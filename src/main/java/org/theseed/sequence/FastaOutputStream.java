@@ -55,11 +55,11 @@ public class FastaOutputStream implements Closeable, AutoCloseable, Flushable {
         // Write the sequence in chunks.
         String sequence = seq.getSequence();
         if (! sequence.isEmpty()) {
-            int begin = 0, end = 64;
+            int begin = 0, end = 60;
             while (end < sequence.length()) {
                 writer.println(sequence.substring(begin, end));
                 begin = end;
-                end += 64;
+                end += 60;
             }
             writer.println(sequence.substring(begin));
         }

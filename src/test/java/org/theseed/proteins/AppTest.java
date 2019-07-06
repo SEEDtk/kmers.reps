@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.proteins.kmers.reps.RepGenome;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
@@ -197,6 +198,49 @@ public class AppTest
         for (int i = 0; i < 5; i++) {
             assertEquals("Compare error at position " + i + " on readback.", testSeqs.get(i), readSeqs.get(i));
         }
+    }
+
+    /**
+     * Test RepGenome object
+     */
+    public void testRepGenome() {
+        String prot1 = "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI" +
+                "NEAKEQVQQALNARKAELESAALNARLAAETIDVSLPGRRIENGGLHPVTRTIDRIESFF" +
+                "GELGFTVATGPEIEDDYHNFDALNIPGHHPARADHDTFWFDATRLLRTQTSGVQIRTMKA" +
+                "QQPPIRIIAPGRVYRNDYDQTHTPMFHQMEGLIVDTNISFTNLKGTLHDFLRNFFEEDLQ" +
+                "IRFRPSYFPFTEPSAEVDVMGKNGKWLEVLGCGMVHPNVLRNVGIDPEVYSGFAFGMGME" +
+                "RLTMLRYGVTDLRSFFENDLRFLKQFK";
+        RepGenome rep1 = new RepGenome("fig|1005530.3.peg.2208", "Escherichia coli EC4402", prot1);
+        assertEquals("Incorrect genome ID parsed.", "1005530.3", rep1.getGenomeId());
+        assertEquals("Incorrect name stored.", "Escherichia coli EC4402", rep1.getName());
+        assertEquals("Incorrect protein stored.", prot1, rep1.getProtein());
+        RepGenome rep2 = new RepGenome("fig|1005530.4.peg.2208", "Escherichia coli EC4402 B", prot1);
+        assertFalse("Different genome IDs are still equal.", rep1.equals(rep2));
+        assertEquals("Incorrect genome ID in second parse.", "1005530.4", rep2.getGenomeId());
+        RepGenome rep3;
+        try {
+            rep3 = new RepGenome("fig|12345.peg.4", "Invalid genome ID", "");
+            fail("Invalid genome ID parsed correctly.");
+        } catch (IllegalArgumentException e) {
+            // Here the correct exception was thrown.
+        }
+        rep3 = new RepGenome("fig|1129793.4.peg.2957", "Glaciecola polaris LMG 21857", "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI");
+        int sim = rep3.similarity(rep1);
+        int sim2 = ((ProteinKmers) rep3).similarity(rep1);
+        assertEquals("Similarity depends on subclass used.", sim2, sim);
+        // Test genome ordering.
+        RepGenome rep4 = new RepGenome("fig|1129793.30.peg.2957", "Test genome 1", "");
+        RepGenome rep5 = new RepGenome("fig|129793.30.peg.2957", "Test genome 2", "");
+        assertTrue("Rep1 not less than rep2.", rep1.compareTo(rep2) < 0);
+        assertTrue("Rep1 not less than rep3.", rep1.compareTo(rep3) < 0);
+        assertTrue("Rep3 not less than rep4.", rep3.compareTo(rep4) < 0);
+        assertTrue("Rep4 not less than rep5.", rep4.compareTo(rep5) < 0);
+        assertTrue("Rep2 not greater than rep1.", rep2.compareTo(rep1) > 0);
+        assertTrue("Rep3 not greater than rep1.", rep3.compareTo(rep1) > 0);
+        assertTrue("Rep4 not greater than rep3.", rep4.compareTo(rep3) > 0);
+        assertTrue("Rep5 not greater than rep4.", rep5.compareTo(rep4) > 0);
+        rep3 = new RepGenome("fig|1005530.3.peg.2957", "Glaciecola polaris LMG 21857", "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI");
+        assertEquals("Equal genome IDs do not compare 0.", 0, rep1.compareTo(rep3));
     }
 
 

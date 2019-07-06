@@ -26,11 +26,12 @@ public class ProteinKmers {
      * Generate a protein kmer set for a specified protein.
      */
     public ProteinKmers(String protein) {
-        this.protein = protein;
-        int n = protein.length() - K;
-        this.kmerSet = new HashSet<String>(n);
+        this.protein = protein.toUpperCase();
+        int n = this.protein.length() - K;
+        int cap = (n < K ? K : n);
+        this.kmerSet = new HashSet<String>(cap);
         for (int i = 0; i <= n; i++) {
-            kmerSet.add(protein.substring(i, i + K));
+            kmerSet.add(this.protein.substring(i, i + K));
         }
     }
 
@@ -92,6 +93,33 @@ public class ProteinKmers {
      */
     public int size() {
         return this.kmerSet.size();
+    }
+
+    /** Only the protein sequence matters to this object. */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((this.protein == null) ? 0 : this.protein.hashCode());
+        return result;
+    }
+
+    /** Only the protein sequence matters to this object. */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ProteinKmers other = (ProteinKmers) obj;
+        if (this.protein == null) {
+            if (other.protein != null)
+                return false;
+        } else if (!this.protein.equals(other.protein))
+            return false;
+        return true;
     }
 
 
