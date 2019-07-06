@@ -180,13 +180,13 @@ public class RepGenomeDbProcessor {
                     // Write it to the report.
                     System.out.format("%s\t%s\t%s\t%d%n", inSeq.getLabel(), inSeq.getComment(),
                             result.getRepresentative().getGenomeId(), result.getSimilarity());
-                    if (debug && this.genomesProcessed % 200 == 0) {
+                    if (debug && this.genomesProcessed % 100 == 0) {
                         long rate = 0;
                         if (genomesProcessed > 0) {
                             rate = this.genomesProcessed * 1000 /
                                     (System.currentTimeMillis() - this.startTime);
                         }
-                        System.err.format("%d genomes processed, %d outliers, %d genomes/second,",
+                        System.err.format("%d genomes processed, %d outliers, %d genomes/second%n",
                                 this.genomesProcessed, outliers, rate);
                     }
                 }
