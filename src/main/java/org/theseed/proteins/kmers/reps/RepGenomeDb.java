@@ -38,7 +38,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
 
 
     /** name of the role for the default key protein */
-    private static final String DEFAULT_PROTEIN = "Phenylalanyl-tRNA synthetase alpha chain";
+    public static final String DEFAULT_PROTEIN = "Phenylalanyl-tRNA synthetase alpha chain";
 
     /** pattern for parsing the savefile header */
     private static final Pattern HEADER_PATTERN = Pattern.compile("Rep(\\d+),K=(\\d+)");
@@ -322,6 +322,24 @@ public class RepGenomeDb implements Iterable<RepGenome> {
         retVal.addGenomes(reader);
         // All done.
         reader.close();
+        return retVal;
+    }
+
+    /** Determine whether or not this genome belongs in the database, and add it if it does.
+     *
+     * @param newGenome	genome to potentially add
+     *
+     * @return TRUE if the genome was added, else FALSE
+     */
+    public boolean checkGenome(RepGenome newGenome) {
+        boolean retVal = false;
+        // Loop through the current representatives, searching for the best score.
+        Representation rep = this.findClosest(newGenome);
+        if (! rep.isRepresented()) {
+            // Here we have a new representative.
+            this.addRep(newGenome);
+            retVal = true;
+        }
         return retVal;
     }
 
