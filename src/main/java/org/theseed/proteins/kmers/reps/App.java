@@ -1,6 +1,4 @@
-package org.theseed.proteins;
-
-import org.theseed.proteins.kmers.reps.RepGenomeDbCreator;
+package org.theseed.proteins.kmers.reps;
 
 /**
  * Create a representative-genome database from a FASTA file of protein sequences.
