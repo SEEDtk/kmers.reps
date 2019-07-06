@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,6 +54,8 @@ public class RepGenomeDb implements Iterable<RepGenome> {
     private String protName;
     /** similarity threshold for representation */
     private int threshold;
+    /** dummy representative-genome object for outliers */
+    private RepGenome dummy = new RepGenome(null, "", "");
 
     /**
      * Construct a blank, empty representative-genome database.
@@ -85,7 +89,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
     /**
      * Object used to denote how a genome is represented.  It contains the similarity
      * score and the representative-genome object of the closest representative.  If
-     * no representative is close, the latter value is NULL
+     * no representative is close, the latter value is a special dummy object.
      */
     public class Representation {
 
@@ -100,7 +104,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
          */
         public Representation(String genomeId, int score) {
             this.similarity = score;
-            this.representative = (genomeId == null ? null : genomeMap.get(genomeId));
+            this.representative = (genomeId == null ? dummy : genomeMap.get(genomeId));
         }
 
         /**
@@ -143,11 +147,19 @@ public class RepGenomeDb implements Iterable<RepGenome> {
         }
 
         /**
-         * @return TRUE if this object indicates the genome is represented; that is,
+         * @return TRUE if this object indicates the genome is represented, that is,
          * 		   the similarity score is higher that the threshold
          */
         public boolean isRepresented() {
             return this.similarity >= threshold;
+        }
+
+        /**
+         * @return TRUE if this object indicates the genome is an extreme outlier, that
+         * 		   is, it has nothing in common with any representative
+         */
+        public boolean isExtreme() {
+            return this.similarity == 0;
         }
 
     }
@@ -257,6 +269,13 @@ public class RepGenomeDb implements Iterable<RepGenome> {
     }
 
     /**
+     * @return a sorted list of this database's representative genome objects
+     */
+    public SortedSet<RepGenome> sorted() {
+        return new TreeSet<RepGenome>(this.genomeMap.values());
+    }
+
+    /**
      * @return the number of representative genomes in this database
      */
     public int size() {
@@ -319,10 +338,22 @@ public class RepGenomeDb implements Iterable<RepGenome> {
             retVal = new RepGenomeDb(threshold, protName);
         }
         // Now read in the representative genomes.
-        retVal.addGenomes(reader);
+        retVal.putGenomes(reader);
         // All done.
         reader.close();
         return retVal;
+    }
+
+
+    /**
+     * Put all the genomes identified by the incoming sequences into this database.
+     * @param sequences
+     */
+    private void putGenomes(Iterable<Sequence> sequences) {
+        for (Sequence seq : sequences) {
+            RepGenome seqRep = new RepGenome(seq);
+            this.addRep(seqRep);
+        }
     }
 
     /** Determine whether or not this genome belongs in the database, and add it if it does.

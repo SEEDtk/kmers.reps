@@ -3,6 +3,7 @@
 	<name>kmers.reps</name>
 	<comment></comment>
 	<projects>
+		<project>shared</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
