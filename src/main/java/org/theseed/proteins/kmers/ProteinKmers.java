@@ -72,7 +72,7 @@ public class ProteinKmers {
      * @param other		the protein-kmers object for the other protein
      */
     public double distance(ProteinKmers other) {
-        double retVal = 0;
+        double retVal = 1.0;
         double similarity = this.similarity(other);
         if (similarity > 0) {
             double union = (this.kmerSet.size() + other.kmerSet.size()) - similarity;

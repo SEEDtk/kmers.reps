@@ -1,13 +1,19 @@
 package org.theseed.proteins;
 
+import org.theseed.proteins.kmers.reps.RepGenomeDbCreator;
+
 /**
- * Hello world!
+ * Create a representative-genome database from a FASTA file of protein sequences.
  *
  */
-public class App 
+public class App
 {
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
+        RepGenomeDbCreator runObject = new RepGenomeDbCreator();
+        boolean ok = runObject.parseCommand(args);
+        if (ok) {
+            runObject.run();
+        }
     }
 }

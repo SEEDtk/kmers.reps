@@ -314,7 +314,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
         } else {
             int threshold = Integer.valueOf(m.group(1));
             int kmerSize = Integer.valueOf(m.group(2));
-            // Create the new database.
+            // Create the new database.  Note we have to update the global kmer size.
             ProteinKmers.setKmerSize(kmerSize);
             retVal = new RepGenomeDb(threshold, protName);
         }

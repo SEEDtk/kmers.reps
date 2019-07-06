@@ -146,7 +146,7 @@ public class AppTest
         assertEquals("Kmer1 has wrong count.", 41, kmer1.size());
         assertEquals("Kmer1/kmer3 wrong similarity.", 3, kmer2.similarity(kmer3));
         assertEquals("Similarity not commutative.", 3, kmer3.similarity(kmer2));
-        assertEquals("Kmer1 too close to kmer2.", 0.0, kmer1.distance(kmer2), 0.0);
+        assertEquals("Kmer1 too close to kmer2.", 1.0, kmer1.distance(kmer2), 0.0);
         assertEquals("Kmer1 too close to kmer3.", 0.95, kmer2.distance(kmer3), 0.005);
     }
 
@@ -291,9 +291,25 @@ public class AppTest
         int n = repDb.size();
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                int comparison = allReps[i].similarity(allReps[j]);
-                assertTrue("Genomes " + allReps[i] + " and " + allReps[j] + " are too close.  Score = " + comparison,
-                        comparison < repDb.getThreshold());
+                // Verify the similarity thresholds here.
+                int compareij = allReps[i].similarity(allReps[j]);
+                assertTrue("Genomes " + allReps[i] + " and " + allReps[j] + " are too close.  Score = " + compareij,
+                        compareij < repDb.getThreshold());
+                // Verify the distance behavior here.
+                double distij = allReps[i].distance(allReps[j]);
+                double distji = allReps[j].distance(allReps[i]);
+                assertEquals("Distance not commutative.", distij, distji, 0.0);
+                for (int k = j + 1; k < n; k++) {
+                    double distjk = allReps[j].distance(allReps[k]);
+                    double distik = allReps[i].distance(allReps[k]);
+                    assertTrue("Triangle inequality failure.", distij + distjk >= distik);
+                    int compareik = allReps[i].similarity(allReps[k]);
+                    if (compareik > compareij && distik > distij) {
+                        fail("Greater similarity at greater distance.");
+                    } else if (compareik < compareij && distik < distij) {
+                        fail("Lesser similarity at lesser distance.");
+                    }
+                }
             }
         }
         // Save this database.
