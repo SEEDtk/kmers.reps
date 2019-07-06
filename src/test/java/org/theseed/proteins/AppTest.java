@@ -2,9 +2,13 @@ package org.theseed.proteins;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.FastaInputStream;
+import org.theseed.sequence.FastaOutputStream;
+import org.theseed.sequence.Sequence;
 import org.theseed.utils.MagicMap;
 
 import junit.framework.Test;
@@ -144,6 +148,56 @@ public class AppTest
         assertEquals("Kmer1 too close to kmer3.", 0.95, kmer2.distance(kmer3), 0.005);
     }
 
-    //TODO test FastaInputStream
+    /**
+     * FASTA file test
+     * @throws IOException
+     */
+    public void testFasta() throws IOException {
+        File inFasta = new File("src/test", "test.fa");
+        FastaInputStream inStream = new FastaInputStream(inFasta);
+        ArrayList<Sequence> testSeqs = new ArrayList<Sequence>(5);
+        for (Sequence input : inStream) {
+            testSeqs.add(input);
+        }
+        inStream.close();
+        assertEquals("Wrong number of sequences.", 5, testSeqs.size());
+        Sequence seq = testSeqs.get(0);
+        assertEquals("Wrong label for seq 1.", "label1", seq.getLabel());
+        assertEquals("Wrong comment for seq 1.", "", seq.getComment());
+        assertEquals("Wrong sequence for seq 1.", "tgtgcagcgagccctacagccttggagggaacaacacggactacctgccgctcgtctacccaaagggggtccccctccccaacacaacggttaccagcgtgccgagcg", seq.getSequence());
+        seq = testSeqs.get(1);
+        assertEquals("Wrong label for seq 2.", "label2", seq.getLabel());
+        assertEquals("Wrong comment for seq 2.", "comment2 with spaces", seq.getComment());
+        assertEquals("Wrong sequence for seq 2.", "ctcaatgggtccgtagtcggcatcggcagatgtgtataagcagcatgcccgccctctgcag", seq.getSequence());
+        seq = testSeqs.get(2);
+        assertEquals("Wrong label for seq 3.", "label3", seq.getLabel());
+        assertEquals("Wrong comment for seq 3.", "comment3", seq.getComment());
+        assertEquals("Wrong sequence for seq 3.", "gtataaagtattggcctgttgag", seq.getSequence());
+        seq = testSeqs.get(3);
+        assertEquals("Wrong label for seq 4.", "label4", seq.getLabel());
+        assertEquals("Wrong comment for seq 4.", "comment4", seq.getComment());
+        assertEquals("Wrong sequence for seq 4.", "", seq.getSequence());
+        seq = testSeqs.get(4);
+        assertEquals("Wrong label for seq 5.", "label5", seq.getLabel());
+        assertEquals("Wrong comment for seq 5.", "comment5", seq.getComment());
+        assertEquals("Wrong sequence for seq 5.", "ggggccctgaggtcctgagcaagtgggtcggcgagagcgagaaggcgataaggt", seq.getSequence());
+        // Write the FASTA back out.
+        File outFasta = new File("src/test", "fasta.ser");
+        FastaOutputStream outStream = new FastaOutputStream(outFasta);
+        outStream.write(testSeqs);
+        outStream.close();
+        // Read it in and verify.
+        inStream = new FastaInputStream(outFasta);
+        ArrayList<Sequence> readSeqs = new ArrayList<Sequence>(5);
+        while (inStream.hasNext()) {
+            readSeqs.add(inStream.next());
+        }
+        inStream.close();
+        assertEquals("Wrong number of records on read back.", 5, readSeqs.size());
+        for (int i = 0; i < 5; i++) {
+            assertEquals("Compare error at position " + i + " on readback.", testSeqs.get(i), readSeqs.get(i));
+        }
+    }
+
 
 }

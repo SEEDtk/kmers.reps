@@ -90,4 +90,43 @@ public class Sequence {
         this.sequence = sequence;
     }
 
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((this.comment == null) ? 0 : this.comment.hashCode());
+        result = prime * result + ((this.label == null) ? 0 : this.label.hashCode());
+        result = prime * result + ((this.sequence == null) ? 0 : this.sequence.hashCode());
+        return result;
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (! (obj instanceof Sequence))
+            return false;
+        Sequence other = (Sequence) obj;
+        if (this.comment == null) {
+            if (other.comment != null)
+                return false;
+        } else if (!this.comment.equals(other.comment))
+            return false;
+        if (this.label == null) {
+            if (other.label != null)
+                return false;
+        } else if (!this.label.equals(other.label))
+            return false;
+        if (this.sequence == null) {
+            if (other.sequence != null)
+                return false;
+        } else if (!this.sequence.equals(other.sequence))
+            return false;
+        return true;
+    }
+
 }
