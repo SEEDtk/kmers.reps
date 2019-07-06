@@ -8,7 +8,7 @@ public class App
 {
     public static void main( String[] args )
     {
-        RepGenomeDbCreator runObject = new RepGenomeDbCreator();
+        RepGenomeDbProcessor runObject = new RepGenomeDbProcessor();
         boolean ok = runObject.parseCommand(args);
         if (ok) {
             runObject.run();

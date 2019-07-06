@@ -12,14 +12,19 @@ import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
 
 /**
- * This is the primary class for creating a representative-genome database.  A FASTA file
+ * This is the primary class for processing a representative-genome database.  A FASTA file
  * is read from the standard input:  each record must have the key protein's feature ID as
  * the label, the genome name as the comment, and the key protein's sequence as the sequence.
+ * 
+ * The positional parameter is the name of the representative-genome database's saved data file.
+ * This is also a FASTA file, containing an empty-sequence header record and one record per 
+ * representative genome.  The command-line options are as follows, and are heavily modal.
  *
- * The positional parameter is the name of the output file.  This will be a FASTA file with
- * an empty-sequence header record, and one record per representative genome.  The command-line
- * options are as follows.
- *
+ * --create		create the representative-genome database from the input file
+ * --list		specifies a file to contain a listing of the ID and name of each representative genome 
+ * --report		specifies a file to contain a report on which genomes are representative of the incoming
+ * 				genomes and what the similarity score is
+ * 
  * -m	minimum similarity threshold for representation (default 100)
  * -K	protein kmer size (default 8)
  * -p	key protein name (default "Phenylalanyl-tRNA synthetase alpha chain")
@@ -27,7 +32,7 @@ import org.theseed.sequence.Sequence;
  * @author Bruce Parrello
  *
  */
-public class RepGenomeDbCreator {
+public class RepGenomeDbProcessor {
 
     // FIELDS
     /** number of genomes processed */
