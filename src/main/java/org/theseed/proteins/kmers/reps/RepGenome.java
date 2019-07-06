@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.Sequence;
 
 /**
  * This class encapsulates the data for a representative genome. In addition to the protein
@@ -39,6 +40,28 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
      */
     public RepGenome(String fid, String name, String protein) {
         super(protein);
+        fillData(fid, name);
+    }
+
+    /**
+     * Construct a representative genome from a FASTA sequence
+     *
+     * @param sequence	incoming sequence; the label must be the key protein's feature ID,
+     * 					the comment must be the relevant genome's name, and the sequence
+     * 					must be the key protein's amino acid sequence
+     */
+    public RepGenome(Sequence definition) {
+        super(definition.getSequence());
+        fillData(definition.getLabel(), definition.getComment());
+    }
+
+    /**
+     * Fill in the feature ID and the genome information.
+     *
+     * @param fid	feature ID for this genome's key protein.
+     * @param name	genome name
+     */
+    private void fillData(String fid, String name) {
         // Extract the genome ID from the feature ID.
         Matcher m = FID_PARSER.matcher(fid);
         if (! m.matches()) {
@@ -47,6 +70,7 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
             this.genomeId = m.group(1);
         }
         // Store the feature ID and genome name.
+        this.fid = fid;
         this.name = name;
     }
 
@@ -69,6 +93,14 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
      */
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * @return a sequence object representing this genome's key protein
+     */
+    public Sequence toSequence() {
+        Sequence retVal = new Sequence(this.fid, this.name, this.getProtein());
+        return retVal;
     }
 
     @Override
@@ -117,6 +149,11 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.genomeId + " (" + this.name + ")";
     }
 
 

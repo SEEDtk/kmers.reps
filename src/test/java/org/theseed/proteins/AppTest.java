@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.proteins.kmers.reps.RepGenome;
+import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
@@ -212,6 +213,7 @@ public class AppTest
                 "RLTMLRYGVTDLRSFFENDLRFLKQFK";
         RepGenome rep1 = new RepGenome("fig|1005530.3.peg.2208", "Escherichia coli EC4402", prot1);
         assertEquals("Incorrect genome ID parsed.", "1005530.3", rep1.getGenomeId());
+        assertEquals("FID not stored.", "fig|1005530.3.peg.2208", rep1.getFid());
         assertEquals("Incorrect name stored.", "Escherichia coli EC4402", rep1.getName());
         assertEquals("Incorrect protein stored.", prot1, rep1.getProtein());
         RepGenome rep2 = new RepGenome("fig|1005530.4.peg.2208", "Escherichia coli EC4402 B", prot1);
@@ -243,5 +245,71 @@ public class AppTest
         assertEquals("Equal genome IDs do not compare 0.", 0, rep1.compareTo(rep3));
     }
 
+    /**
+     * test RepGenomeDb
+     *
+     * @throws IOException
+     */
+    public void testRepGenomeDb() throws IOException {
+        RepGenomeDb repDb = new RepGenomeDb(100);
+        assertEquals("Wrong kmer size.", ProteinKmers.kmerSize(), repDb.getKmerSize());
+        assertEquals("Wrong key protein.", "Phenylalanyl-tRNA synthetase alpha chain", repDb.getProtName());
+        assertEquals("Wrong threshold.", 100, repDb.getThreshold());
+        ProteinKmers.setKmerSize(9);
+        repDb = new RepGenomeDb(200, "ATP synthase delta chain");
+        assertEquals("Wrong kmer size in db2.", 9, repDb.getKmerSize());
+        assertEquals("Wrong key protein in db2.", "ATP synthase delta chain", repDb.getProtName());
+        assertEquals("Wrong threshold in db2.", 200, repDb.getThreshold());
+        // Reset the kmer size.
+        ProteinKmers.setKmerSize(10);
+        // Process a fasta stream to create a rep-genome DB.
+        File fastaFile = new File("src/test", "small.fa");
+        FastaInputStream fastaStream = new FastaInputStream(fastaFile);
+        repDb = new RepGenomeDb(50);
+        repDb.addGenomes(fastaStream);
+        fastaStream.close();
+        // Find the representative of a genome.
+        ProteinKmers testSeq = new ProteinKmers(
+                "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI" +
+                "NEAKEQVQQALNARKAELESAALNARLAAETIDVSLPGRRIENGGLHPVTRTIDRIESFF" +
+                "GELGFTVATGPEIEDDYHNFDALNIPGHHPARADHDTFWFDATRLLRTQTSGVQIRTMKA" +
+                "QQPPIRIIAPGRVYRNDYDQTHTPMFHQMEGLIVDTNISFTNLKGTLHDFLRNFFEEDLQ" +
+                "IRFRPSYFPFTEPSAEVDVMGKNGKWLEVLGCGMVHPNVLRNVGIDPEVYSGFAFGMGME" +
+                "RLTMLRYGVTDLRSFFENDLRFLKQFK");
+        RepGenomeDb.Representation result = repDb.findClosest(testSeq);
+        assertEquals("E coli not found for E coli protein.", "1005530.3", result.getGenomeId());
+        assertTrue("E coli not close enough to E coli protein.", result.getSimilarity() >= 200);
+        // Now verify that all the sequences are represented.
+        fastaStream = new FastaInputStream(fastaFile);
+        for (Sequence inSeq : fastaStream) {
+            result = repDb.findClosest(inSeq);
+            assertTrue("Genome " + inSeq.getLabel() + " not represented.", result.isRepresented());
+        }
+        fastaStream.close();
+        // Now get all the represented genomes and verify that they are far apart.
+        RepGenome[] allReps = repDb.all();
+        int n = repDb.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                int comparison = allReps[i].similarity(allReps[j]);
+                assertTrue("Genomes " + allReps[i] + " and " + allReps[j] + " are too close.  Score = " + comparison,
+                        comparison < repDb.getThreshold());
+            }
+        }
+        // Save this database.
+        File saveFile = new File("src/test", "repdb.ser");
+        repDb.save(saveFile);
+        // Load it back in.
+        ProteinKmers.setKmerSize(6);
+        RepGenomeDb newDb = RepGenomeDb.load(saveFile);
+        assertEquals("Incorrect protein name loaded.", repDb.getProtName(), newDb.getProtName());
+        assertEquals("Incorrect kmer size loaded.", repDb.getKmerSize(), newDb.getKmerSize());
+        assertEquals("Incorrect kmer set set.", newDb.getKmerSize(), ProteinKmers.kmerSize());
+        assertEquals("Incorrect threshold loaded.", repDb.getThreshold(), newDb.getThreshold());
+        assertEquals("Wrong number of genomes loaded.", repDb.size(), newDb.size());
+        for (RepGenome oldGenome : allReps) {
+            assertEquals("Genome " + oldGenome + " not loaded.", oldGenome, newDb.get(oldGenome.getGenomeId()));
+        }
 
+    }
 }
