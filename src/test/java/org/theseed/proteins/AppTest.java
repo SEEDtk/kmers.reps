@@ -64,10 +64,10 @@ public class AppTest
     }
 
     /**
-     * Test magic IDs.
+     * Test roles IDs.
      * @throws IOException
      */
-    public void testMagic() throws IOException {
+    public void testRoleMagic() throws IOException {
         File inFile = new File("src/test", "words.txt");
         Scanner roleScanner = new Scanner(inFile);
         roleScanner.useDelimiter("\t|\r\n|\n");
@@ -136,6 +136,7 @@ public class AppTest
      * test protein kmers
      */
     public void testKmers() {
+        ProteinKmers.setKmerSize(10);
         String myProt1 = "MGMLVPLISKISDLSEEAKACVAACSSVEELDEVRGRYIGRAGALTALLA"; // 50 AA
         String myProt2 = "MDINLFKEELEELAKKAKHMLNETASKNDLEQVKVSLLGKKGLLTLQSAA";
         String myProt3 = "MDINLFKEELKHMLNETASKKGLLTLQSA"; // 30 AA
