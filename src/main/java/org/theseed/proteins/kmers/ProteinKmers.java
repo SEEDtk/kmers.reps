@@ -14,7 +14,7 @@ import java.util.HashSet;
 public class ProteinKmers {
 
     /** current kmer size */
-    private static int K = 10;
+    private static int K = 8;
 
     // FIELDS
     /** initial protein string */
