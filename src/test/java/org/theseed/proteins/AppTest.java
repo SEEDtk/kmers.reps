@@ -64,6 +64,25 @@ public class AppTest
     }
 
     /**
+     * Test the bug with the odd X-heavy protein not having a repeatable similarity.
+     * @throws IOException
+     */
+    public void testXProtein() throws IOException {
+        RepGenomeDb testdb = new RepGenomeDb(200);
+        File inFile = new File("src/test", "xsmall.fa");
+        FastaInputStream inStream = new FastaInputStream(inFile);
+        Sequence testSeq = inStream.next();
+        RepGenome testGenome = new RepGenome(testSeq);
+        testdb.checkGenome(testGenome);
+        RepGenomeDb.Representation result = testdb.findClosest(testSeq);
+        assertTrue("Should not be an outlier.", result.getSimilarity() > 200);
+        double distance = testGenome.distance(testGenome);
+        assertEquals("Distance to self is nonzero.", 0.0, distance, 0.0);
+        inStream.close();
+    }
+
+
+    /**
      * Test roles IDs.
      * @throws IOException
      */

@@ -58,9 +58,17 @@ public class ProteinKmers {
      */
     public int similarity(ProteinKmers other) {
         int retVal = 0;
-        for (String kmer : other.kmerSet) {
-            if (this.kmerSet.contains(kmer)) {
-                retVal++;
+        if (this.protein.contentEquals(other.protein)) {
+            // Identical proteins.  Compute the similarity from the length.  This will be
+            // higher than the highest possible for the protein, since the maximum otherwise
+            // is length - K.  We need to do this so that proteins with long X runs are
+            // equal to themselves.
+            retVal = this.protein.length();
+        } else {
+            for (String kmer : other.kmerSet) {
+                if (this.kmerSet.contains(kmer)) {
+                    retVal++;
+                }
             }
         }
         return retVal;
@@ -73,10 +81,15 @@ public class ProteinKmers {
      */
     public double distance(ProteinKmers other) {
         double retVal = 1.0;
-        double similarity = this.similarity(other);
-        if (similarity > 0) {
-            double union = (this.kmerSet.size() + other.kmerSet.size()) - similarity;
-            retVal = 1.0 - similarity / union;
+        if (this.protein.contentEquals(other.protein)) {
+            // Same protein.  Return 0 distance.  See the odd similarity computation above.
+            retVal = 0.0;
+        } else {
+            double similarity = this.similarity(other);
+            if (similarity > 0) {
+                double union = (this.kmerSet.size() + other.kmerSet.size()) - similarity;
+                retVal = 1.0 - similarity / union;
+            }
         }
         return retVal;
     }
