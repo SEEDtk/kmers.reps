@@ -10,10 +10,10 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.theseed.counters.QualityCountMap;
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.CountMap;
 
 /**
  * This is the primary class for processing a representative-genome database.  A FASTA file
@@ -161,7 +161,7 @@ public class RepGenomeDbProcessor {
                 // Set up progress timing and stats.
                 this.genomesProcessed = 0;
                 int outliers = 0;
-                CountMap<RepGenome> repCounts = new CountMap<RepGenome>();
+                QualityCountMap<RepGenome> repCounts = new QualityCountMap<RepGenome>();
                 this.startTime = System.currentTimeMillis();
                 // Loop through the input.
                 for (Sequence inSeq : inStream) {
