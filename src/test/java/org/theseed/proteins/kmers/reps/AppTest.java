@@ -1,10 +1,12 @@
-package org.theseed.proteins;
+package org.theseed.proteins.kmers.reps;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import org.theseed.proteins.Role;
+import org.theseed.proteins.RoleMap;
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.proteins.kmers.reps.RepGenome;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
