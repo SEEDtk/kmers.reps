@@ -132,6 +132,7 @@ public class RepGenomeDbProcessor {
     /** Process the representative-genome database. */
     public void run() {
         try {
+            long initTime = System.currentTimeMillis();
             if (this.createFile != null) {
                 // Here we must create the rep-genome database.
                 createRepDb();
@@ -207,6 +208,8 @@ public class RepGenomeDbProcessor {
                     if (debug) System.err.println("Statistics report done.");
                 }
             }
+            long totalDuration = (System.currentTimeMillis() - initTime) / 60;
+            System.err.format("Total duration is %d minutes.", totalDuration);
         } catch (IOException e) {
             throw new RuntimeException("Error reading FASTA file.", e);
         }
