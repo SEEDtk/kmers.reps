@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.SortedSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -37,9 +39,12 @@ import org.theseed.sequence.Sequence;
  *
  * When CREATE is specified, the following options are also used
  *
- * -m	minimum similarity threshold for representation (default 100)
- * -K	protein kmer size (default 8)
- * -p	key protein name (default "Phenylalanyl-tRNA synthetase alpha chain")
+ * -m		minimum similarity threshold for representation (default 100)
+ * -K		protein kmer size (default 8)
+ * -p		key protein name (default "Phenylalanyl-tRNA synthetase alpha chain")
+ * -x		maximum number of ambiguity characters allowed in a sequence; genomes with more than this number
+ * 			are deferred to a second pass to reduce their likelihood of being selected (default 20)
+ * --dna	if specified, the sequences are presumed to be DNA instead of amino acids
  *
  * @author Bruce Parrello
  *
@@ -99,6 +104,15 @@ public class RepGenomeDbProcessor {
     @Option(name="--verbose", aliases={"-v", "--debug"}, usage="show progress on STDERR")
     private boolean debug;
 
+    /** treat the sequences as DNA instead of amino acids */
+    @Option(name="--dna", usage="input is DNA instead of AA")
+    private boolean dnaMode;
+
+    /** maximum number of ambiguity characters */
+    @Option(name="-x", aliases={"--maxErr"}, metaVar="20", usage="maximum number of Ns (DNA) or Xs (amino acid)")
+    private int maxErr;
+    private long lastTime;
+
     /** Parse the command line parameters and options. */
     public boolean parseCommand(String[] args) {
         boolean retVal = false;
@@ -111,6 +125,8 @@ public class RepGenomeDbProcessor {
         this.statFile = null;
         this.noInput = false;
         this.debug = false;
+        this.dnaMode = false;
+        this.maxErr = 20;
 
         CmdLineParser parser = new CmdLineParser(this);
         try {
@@ -224,20 +240,28 @@ public class RepGenomeDbProcessor {
                 ProteinKmers.kmerSize(), this.threshold, this.protName);
         this.repDB = new RepGenomeDb(this.threshold, this.protName);
         FastaInputStream inStream = new FastaInputStream(this.createFile);
+        // We will put deferred sequences in here.
+        ArrayList<Sequence> deferred = new ArrayList<Sequence>();
+        // Compute the ambiguity character.
+        char badChar = (this.dnaMode ? 'N' : 'X');
         // Loop through the input stream, processing representative genomes.  We can
         // do this in one statement, but we slow down to display progress.
         if (debug) System.err.println("Processing input.");
         genomesProcessed = 0;
-        long lastTime = System.currentTimeMillis();
+        this.lastTime = System.currentTimeMillis();
         startTime = lastTime;
         for (Sequence inSequence : inStream) {
-            RepGenome newGenome = new RepGenome(inSequence);
-            repDB.checkGenome(newGenome);
-            genomesProcessed++;
-            if ((System.currentTimeMillis() - lastTime) > 10000) {
-                // A minute since our last progress. Show more progress.
-                if (debug) showCreateProgress();
-                lastTime = System.currentTimeMillis();
+            // Verify that this is a good sequence.
+            if (StringUtils.countMatches(inSequence.getSequence(), badChar) >= this.maxErr) {
+                deferred.add(inSequence);
+            } else {
+                processSequence(inSequence);
+            }
+        }
+        if (deferred.size() > 0) {
+            if (debug) System.err.format("Processing %d deferred sequences.%n", deferred.size());
+            for (Sequence inSequence : deferred) {
+                processSequence(inSequence);
             }
         }
         if (debug) showCreateProgress();
@@ -245,6 +269,22 @@ public class RepGenomeDbProcessor {
         // Save the database.
         if (debug) System.err.println("Saving database to " + dbFile.getPath() + ".");
         repDB.save(dbFile);
+    }
+
+    /**
+     * Process a single sequence.
+     *
+     * @param inSequence	sequence to process
+     */
+    private void processSequence(Sequence inSequence) {
+        RepGenome newGenome = new RepGenome(inSequence);
+        repDB.checkGenome(newGenome);
+        genomesProcessed++;
+        if ((System.currentTimeMillis() - this.lastTime) > 10000) {
+            // A minute since our last progress. Show more progress.
+            if (debug) showCreateProgress();
+            this.lastTime = System.currentTimeMillis();
+        }
     }
 
     /** Display our current progress during database creation. */

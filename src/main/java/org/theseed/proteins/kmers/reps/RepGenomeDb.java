@@ -199,14 +199,30 @@ public class RepGenomeDb implements Iterable<RepGenome> {
         for (Sequence seqObject : fastaStream) {
             RepGenome newGenome = new RepGenome(seqObject.getLabel(), seqObject.getComment(), seqObject.getSequence());
             // Loop through the current representatives, searching for the best score.
-            Representation rep = this.findClosest(newGenome);
-            if (! rep.isRepresented()) {
+            if (! this.checkSimilarity(newGenome, this.threshold)) {
                 // Here we have a new representative.
                 this.addRep(newGenome);
                 retVal++;
             }
         }
         return retVal;
+    }
+
+
+    /**
+     * @return TRUE if the specified sequence has a similarity score of the specified
+     * 		   level or higher with at least one genome in this database, else FALSE
+     *
+     * @param newSeq	sequence to check
+     * @param sim		similarity score to use
+     */
+    public boolean checkSimilarity(ProteinKmers newSeq, int sim) {
+        Iterator<RepGenome> iter = this.iterator();
+        int simFound = 0;
+        while (iter.hasNext() && simFound < sim) {
+            simFound = iter.next().similarity(newSeq);
+        }
+        return (simFound >= sim);
     }
 
     /**
@@ -365,13 +381,24 @@ public class RepGenomeDb implements Iterable<RepGenome> {
     public boolean checkGenome(RepGenome newGenome) {
         boolean retVal = false;
         // Loop through the current representatives, searching for the best score.
-        Representation rep = this.findClosest(newGenome);
-        if (! rep.isRepresented()) {
+        if (! this.checkSimilarity(newGenome, this.threshold)) {
             // Here we have a new representative.
             this.addRep(newGenome);
             retVal = true;
         }
         return retVal;
+    }
+
+    /**
+     * @return TRUE if the specified sequence has a similarity score of the specified
+     * 		   level or higher with at least one genome in this database, else FALSE
+     *
+     * @param inSeq	sequence to check
+     * @param sim		similarity score to use
+     */
+    public boolean checkSimilarity(Sequence inSeq, int sim) {
+        ProteinKmers kmerThing = new ProteinKmers(inSeq.getSequence());
+        return checkSimilarity(kmerThing, sim);
     }
 
 }

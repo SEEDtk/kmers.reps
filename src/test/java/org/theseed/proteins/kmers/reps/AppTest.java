@@ -207,8 +207,8 @@ public class AppTest
         // Now verify that all the sequences are represented.
         fastaStream = new FastaInputStream(fastaFile);
         for (Sequence inSeq : fastaStream) {
-            result = repDb.findClosest(inSeq);
-            assertTrue("Genome " + inSeq.getLabel() + " not represented.", result.isRepresented());
+            boolean found = repDb.checkSimilarity(inSeq, 50);
+            assertTrue("Genome " + inSeq.getLabel() + " not represented.", found);
         }
         fastaStream.close();
         // Now get all the represented genomes and verify that they are far apart.
