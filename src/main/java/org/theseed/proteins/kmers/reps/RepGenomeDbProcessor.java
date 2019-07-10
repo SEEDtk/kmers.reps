@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedSet;
 
 import org.apache.commons.lang3.StringUtils;
@@ -214,7 +215,7 @@ public class RepGenomeDbProcessor {
                     if (debug) System.err.println("Producing stat report on " + statFile.getPath() + ".");
                     PrintWriter statStream = new PrintWriter(statFile);
                     statStream.println("rep_id\trep_name\trepresented\toutliers");
-                    SortedSet<RepGenome> statReps = repCounts.keys();
+                    List<RepGenome> statReps = repCounts.bestKeys();
                     for (RepGenome rep : statReps) {
                         statStream.format("%s\t%s\t%d\t%d%n", rep.getGenomeId(),
                                 rep.getName(), repCounts.good(rep),
@@ -224,7 +225,7 @@ public class RepGenomeDbProcessor {
                     if (debug) System.err.println("Statistics report done.");
                 }
             }
-            long totalDuration = (System.currentTimeMillis() - initTime) / 60;
+            long totalDuration = (System.currentTimeMillis() - initTime) / 60000;
             System.err.format("Total duration is %d minutes.", totalDuration);
         } catch (IOException e) {
             throw new RuntimeException("Error reading FASTA file.", e);
