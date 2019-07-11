@@ -196,7 +196,8 @@ public class RepGenomeDbProcessor {
                         repCounts.setGood(result.getRepresentative());
                     }
                     // Write it to the report.
-                    System.out.format("%s\t%s\t%s\t%d%n", inSeq.getLabel(), inSeq.getComment(),
+                    String genomeId = RepGenome.genomeOf(inSeq.getLabel());
+                    System.out.format("%s\t%s\t%s\t%d%n", genomeId, inSeq.getComment(),
                             result.getRepresentative().getGenomeId(), result.getSimilarity());
                     if (debug && this.genomesProcessed % 100 == 0) {
                         long rate = 0;

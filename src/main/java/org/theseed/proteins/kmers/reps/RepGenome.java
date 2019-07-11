@@ -63,19 +63,30 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
      */
     private void fillData(String fid, String name) {
         // Extract the genome ID from the feature ID.
+        this.genomeId = genomeOf(fid);
+        // Store the feature ID and genome name.
+        this.fid = fid;
+        this.name = name;
+    }
+
+    /**
+     * @return the genome ID portion of a feature ID
+     *
+     * @param fid	feature ID to parse for a genome ID
+     */
+    public static String genomeOf(String fid) {
+        String retVal;
         if (fid == null) {
-            this.genomeId = "<none>";
+            retVal = "<none>";
         } else {
             Matcher m = FID_PARSER.matcher(fid);
             if (! m.matches()) {
                 throw new IllegalArgumentException("Invalid feature ID" + fid);
             } else {
-                this.genomeId = m.group(1);
+                retVal = m.group(1);
             }
         }
-        // Store the feature ID and genome name.
-        this.fid = fid;
-        this.name = name;
+        return retVal;
     }
 
     /**
