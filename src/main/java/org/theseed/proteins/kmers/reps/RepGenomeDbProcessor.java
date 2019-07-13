@@ -195,10 +195,12 @@ public class RepGenomeDbProcessor {
                     } else {
                         repCounts.setGood(result.getRepresentative());
                     }
-                    // Write it to the report.
+                    // Write it to the report.  Note we tweak the infinity value.
+                    int sim = result.getSimilarity();
+                    String simString = (sim == ProteinKmers.INFINITY ? "MAX" : Integer.toString(sim));
                     String genomeId = RepGenome.genomeOf(inSeq.getLabel());
-                    System.out.format("%s\t%s\t%s\t%d%n", genomeId, inSeq.getComment(),
-                            result.getRepresentative().getGenomeId(), result.getSimilarity());
+                    System.out.format("%s\t%s\t%s\t%s%n", genomeId, inSeq.getComment(),
+                            result.getRepresentative().getGenomeId(), simString);
                     if (debug && this.genomesProcessed % 100 == 0) {
                         long rate = 0;
                         if (genomesProcessed > 0) {

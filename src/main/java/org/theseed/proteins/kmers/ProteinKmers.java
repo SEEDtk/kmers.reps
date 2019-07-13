@@ -16,6 +16,9 @@ public class ProteinKmers {
     /** current kmer size */
     private static int K = 8;
 
+    /** similarity score for identical proteins */
+    public final static int INFINITY = 9999;
+
     // FIELDS
     /** initial protein string */
     private String protein;
@@ -59,11 +62,11 @@ public class ProteinKmers {
     public int similarity(ProteinKmers other) {
         int retVal = 0;
         if (this.protein.contentEquals(other.protein)) {
-            // Identical proteins.  Compute the similarity from the length.  This will be
+            // Identical proteins.  Use the fake infinity.  This will be
             // higher than the highest possible for the protein, since the maximum otherwise
             // is length - K.  We need to do this so that proteins with long X runs are
             // equal to themselves.
-            retVal = this.protein.length();
+            retVal = ProteinKmers.INFINITY;
         } else {
             for (String kmer : other.kmerSet) {
                 if (this.kmerSet.contains(kmer)) {
