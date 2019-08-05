@@ -229,7 +229,7 @@ public class RepGenomeDbProcessor {
                 }
             }
             long totalDuration = (System.currentTimeMillis() - initTime) / 60000;
-            System.err.format("Total duration is %d minutes.", totalDuration);
+            if (debug) System.err.format("Total duration is %d minutes.%n", totalDuration);
         } catch (IOException e) {
             throw new RuntimeException("Error reading FASTA file.", e);
         }
