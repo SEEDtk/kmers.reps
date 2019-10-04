@@ -17,6 +17,7 @@ import org.theseed.counters.QualityCountMap;
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
+import org.theseed.utils.ICommand;
 
 /**
  * This is the primary class for processing a representative-genome database.  A FASTA file
@@ -50,7 +51,7 @@ import org.theseed.sequence.Sequence;
  * @author Bruce Parrello
  *
  */
-public class RepGenomeDbProcessor {
+public class RepGenomeDbProcessor implements ICommand {
 
     // FIELDS
     /** number of genomes processed */
