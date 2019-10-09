@@ -29,7 +29,7 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
     private String name;
 
     /** pattern for extracting genome ID from feature ID */
-    private static final Pattern FID_PARSER = Pattern.compile("fig\\|(\\d+\\.\\d+)\\.\\w+\\.\\d+");
+    public static final Pattern FID_PARSER = Pattern.compile("fig\\|(\\d+\\.\\d+)\\.\\w+\\.\\d+");
 
     /**
      * Construct a representative genome.

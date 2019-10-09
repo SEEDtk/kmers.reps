@@ -124,6 +124,71 @@ public class AppTest
     }
 
     /**
+     * Test RepGenome object
+     */
+    public void testRepSequence() {
+        String prot1 = "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI" +
+                "NEAKEQVQQALNARKAELESAALNARLAAETIDVSLPGRRIENGGLHPVTRTIDRIESFF" +
+                "GELGFTVATGPEIEDDYHNFDALNIPGHHPARADHDTFWFDATRLLRTQTSGVQIRTMKA" +
+                "QQPPIRIIAPGRVYRNDYDQTHTPMFHQMEGLIVDTNISFTNLKGTLHDFLRNFFEEDLQ" +
+                "IRFRPSYFPFTEPSAEVDVMGKNGKWLEVLGCGMVHPNVLRNVGIDPEVYSGFAFGMGME" +
+                "RLTMLRYGVTDLRSFFENDLRFLKQFK";
+        Sequence seq1 = new Sequence("fig|1005530.3.peg.2208", "", prot1);
+        Sequence seq2 = new Sequence("a sequence", "", prot1);
+        RepSequence rep1 = new RepSequence(seq1);
+        RepSequence rep2 = new RepSequence(seq2);
+        assertEquals("Incorrect ID stored for seq 1.", "fig|1005530.3.peg.2208", rep1.getId());
+        assertEquals("Incorrect ID stored for seq 2.", "a sequence", rep2.getId());
+        assertEquals("Incorrect sequence stored.", prot1, rep1.getProtein());
+        assertFalse("Different IDs are still equal", seq1.equals(seq2));
+        Sequence seq3 = new Sequence("fig|1005530.3.peg.2208", "Glaciecola polaris LMG 21857", "MSHLAELVASAKAAISQASDVAALDNVRVEYLGKKGHLTLQMTTLRELPPEERPAAGAVI");
+        RepSequence rep3 = new RepSequence(seq3);
+        int sim = rep3.similarity(rep1);
+        int sim2 = ((ProteinKmers) rep3).similarity(rep1);
+        assertEquals("Similarity depends on subclass used.", sim2, sim);
+        // Test sequence ordering.
+        assertThat("Rep1 not greater than rep2.", rep1.compareTo(rep2), greaterThan(0));
+        assertThat("Rep2 not less than rep1.", rep2.compareTo(rep1), lessThan(0));
+        assertEquals("Equal sequence IDs do not compare 0.", 0, rep1.compareTo(rep3));
+        assertEquals("Equal sequence IDs do not compare equal.", rep1, rep3);
+    }
+
+    /**
+     * test sequence group kmer distance
+     *
+     * @throws IOException
+     */
+    public void testKmerCollectionGroup() throws IOException {
+        KmerCollectionGroup kGroup = new KmerCollectionGroup();
+        File inFile = new File("src/test", "seq_list.fa");
+        FastaInputStream inStream = new FastaInputStream(inFile);
+        for (Sequence inSeq : inStream) {
+            String label = inSeq.getComment();
+            kGroup.addSequence(inSeq, label);
+        }
+        inStream.close();
+        Sequence testSeq = new Sequence("test1", "", "MILLRRLLGDVLRRQRQRQGRTLREVSSSARVSLGYLSEVERGQKEASSELLSAICDALD" +
+                "VRMSELMREVSDELALAELARSAAATPSETVPAPVRPMLGSVSVTGVPPERVTIKAPAEA" +
+                "VDVVAA");
+        Sequence testSeq2 = new Sequence("test2", "", "MTIQTFLCQDTDIYEGKHPRRFRNIEAVAERKLQMLDAAVELKDLRSPPGNRLEALIGD" +
+                "RAGQHSIRINDQWRICFVWTGPDRVEIVDYH");
+        double dist = kGroup.getDistance(testSeq, "AntiHiga");
+        assertThat(dist, closeTo(0.42, 0.0001));
+        dist = kGroup.getDistance(testSeq, "ToxiHigb");
+        assertThat(dist, closeTo(1.0, 0.0001));
+        dist = kGroup.getDistance(testSeq2, "AntiHiga");
+        assertThat(dist, closeTo(1.0, 0.0001));
+        dist = kGroup.getDistance(testSeq2, "ToxiHigb");
+        assertThat(dist, closeTo(0.2929, 0.0001));
+        KmerCollectionGroup.Result ret = kGroup.getBest(testSeq);
+        assertThat(ret.getDistance(), closeTo(0.42, 0.0001));
+        assertThat(ret.getGroup(), equalTo("AntiHiga"));
+        ret = kGroup.getBest(testSeq2);
+        assertThat(ret.getDistance(), closeTo(0.2929, 0.0001));
+        assertThat(ret.getGroup(), equalTo("ToxiHigb"));
+    }
+
+    /**
      * test RepGenomeDb
      *
      * @throws IOException

@@ -25,7 +25,7 @@ import org.theseed.utils.ICommand;
  * from at least one sequence in the list.  The result is a set of sequences that can
  * be used to determine if other sequences belong in the list.
  *
- * The parameters are as follows.
+ * The command-line parameters are as follows.
  *
  * -K		protein kmer size (default 8)
  * -v		display progress messages on STDERR

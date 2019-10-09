@@ -9,6 +9,7 @@ import org.theseed.utils.ICommand;
  *
  * 	repdb		Create a representative-genome database from a FASTA file of protein sequences.
  *	group		Analyze proteins and group them together.
+ *  classify	Compare proteins to multiple protein lists
  */
 public class App
 {
@@ -24,6 +25,9 @@ public class App
             break;
         case "group" :
             processor = new RepMatrixProcessor();
+            break;
+        case "classify" :
+            processor = new ClassifyProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ": must be \"repdb\" or \"matrix\".");
