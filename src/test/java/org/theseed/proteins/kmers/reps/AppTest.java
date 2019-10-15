@@ -173,18 +173,18 @@ public class AppTest
         Sequence testSeq2 = new Sequence("test2", "", "MTIQTFLCQDTDIYEGKHPRRFRNIEAVAERKLQMLDAAVELKDLRSPPGNRLEALIGD" +
                 "RAGQHSIRINDQWRICFVWTGPDRVEIVDYH");
         double dist = kGroup.getDistance(testSeq, "AntiHiga");
-        assertThat(dist, closeTo(0.42, 0.0001));
+        assertThat(dist, closeTo(0.4467, 0.0001));
         dist = kGroup.getDistance(testSeq, "ToxiHigb");
         assertThat(dist, closeTo(1.0, 0.0001));
         dist = kGroup.getDistance(testSeq2, "AntiHiga");
         assertThat(dist, closeTo(1.0, 0.0001));
         dist = kGroup.getDistance(testSeq2, "ToxiHigb");
-        assertThat(dist, closeTo(0.2929, 0.0001));
+        assertThat(dist, closeTo(0.3663, 0.0001));
         KmerCollectionGroup.Result ret = kGroup.getBest(testSeq);
-        assertThat(ret.getDistance(), closeTo(0.42, 0.0001));
+        assertThat(ret.getDistance(), closeTo(0.4467, 0.0001));
         assertThat(ret.getGroup(), equalTo("AntiHiga"));
         ret = kGroup.getBest(testSeq2);
-        assertThat(ret.getDistance(), closeTo(0.2929, 0.0001));
+        assertThat(ret.getDistance(), closeTo(0.3663, 0.0001));
         assertThat(ret.getGroup(), equalTo("ToxiHigb"));
     }
 
