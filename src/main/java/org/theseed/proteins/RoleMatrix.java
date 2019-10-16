@@ -133,4 +133,11 @@ public class RoleMatrix {
         return retVal;
     }
 
+    /**
+     * @return a list of all the genomes in this matrix
+     */
+	public Set<String> genomes() {
+		return this.genomeRoles.keySet();
+	}
+
 }

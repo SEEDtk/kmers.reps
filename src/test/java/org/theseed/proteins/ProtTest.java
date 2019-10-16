@@ -5,11 +5,15 @@ import static org.hamcrest.Matchers.*;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -146,8 +150,28 @@ public class ProtTest extends TestCase {
     public void testRoleMatrixStress() throws IOException {
         File inFile = new File("src/test", "rickettsia.roles.tbl");
         FileReader fileStream = new FileReader(inFile);
-        BufferedReader reader = new BufferedReader(fileStream);
-
+        RoleMatrix stressMatrix = new RoleMatrix(100, 100);
+        Set<String> genomes = new HashSet<String>();
+        try (BufferedReader reader = new BufferedReader(fileStream)) {
+	        // Skip the header.
+	        reader.readLine();
+	        // Loop through the file.
+	        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+	        	String[] fields = StringUtils.splitPreserveAllTokens(line, '\t');
+	        	List<String> roles = Arrays.asList(Arrays.copyOfRange(fields, 2, fields.length));
+	        	stressMatrix.register(fields[0], roles);
+	        	genomes.add(fields[0]);
+	        }
+        }
+        Set<String> matrixGenomes = stressMatrix.genomes();
+        for (String genome : genomes)
+        	assertTrue(matrixGenomes.contains(genome));
+        assertThat(matrixGenomes.size(), equalTo(genomes.size()));
+        Collection<String> universals = stressMatrix.getUniversals(0.90);
+        for (String genome : genomes) {
+        	double completeness = stressMatrix.completeness(universals, genome);
+        	assertThat(completeness, greaterThanOrEqualTo(0.90));
+        }
     }
 
 
