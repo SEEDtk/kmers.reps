@@ -127,7 +127,8 @@ public class RoleMatrix {
         Iterator<String> iter = this.genomeRoles.keySet().iterator();
         // Loop until we fail or run out of genomes.
         while (retVal && iter.hasNext()) {
-            double actual = this.completeness(roles, iter.next());
+            String genome = iter.next();
+            double actual = this.completeness(roles, genome);
             retVal = (actual >= threshold);
         }
         return retVal;
@@ -136,8 +137,8 @@ public class RoleMatrix {
     /**
      * @return a list of all the genomes in this matrix
      */
-	public Set<String> genomes() {
-		return this.genomeRoles.keySet();
-	}
+    public Set<String> genomes() {
+        return this.genomeRoles.keySet();
+    }
 
 }

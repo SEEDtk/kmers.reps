@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -148,29 +149,50 @@ public class ProtTest extends TestCase {
      * @throws IOException
      */
     public void testRoleMatrixStress() throws IOException {
-        File inFile = new File("src/test", "rickettsia.roles.tbl");
-        FileReader fileStream = new FileReader(inFile);
-        RoleMatrix stressMatrix = new RoleMatrix(100, 100);
+        // Archaea file
+        File inFile = new File("src/test", "archaea.profile.tbl");
+        RoleMatrix stressMatrix = new RoleMatrix(30, 100);
         Set<String> genomes = new HashSet<String>();
+        try (Scanner scanner = new Scanner(inFile)) {
+            // Skip the group header.
+            scanner.nextLine();
+            String label = scanner.next();
+            while (! label.contentEquals("//")) {
+                List<String> roles = Arrays.asList(StringUtils.split(scanner.next(), ','));
+                stressMatrix.register(label, roles);
+                genomes.add(label);
+                label = scanner.next();
+            }
+        }
+        Collection<String> universals = stressMatrix.getUniversals(0.85);
+        for (String genome : genomes) {
+            double completeness = stressMatrix.completeness(universals, genome);
+            assertThat(completeness, greaterThanOrEqualTo(0.85));
+        }
+        // rickettsia file (100 genomes)
+        inFile = new File("src/test", "rickettsia.roles.tbl");
+        FileReader fileStream = new FileReader(inFile);
+        stressMatrix = new RoleMatrix(100, 100);
+        genomes = new HashSet<String>();
         try (BufferedReader reader = new BufferedReader(fileStream)) {
-	        // Skip the header.
-	        reader.readLine();
-	        // Loop through the file.
-	        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-	        	String[] fields = StringUtils.splitPreserveAllTokens(line, '\t');
-	        	List<String> roles = Arrays.asList(Arrays.copyOfRange(fields, 2, fields.length));
-	        	stressMatrix.register(fields[0], roles);
-	        	genomes.add(fields[0]);
-	        }
+            // Skip the header.
+            reader.readLine();
+            // Loop through the file.
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                String[] fields = StringUtils.splitPreserveAllTokens(line, '\t');
+                List<String> roles = Arrays.asList(Arrays.copyOfRange(fields, 2, fields.length));
+                stressMatrix.register(fields[0], roles);
+                genomes.add(fields[0]);
+            }
         }
         Set<String> matrixGenomes = stressMatrix.genomes();
         for (String genome : genomes)
-        	assertTrue(matrixGenomes.contains(genome));
+            assertTrue(matrixGenomes.contains(genome));
         assertThat(matrixGenomes.size(), equalTo(genomes.size()));
-        Collection<String> universals = stressMatrix.getUniversals(0.90);
+        universals = stressMatrix.getUniversals(0.90);
         for (String genome : genomes) {
-        	double completeness = stressMatrix.completeness(universals, genome);
-        	assertThat(completeness, greaterThanOrEqualTo(0.90));
+            double completeness = stressMatrix.completeness(universals, genome);
+            assertThat(completeness, greaterThanOrEqualTo(0.90));
         }
     }
 
