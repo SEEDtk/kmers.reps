@@ -138,7 +138,7 @@ public class ProtTest extends TestCase {
         assertThat(testMatrix.completeness(abcB, "83333.1"), closeTo(0.750, 0.001));
         assertThat(testMatrix.completeness(abcB, "100226.1"), closeTo(0.500, 0.001));
         assertThat(testMatrix.completeness(abcB, "11446.1"), closeTo(0.500, 0.001));
-        Collection<String> roles = testMatrix.getUniversals(0.75);
+        Collection<String> roles = testMatrix.getMarkerRoles(0.75);
         assertThat(testMatrix.completeness(roles, "83333.1"), greaterThanOrEqualTo(0.75));
         assertThat(testMatrix.completeness(roles, "100226.1"), greaterThanOrEqualTo(0.75));
         assertThat(testMatrix.completeness(roles, "11446.1"), greaterThanOrEqualTo(0.75));
@@ -150,7 +150,7 @@ public class ProtTest extends TestCase {
      */
     public void testRoleMatrixStress() throws IOException {
         // Archaea file
-        File inFile = new File("src/test", "archaea.profile.tbl");
+        File inFile = new File("src/test", "r200.roles.tbl");
         RoleMatrix stressMatrix = new RoleMatrix(30, 100);
         Set<String> genomes = new HashSet<String>();
         try (Scanner scanner = new Scanner(inFile)) {
@@ -164,10 +164,20 @@ public class ProtTest extends TestCase {
                 label = scanner.next();
             }
         }
-        Collection<String> universals = stressMatrix.getUniversals(0.85);
+        Collection<String> universals = stressMatrix.getMarkerRoles(0.80);
         for (String genome : genomes) {
             double completeness = stressMatrix.completeness(universals, genome);
-            assertThat(completeness, greaterThanOrEqualTo(0.85));
+            assertThat(completeness, greaterThanOrEqualTo(0.80));
+        }
+        universals = stressMatrix.getCommonRoles(0.95);
+        for (String role : universals) {
+            int frequency = (int) (stressMatrix.roleCount(role) / 0.95);
+            assertThat(frequency, greaterThanOrEqualTo(genomes.size()));
+        }
+        for (String genome : genomes) {
+            double completeness = stressMatrix.completeness(universals, genome);
+            if (completeness < 0.80)
+                System.err.println(genome + " = " + completeness);
         }
         // rickettsia file (100 genomes)
         inFile = new File("src/test", "rickettsia.roles.tbl");
@@ -189,7 +199,7 @@ public class ProtTest extends TestCase {
         for (String genome : genomes)
             assertTrue(matrixGenomes.contains(genome));
         assertThat(matrixGenomes.size(), equalTo(genomes.size()));
-        universals = stressMatrix.getUniversals(0.90);
+        universals = stressMatrix.getMarkerRoles(0.90);
         for (String genome : genomes) {
             double completeness = stressMatrix.completeness(universals, genome);
             assertThat(completeness, greaterThanOrEqualTo(0.90));

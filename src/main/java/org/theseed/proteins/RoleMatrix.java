@@ -3,6 +3,7 @@
  */
 package org.theseed.proteins;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -100,11 +101,14 @@ public class RoleMatrix {
         return retVal;
     }
     /**
-     * @return a universal role set for the genomes in this matrix.
+     * Compute a marker role set.  A marker role set is a set of roles that occurs at a threshold fraction
+     * or better in every genome.
+     *
+     * @return a marker role set for the genomes in this matrix.
      *
      * @param threshold		the minimum completeness fraction for the role set
      */
-    public Collection<String> getUniversals(double threshold) {
+    public Collection<String> getMarkerRoles(double threshold) {
         // Get all the roles in order from most frequent to least frequent.
         List<String> retVal = this.roleCounts.sortedCounts().stream().map(CountMap<String>.Count::getKey).collect(Collectors.toList());
         // Loop until we run out of roles or meet the threshold.  If we fail, pop a role off the end.
@@ -112,6 +116,25 @@ public class RoleMatrix {
             retVal.remove(retVal.size() - 1);
         }
         // Return the result.
+        return retVal;
+    }
+
+    /**
+     * Compute a common role set.  A common role set is a set of roles each of which occurs in a given fraction
+     * of the genomes.
+     *
+     * @return a common role set for the genomes in this matrix.
+     *
+     * @param threshold		the minimum frequency fraction for the role set
+     */
+    public Collection<String> getCommonRoles(double threshold) {
+        // Create an empty list of roles.
+        ArrayList<String> retVal = new ArrayList<String>(1000);
+        // Fill it with roles that occur often enough.
+        int minCount = (int) Math.ceil(this.genomeRoles.size() * threshold);
+        for (CountMap<String>.Count counter : this.roleCounts.counts()) {
+            if (counter.getCount() >= minCount) retVal.add(counter.getKey());
+        }
         return retVal;
     }
 
