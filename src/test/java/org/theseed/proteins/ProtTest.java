@@ -149,45 +149,11 @@ public class ProtTest extends TestCase {
      * @throws IOException
      */
     public void testRoleMatrixStress() throws IOException {
-        // remains file
-        File inFile = new File("src/test", "remains.profile.tbl");
-        RoleMatrix stressMatrix = new RoleMatrix(30, 100);
-        Set<String> genomes = new HashSet<String>();
-        try (Scanner scanner = new Scanner(inFile)) {
-            // Skip the group header.
-            scanner.nextLine();
-            String label = scanner.next();
-            while (! label.contentEquals("//")) {
-                List<String> roles = Arrays.asList(StringUtils.split(scanner.next(), ','));
-                stressMatrix.register(label, roles);
-                genomes.add(label);
-                label = scanner.next();
-            }
-        }
-        Collection<String> universals = stressMatrix.getMarkerRoles(0.80);
-        for (String genome : genomes) {
-            double completeness = stressMatrix.completeness(universals, genome);
-            assertThat(completeness, greaterThanOrEqualTo(0.80));
-        }
-        universals = stressMatrix.getCommonRoles(0.95);
-        for (String role : universals) {
-            int frequency = (int) (stressMatrix.roleCount(role) / 0.95);
-            assertThat(frequency, greaterThanOrEqualTo(genomes.size()));
-        }
-        int escapeCount = 0;
-        for (String genome : genomes) {
-            double completeness = stressMatrix.completeness(universals, genome);
-            if (completeness < 0.80) {
-                System.err.println(genome + " = " + completeness);
-                escapeCount++;
-            }
-        }
-        System.err.println(escapeCount + " genomes escaped.");
         // rickettsia file (100 genomes)
-        inFile = new File("src/test", "rickettsia.roles.tbl");
+        File inFile = new File("src/test", "rickettsia.roles.tbl");
         FileReader fileStream = new FileReader(inFile);
-        stressMatrix = new RoleMatrix(100, 100);
-        genomes = new HashSet<String>();
+        RoleMatrix stressMatrix = new RoleMatrix(100, 100);
+        Set<String> genomes = new HashSet<String>();
         try (BufferedReader reader = new BufferedReader(fileStream)) {
             // Skip the header.
             reader.readLine();
@@ -203,11 +169,17 @@ public class ProtTest extends TestCase {
         for (String genome : genomes)
             assertTrue(matrixGenomes.contains(genome));
         assertThat(matrixGenomes.size(), equalTo(genomes.size()));
-        universals = stressMatrix.getMarkerRoles(0.90);
+        Collection<String> universals = stressMatrix.getMarkerRoles(0.90);
         for (String genome : genomes) {
             double completeness = stressMatrix.completeness(universals, genome);
             assertThat(completeness, greaterThanOrEqualTo(0.90));
         }
+        universals = stressMatrix.getCommonRoles(0.95);
+        for (String role : universals) {
+            int frequency = (int) (stressMatrix.roleCount(role) / 0.95);
+            assertThat(frequency, greaterThanOrEqualTo(genomes.size()));
+        }
+
     }
 
 
