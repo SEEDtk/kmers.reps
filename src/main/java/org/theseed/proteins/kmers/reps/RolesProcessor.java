@@ -147,8 +147,9 @@ public class RolesProcessor implements ICommand {
             // Start with the first target value.
             targets.reset();
             // Loop through the targets.
+            double target = 0.0;
             while (this.targets.hasNext() && roleSet.size() < this.minRoles) {
-                double target = targets.next();
+                target = targets.next();
                 if (this.debug) System.err.println("Computing marker role set for target " + target);
                 roleSet = roleMtx.getMarkerRoles(target);
             }
@@ -157,6 +158,12 @@ public class RolesProcessor implements ICommand {
                 if (this.debug) System.err.println("Computing common role set at threshold " +
                         this.commonOccurrence);
                 roleSet = roleMtx.getCommonRoles(this.commonOccurrence);
+                // Count the genomes that fail the lowest target.
+                int fCount = 0;
+                for (String genome : roleMtx.genomes()) {
+                    if (roleMtx.completeness(roleSet, genome) < target) fCount++;
+                }
+                if (this.debug) System.err.println(fCount + " genomes failed the lowest target.");
             }
             if (this.debug) System.err.println(roleSet.size() + " roles found for " + groupId);
             // Write out the group header.

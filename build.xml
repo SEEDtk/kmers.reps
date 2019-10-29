@@ -24,6 +24,7 @@
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/hamcrest/hamcrest/2.1/hamcrest-2.1.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/args4j/args4j/2.33/args4j-2.33.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/commons-codec/commons-codec/1.12/commons-codec-1.12.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/net/sf/trove4j/trove4j/3.0.3/trove4j-3.0.3.jar"/>
         </jar>
     </target>
 </project>
