@@ -149,8 +149,8 @@ public class ProtTest extends TestCase {
      * @throws IOException
      */
     public void testRoleMatrixStress() throws IOException {
-        // Archaea file
-        File inFile = new File("src/test", "r200.roles.tbl");
+        // remains file
+        File inFile = new File("src/test", "remains.profile.tbl");
         RoleMatrix stressMatrix = new RoleMatrix(30, 100);
         Set<String> genomes = new HashSet<String>();
         try (Scanner scanner = new Scanner(inFile)) {
@@ -174,11 +174,15 @@ public class ProtTest extends TestCase {
             int frequency = (int) (stressMatrix.roleCount(role) / 0.95);
             assertThat(frequency, greaterThanOrEqualTo(genomes.size()));
         }
+        int escapeCount = 0;
         for (String genome : genomes) {
             double completeness = stressMatrix.completeness(universals, genome);
-            if (completeness < 0.80)
+            if (completeness < 0.80) {
                 System.err.println(genome + " = " + completeness);
+                escapeCount++;
+            }
         }
+        System.err.println(escapeCount + " genomes escaped.");
         // rickettsia file (100 genomes)
         inFile = new File("src/test", "rickettsia.roles.tbl");
         FileReader fileStream = new FileReader(inFile);
