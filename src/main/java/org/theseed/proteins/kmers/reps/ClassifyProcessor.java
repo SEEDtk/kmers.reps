@@ -19,9 +19,10 @@ import org.theseed.utils.ICommand;
 
 /**
  * This processor builds an internal database from multiple FASTA files and then, for each input sequence
- * determines which of the original FASTA files contains the closest sequence and how far apart they are.
+ * determines how far it is from a particular FASTA file in the database.
  *
- * The standard input is the FASTA file of sequences to process again the original files.
+ * The standard input is the FASTA file of sequences to process again the original files.  The comment
+ * for each sequence is the list name of the FASTA file to compare it to.
  *
  * A control file contains the list name and file name of each original FASTA file.  This file should be
  * tab-delimited with no headers, the list name in the first column and the file name in the second.
@@ -136,10 +137,10 @@ public class ClassifyProcessor implements ICommand {
             // Process the input file.  Note we only output distances less than the max.
             if (this.debug) System.err.println("Processing input sequences.");
             for (Sequence seq : this.inStream) {
-                KmerCollectionGroup.Result res = this.groups.getBest(seq);
-                if (res.getDistance() <= this.maxDist) {
-                    System.out.format("%s\t%s\t%12.8f%n", seq.getLabel(), res.getGroup(),
-                            res.getDistance());
+                double distance = this.groups.getDistance(seq, seq.getComment());
+                if (distance <= this.maxDist) {
+                    System.out.format("%s\t%s\t%12.8f%n", seq.getLabel(), seq.getComment(),
+                            distance);
                 }
             }
         } catch (IOException e) {
