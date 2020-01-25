@@ -60,24 +60,6 @@ public class AppTest
     }
 
 
-    /**
-     * test protein kmers
-     */
-    public void testKmers() {
-        ProteinKmers.setKmerSize(10);
-        String myProt1 = "MGMLVPLISKISDLSEEAKACVAACSSVEELDEVRGRYIGRAGALTALLA"; // 50 AA
-        String myProt2 = "MDINLFKEELEELAKKAKHMLNETASKNDLEQVKVSLLGKKGLLTLQSAA";
-        String myProt3 = "MDINLFKEELKHMLNETASKKGLLTLQSA"; // 30 AA
-        ProteinKmers kmer1 = new ProteinKmers(myProt1);
-        ProteinKmers kmer2 = new ProteinKmers(myProt2);
-        ProteinKmers kmer3 = new ProteinKmers(myProt3);
-        assertEquals("Kmer1 has wrong protein.", myProt1, kmer1.getProtein());
-        assertEquals("Kmer1 has wrong count.", 41, kmer1.size());
-        assertEquals("Kmer1/kmer3 wrong similarity.", 3, kmer2.similarity(kmer3));
-        assertEquals("Similarity not commutative.", 3, kmer3.similarity(kmer2));
-        assertEquals("Kmer1 too close to kmer2.", 1.0, kmer1.distance(kmer2), 0.0);
-        assertEquals("Kmer1 too close to kmer3.", 0.95, kmer2.distance(kmer3), 0.005);
-    }
 
     /**
      * Test RepGenome object
