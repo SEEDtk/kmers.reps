@@ -136,41 +136,6 @@ public class AppTest
     }
 
     /**
-     * test sequence group kmer distance
-     *
-     * @throws IOException
-     */
-    public void testKmerCollectionGroup() throws IOException {
-        KmerCollectionGroup kGroup = new KmerCollectionGroup();
-        File inFile = new File("src/test", "seq_list.fa");
-        FastaInputStream inStream = new FastaInputStream(inFile);
-        for (Sequence inSeq : inStream) {
-            String label = inSeq.getComment();
-            kGroup.addSequence(inSeq, label);
-        }
-        inStream.close();
-        Sequence testSeq = new Sequence("test1", "", "MILLRRLLGDVLRRQRQRQGRTLREVSSSARVSLGYLSEVERGQKEASSELLSAICDALD" +
-                "VRMSELMREVSDELALAELARSAAATPSETVPAPVRPMLGSVSVTGVPPERVTIKAPAEA" +
-                "VDVVAA");
-        Sequence testSeq2 = new Sequence("test2", "", "MTIQTFLCQDTDIYEGKHPRRFRNIEAVAERKLQMLDAAVELKDLRSPPGNRLEALIGD" +
-                "RAGQHSIRINDQWRICFVWTGPDRVEIVDYH");
-        double dist = kGroup.getDistance(testSeq, "AntiHiga");
-        assertThat(dist, closeTo(0.4467, 0.0001));
-        dist = kGroup.getDistance(testSeq, "ToxiHigb");
-        assertThat(dist, closeTo(1.0, 0.0001));
-        dist = kGroup.getDistance(testSeq2, "AntiHiga");
-        assertThat(dist, closeTo(1.0, 0.0001));
-        dist = kGroup.getDistance(testSeq2, "ToxiHigb");
-        assertThat(dist, closeTo(0.3663, 0.0001));
-        KmerCollectionGroup.Result ret = kGroup.getBest(testSeq);
-        assertThat(ret.getDistance(), closeTo(0.4467, 0.0001));
-        assertThat(ret.getGroup(), equalTo("AntiHiga"));
-        ret = kGroup.getBest(testSeq2);
-        assertThat(ret.getDistance(), closeTo(0.3663, 0.0001));
-        assertThat(ret.getGroup(), equalTo("ToxiHigb"));
-    }
-
-    /**
      * test RepGenomeDb
      *
      * @throws IOException
