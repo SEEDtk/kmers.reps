@@ -1,0 +1,23 @@
+genome.genome_id	genome.genome_name	genome.taxon_lineage_ids	Coarse Consistency	Fine Consistency	Completeness	Contamination	Completeness Group	Good Seed	Contigs	Pct Hypothetical	Score	Good Genome
+813.178	Chlamydia trachomatis strain SQ06	131567::2::1783257::204428::204429::51291::809::1113537::810::813	99.9	99.9	100	0	R200 (Chlamydia trachomatis D/UW-3/CX)	Y	1	0	308.881	1
+813.179	Chlamydia trachomatis strain SQ07	131567::2::1783257::204428::204429::51291::809::1113537::810::813	99.9	99.9	100	0	R200 (Chlamydia trachomatis D/UW-3/CX)	Y	1	0	308.881	1
+163164.29	Wolbachia endosymbiont of Drosophila melanogaster strain wMel	131567::2::1224::28211::766::942::952::953::163164	99.9	99.9	100	0	R200 (Wolbachia endosymbiont of Drosophila simulans wHa)	Y	1	0	308.881	1
+754252.34	Propionibacterium freudenreichii subsp. shermanii CIRM-BIA1 strain CIRM-B1AI	131567::2::1783272::201174::1760::85009::31957::1743::1744::1752::754252	99.9	99.9	100	0	R200 (Propionibacterium freudenreichii subsp. freudenreichii strain 20271T)	Y	1	0	308.881	1
+1639.4260	Listeria monocytogenes strain MF4562	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	1	0	308.772	1
+1639.4261	Listeria monocytogenes strain MF4697	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
+1639.4262	Listeria monocytogenes strain MF6172	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
+1639.4263	Listeria monocytogenes strain MF4545	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
+2702.133	Gardnerella vaginalis strain UMB0912	131567::2::1783272::201174::1760::85004::31953::2701::2702	99.9	99.8	100	0	R200 (Gardnerella vaginalis JCP8481B)	Y	4	0	308.742	1
+406327.12	Methanococcus vannielii SB	131567::2157::28890::2283794::183939::2182::2183::2184::2187::406327	100.0	99.9	100	0	root	Y	1	14	294.881	1
+571.605	Klebsiella oxytoca strain 4928STDY7071345	131567::2::1224::1236::91347::543::570::571	99.0	96.6	100	0.2	R200 (Kluyvera ascorbata ATCC 33433)	Y	80	15.871422	287.622578	1
+1639.5574	Listeria monocytogenes strain FLAG-41283-A	131567::2::1783272::1239::91061::1385::186820::1637::1639	99.9	98.0	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	19	19.007732	287.622268	1
+666.4593	Vibrio cholerae strain N2753	131567::2::1224::1236::135623::641::662::666	99.9	98.6	100	0.4	R200 (Vibrio mimicus VM223)	Y	59	17.261904	287.622096	1
+1639.1340	Listeria monocytogenes strain MF5377	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	16	21	287.622	1
+1069623.3	Streptococcus pneumoniae GA05578	131567::2::1783272::1239::91061::186826::1300::1301::1313::1069623	99.2	98.8	100	0	R200 (Streptococcus pseudopneumoniae IS7493)	Y	7	20	287.622	1
+1313.6345	Streptococcus pneumoniae strain MD5070	131567::2::1783272::1239::91061::186826::1300::1301::1313	99.3	98.8	100	0	R200 (Streptococcus pseudopneumoniae IS7493)	Y	107	19	287.622	1
+1408469.3	Mycoplasma simbae ATCC 49888	131567::2::1783272::544448::31969::2085::2092::2093::36744::1408469	97.9	97.8	100	0	root	Y	12	50	256.482	1
+2587806.3	Beggiatoa sp. 'Gulf of Mexico' strain Beggiatoa GOM9	131567::2::1224::1236::72273::135617::1021::2587806	91.3	70.8	98.4	52.3	R50 (Nitrosococcus watsonii C-113)	Y	63965	84.173965	-709.751965	0
+83555.68	Chlamydia abortus strain 162STDY5437299	131567::2::1783257::204428::204429::51291::809::1113537::810::83555	93.9	93.9	0	0	root		161	94.59459	106.14641	0
+1733.9145	Mycobacterium tuberculosis 14.0602981	131567::2::1783272::201174::1760::85007::1762::1763::77643::1773	97.8	83.8	99.8	28.1	R200 (Mycobacterium bovis AF2122/97)		79186	87.197983	-728.415983	0
+1869227.403	bacterium strain F3_7	131567::2::2323::49928::1869227	76.3	37.5	100	83.7	root		48629	70.05748	-733.97248	0
+1280.20957	Staphylococcus aureus strain DEU25	131567::2::1783272::1239::91061::1385::90964::1279::1280	90.9	32.5	100	86.7	R200 (Staphylococcus aureus subsp. aureus DSM 20231)		51920	33.70862	-750.98362	0

@@ -95,6 +95,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
 
         // FIELDS
         private int similarity;
+        private double distance;
         private RepGenome representative;
 
         /** Denote that the identified genome is the representative with the specified score.
@@ -102,8 +103,9 @@ public class RepGenomeDb implements Iterable<RepGenome> {
          * @param genomeId	representative genome's ID (or NULL if there is no representative)
          * @param score		similarity score
          */
-        public Representation(String genomeId, int score) {
+        private Representation(String genomeId, int score, double distance) {
             this.similarity = score;
+            this.distance = distance;
             this.representative = (genomeId == null ? dummy : genomeMap.get(genomeId));
         }
 
@@ -127,11 +129,20 @@ public class RepGenomeDb implements Iterable<RepGenome> {
          *
          * @param representative	proposed new representative
          * @param score				similarity score for it
+         * @param other				other protein's kmer object
          */
-        private void Merge(RepGenome representative, int score) {
+        private void Merge(RepGenome representative, int score, ProteinKmers other) {
             if (score > this.similarity) {
                 this.representative = representative;
                 this.similarity = score;
+                if (score == ProteinKmers.INFINITY) {
+                    this.distance = 0.0;
+                } else if (score == 0) {
+                    this.distance = 1.0;
+                } else {
+                    double union = (representative.size() + other.size()) - score;
+                    this.distance = 1.0 - similarity / union;
+                }
             }
         }
 
@@ -160,6 +171,13 @@ public class RepGenomeDb implements Iterable<RepGenome> {
          */
         public boolean isExtreme() {
             return this.similarity == 0;
+        }
+
+        /**
+         * @return the distance to the representative
+         */
+        public double getDistance() {
+            return distance;
         }
 
     }
@@ -230,7 +248,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
      *
      * @param newGenome	new genome to add
      */
-    private void addRep(RepGenome newGenome) {
+    /* package */ void addRep(RepGenome newGenome) {
         this.genomeMap.put(newGenome.getGenomeId(), newGenome);
     }
 
@@ -241,11 +259,11 @@ public class RepGenomeDb implements Iterable<RepGenome> {
      */
     public Representation findClosest(ProteinKmers testSeq) {
         // Assume there is no representative.
-        Representation retVal = new Representation(null, 0);
+        Representation retVal = new Representation(null, 0, 1.0);
         // Loop through the representatives, looking for a match.
         for (RepGenome rep : this) {
             int newScore = rep.similarity(testSeq);
-            retVal.Merge(rep, newScore);
+            retVal.Merge(rep, newScore, testSeq);
         }
         return retVal;
     }

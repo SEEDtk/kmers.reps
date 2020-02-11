@@ -12,8 +12,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
+import java.util.Iterator;
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.io.TabbedLineReader;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -177,6 +178,130 @@ public class ProtTest extends TestCase {
         for (String role : universals) {
             int frequency = (int) (stressMatrix.roleCount(role) / 0.95);
             assertThat(frequency, greaterThanOrEqualTo(genomes.size()));
+        }
+
+    }
+
+    /**
+     * Test the protein data factory.
+     *
+     * @throws IOException
+     */
+    public void testProteinFactory() throws IOException {
+        // Set up the protein data factory.
+        ProteinDataFactory factory = new ProteinDataFactory();
+        // Load in the genomes. One of them should fail on genus/species.
+        try (TabbedLineReader tabReader = new TabbedLineReader(new File("src/test", "quality.tbl"))) {
+            int idCol = tabReader.findField("genome_id");
+            int nameCol = tabReader.findField("genome_name");
+            int lineageCol = tabReader.findField("taxon_lineage_ids");
+            int scoreCol = tabReader.findField("Score");
+            for (TabbedLineReader.Line line : tabReader) {
+                factory.addGenome(line.get(idCol), line.get(nameCol), line.get(lineageCol), line.getDouble(scoreCol));
+            }
+            // First pass through.  We expect 1869227.403 to have dropped out because of
+            // an insufficient taxonomy.
+            Iterator<ProteinData> iter = factory.iterator();
+            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
+            assertThat(iter.next().getGenomeId(), equalTo("163164.29"));
+            assertThat(iter.next().getGenomeId(), equalTo("754252.34"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4260"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4261"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4262"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4263"));
+            assertThat(iter.next().getGenomeId(), equalTo("2702.133"));
+            assertThat(iter.next().getGenomeId(), equalTo("406327.12"));
+            assertThat(iter.next().getGenomeId(), equalTo("571.605"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.5574"));
+            assertThat(iter.next().getGenomeId(), equalTo("666.4593"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
+            assertThat(iter.next().getGenomeId(), equalTo("1069623.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("1313.6345"));
+            assertThat(iter.next().getGenomeId(), equalTo("1408469.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("2587806.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("83555.68"));
+            assertThat(iter.next().getGenomeId(), equalTo("1733.9145"));
+            assertThat(iter.next().getGenomeId(), equalTo("1280.20957"));
+            assertFalse(iter.hasNext());
+            assertThat(factory.size(), equalTo(21));
+            // Now we finalize.  This will drop out 83555.68 due to the lack of
+            // a seed protein. We use a small batch size to test the batching.
+            factory.finishList(8);
+            iter = factory.iterator();
+            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
+            assertThat(iter.next().getGenomeId(), equalTo("163164.29"));
+            assertThat(iter.next().getGenomeId(), equalTo("754252.34"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4260"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4261"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4262"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.4263"));
+            assertThat(iter.next().getGenomeId(), equalTo("2702.133"));
+            assertThat(iter.next().getGenomeId(), equalTo("406327.12"));
+            assertThat(iter.next().getGenomeId(), equalTo("571.605"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.5574"));
+            assertThat(iter.next().getGenomeId(), equalTo("666.4593"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
+            assertThat(iter.next().getGenomeId(), equalTo("1069623.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("1313.6345"));
+            assertThat(iter.next().getGenomeId(), equalTo("1408469.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("2587806.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("1733.9145"));
+            assertThat(iter.next().getGenomeId(), equalTo("1280.20957"));
+            assertFalse(iter.hasNext());
+            assertThat(factory.size(), equalTo(20));
+            // Verify that we have complete information.
+            for (ProteinData genomeData : factory) {
+                assertNotNull(genomeData.getGenomeName());
+                assertNotNull(genomeData.getGenus());
+                assertNotNull(genomeData.getSpecies());
+                assertNotNull(genomeData.getDna());
+                assertNotNull(genomeData.getProtein());
+                assertNotNull(genomeData.getFid());
+            }
+            // Get a specific genome.
+            ProteinData genomeData = factory.getGenome("571.605");
+            assertThat(genomeData.getSpecies(), equalTo("571"));
+            assertThat(genomeData.getGenus(), equalTo("570"));
+            assertThat(genomeData.getDna(), equalTo(
+                    "atgtcacatctcgcagagctggttgccagtgcgaaggcagccattaacgaggcatcagat" +
+                    "gttgctgcgctggacaacgtccgcgtggaatacctgggtaaaaaaggtctcctgaccctt" +
+                    "cagatgacgaccctgcgtgagctgcctgctgaagagcgtccggcagccggtgcggttatc" +
+                    "aacgaagcgaaagagcaggtccagcaggcgcttaacgcgcgcaagtcagcgctcgaaagc" +
+                    "gcagcgctcaacgcgcgtctggcctcggaaaccattgatgtctctctgccggggcgtcgt" +
+                    "atcgagaacggtggcctgcatccggtgacccgtaccatcgaccgtattgaaagtttcttc" +
+                    "ggtgagctcggttttaccgtcgcgactggcccggagatcgaagatgattatcacaacttc" +
+                    "gatgcgctgaatattccaggccaccacccggcacgcgctgaccacgacactttctggttt" +
+                    "gatgccacgcgcctgctgcgcacgcaaacatcaggcgtacagatccgcaccatggctaat" +
+                    "cagcagccgccaatccgcattattgcccccggccgcgtgtatcgtaacgactacgatcag" +
+                    "acgcataccccgatgttccatcagatggaaggtctgatcgttgacactaacatcagcttc" +
+                    "accaacctgaagggaacgctgcacgatttcctgcgtaacttctttgaagaagacctgcag" +
+                    "attcgttttcgtccgtcctatttcccgttcactgagccgtctgcagaagttgacgtgatg" +
+                    "ggtaaaaacggtaaatggctggaagtgctcggctgcggtatggtgcatccaaacgtgctg" +
+                    "cgtaacgtgggcatcgatccggaaatctattccggctttgccttcggcatgggtatggag" +
+                    "cgcctgaccatgctgcgctatggcgtgaccgacttacgcgcgttcttcgaaaacgatctg" +
+                    "cgtttcctcaaacagtttaaataa"));
+            assertThat(genomeData.getProtein(), equalTo(
+                    "MSHLAELVASAKAAINEASDVAALDNVRVEYLGKKGLLTLQMTTLRELPAEERPAAGAVI" +
+                    "NEAKEQVQQALNARKSALESAALNARLASETIDVSLPGRRIENGGLHPVTRTIDRIESFF" +
+                    "GELGFTVATGPEIEDDYHNFDALNIPGHHPARADHDTFWFDATRLLRTQTSGVQIRTMAN" +
+                    "QQPPIRIIAPGRVYRNDYDQTHTPMFHQMEGLIVDTNISFTNLKGTLHDFLRNFFEEDLQ" +
+                    "IRFRPSYFPFTEPSAEVDVMGKNGKWLEVLGCGMVHPNVLRNVGIDPEIYSGFAFGMGME" +
+                    "RLTMLRYGVTDLRAFFENDLRFLKQFK"));
+            assertThat(genomeData.getGenomeName(), equalTo("Klebsiella oxytoca strain 4928STDY7071345"));
+            assertThat(genomeData.getDomain(), equalTo("Bacteria"));
+            assertThat(genomeData.getScore(), closeTo(287.622578, 0.00001));
+            assertThat(genomeData.getGeneticCode(), equalTo(11));
+            // Verify that we find Archaea domains properly.
+            genomeData = factory.getGenome("406327.12");
+            assertThat(genomeData.getDomain(), equalTo("Archaea"));
+            assertThat(genomeData.getGenomeName(), equalTo("Methanococcus vannielii SB"));
+            // Verify that we find gc = 4 properly.
+            genomeData = factory.getGenome("1408469.3");
+            assertThat(genomeData.getGeneticCode(), equalTo(4));
+            assertThat(genomeData.getGenus(), equalTo("2093"));
+            assertThat(genomeData.getSpecies(), equalTo("36744"));
         }
 
     }

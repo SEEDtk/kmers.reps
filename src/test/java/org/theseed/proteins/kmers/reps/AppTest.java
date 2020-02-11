@@ -169,6 +169,9 @@ public class AppTest
         RepGenomeDb.Representation result = repDb.findClosest(testSeq);
         assertEquals("E coli not found for E coli protein.", "1005530.3", result.getGenomeId());
         assertTrue("E coli not close enough to E coli protein.", result.getSimilarity() >= 200);
+        // Verify that the distance works.
+        ProteinKmers myRep = result.getRepresentative();
+        assertThat(result.getDistance(), equalTo(myRep.distance(testSeq)));
         // Now verify that all the sequences are represented.
         fastaStream = new FastaInputStream(fastaFile);
         for (Sequence inSeq : fastaStream) {

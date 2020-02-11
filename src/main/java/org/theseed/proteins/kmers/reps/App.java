@@ -11,6 +11,7 @@ import org.theseed.utils.ICommand;
  *	group		Analyze proteins and group them together.
  *  classify	Compare proteins to multiple protein lists
  *  roles		Process a universal-role file against a representative genome database
+ *  taxon		Create taxonomic training sets for each group
  */
 public class App
 {
@@ -33,8 +34,11 @@ public class App
         case "roles" :
             processor = new RolesProcessor();
             break;
+        case "genomes" :
+            processor = new GenomeProcessor();
+            break;
         default :
-            throw new RuntimeException("Invalid command " + command + ": must be \"repdb\" or \"matrix\".");
+            throw new RuntimeException("Invalid command " + command + ".");
         }
         boolean ok = processor.parseCommand(newArgs);
         if (ok) {
