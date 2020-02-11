@@ -297,8 +297,11 @@ public class GenomeProcessor extends BaseProcessor implements ICommand {
                 // Loop through the saved lists of represented genomes, in statMap order.
                 QualityCountMap<String> lastStatMap = statMaps.get(repGenSets.size() - 1);
                 for (String groupId : lastStatMap.bestKeys()) {
-                    for (ProteinData genome : repFinderSets.get(groupId)) {
-                        this.printRepFinderLine(repFinderStream, genome, groupId);
+                    List<ProteinData> repFinderSet = repFinderSets.get(groupId);
+                    if (repFinderSet != null) {
+                        for (ProteinData genome : repFinderSets.get(groupId)) {
+                            this.printRepFinderLine(repFinderStream, genome, groupId);
+                        }
                     }
                 }
             }
