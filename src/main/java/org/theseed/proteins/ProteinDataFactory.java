@@ -186,27 +186,22 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         }
         // Process the residual batch.
         if (dnaMap.size() > 0) this.processMaps(dnaMap, protMap);
-        // Now run through and remove the genomes that aren't filled in.  Move the
-        // genomes with ambiguity characters to the end.
-        List<ProteinData> deferList = new ArrayList<ProteinData>(1000);
-        log.info("Removing genomes with incomplete data and resorting list.");
+        // Now run through and remove the genomes that aren't filled in or have multiple
+        // ambiguity characters in the see protein.
+        log.info("Removing genomes with incomplete data or ambiguity.");
         int deleteCount = 0;
         Iterator<ProteinData> iter = this.master.iterator();
         while (iter.hasNext()) {
             ProteinData genomeData = iter.next();
-            if (genomeData.getDna() == null || genomeData.getProtein() == null) {
+            if (genomeData.getDna() == null || genomeData.getProtein() == null ||
+                    genomeData.getProtein().contains("XX")) {
                 iter.remove();
                 this.idMap.remove(genomeData.getGenomeId());
                 deleteCount++;
-            } else if (genomeData.getProtein().contains("X")) {
-                iter.remove();
-                deferList.add(genomeData);
             }
         }
-        log.info("{} incomplete genomes removed. {} ambiguous proteins relocated.",
-                deleteCount, deferList.size());
-        // Add the deferred proteins to the end of the list.
-        this.master.addAll(deferList);
+        log.info("{} incomplete or ambiguous genomes removed.",
+                deleteCount);
     }
 
     /**
