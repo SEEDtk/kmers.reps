@@ -82,6 +82,7 @@ public class MD5Processor extends BaseProcessor {
     @Override
     public void run() {
         try {
+            log.info("Preparing for processing.");
             this.mdComputer = new P3MD5Hex();
             // The basic approach is to read in a batch of genome IDs.  We accumulate input lines until we have a batch
             // and then compute the MD5s.
