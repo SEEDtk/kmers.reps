@@ -2,6 +2,7 @@ package org.theseed.proteins.kmers.reps;
 
 import java.util.Arrays;
 
+import org.theseed.genome.MD5Processor;
 import org.theseed.utils.ICommand;
 
 /**
@@ -12,6 +13,8 @@ import org.theseed.utils.ICommand;
  *  classify	Compare proteins to multiple protein lists
  *  roles		Process a universal-role file against a representative genome database
  *  taxon		Create taxonomic training sets for each group
+ *  genomes		Process genome evaluation results
+ *  md5			Compute genome MD5s
  */
 public class App
 {
@@ -36,6 +39,9 @@ public class App
             break;
         case "genomes" :
             processor = new GenomeProcessor();
+            break;
+        case "md5" :
+            processor = new MD5Processor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
