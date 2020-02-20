@@ -3,10 +3,8 @@
  */
 package org.theseed.proteins.kmers.reps;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
+import org.theseed.genome.Feature;
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.Sequence;
 
@@ -28,10 +26,7 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
     /** name of the representative genome */
     private String name;
 
-    /** pattern for extracting genome ID from feature ID */
-    public static final Pattern FID_PARSER = Pattern.compile("fig\\|(\\d+\\.\\d+)\\.\\w+\\.\\d+");
-
-    /**
+     /**
      * Construct a representative genome.
      *
      * @param fid		ID of the feature containing the genome's key protein
@@ -63,31 +58,12 @@ public class RepGenome extends ProteinKmers implements Comparable<RepGenome> {
      */
     private void fillData(String fid, String name) {
         // Extract the genome ID from the feature ID.
-        this.genomeId = genomeOf(fid);
+        this.genomeId = Feature.genomeOf(fid);
         // Store the feature ID and genome name.
         this.fid = fid;
         this.name = name;
     }
 
-    /**
-     * @return the genome ID portion of a feature ID
-     *
-     * @param fid	feature ID to parse for a genome ID
-     */
-    public static String genomeOf(String fid) {
-        String retVal;
-        if (fid == null) {
-            retVal = "<none>";
-        } else {
-            Matcher m = FID_PARSER.matcher(fid);
-            if (! m.matches()) {
-                throw new IllegalArgumentException("Invalid feature ID" + fid);
-            } else {
-                retVal = m.group(1);
-            }
-        }
-        return retVal;
-    }
 
     /**
      * @return the genomeId

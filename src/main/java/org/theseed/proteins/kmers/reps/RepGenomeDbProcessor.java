@@ -14,6 +14,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.theseed.counters.QualityCountMap;
+import org.theseed.genome.Feature;
 import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
@@ -199,7 +200,7 @@ public class RepGenomeDbProcessor implements ICommand {
                     // Write it to the report.  Note we tweak the infinity value.
                     int sim = result.getSimilarity();
                     String simString = (sim == ProteinKmers.INFINITY ? "MAX" : Integer.toString(sim));
-                    String genomeId = RepGenome.genomeOf(inSeq.getLabel());
+                    String genomeId = Feature.genomeOf(inSeq.getLabel());
                     System.out.format("%s\t%s\t%s\t%s%n", genomeId, inSeq.getComment(),
                             result.getRepresentative().getGenomeId(), simString);
                     if (debug && this.genomesProcessed % 100 == 0) {

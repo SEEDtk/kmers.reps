@@ -17,7 +17,7 @@ import gnu.trove.set.hash.THashSet;
 
 /**
  * This class maintains a matrix of roles to genomes.  A CountMap tracks the total number of occurrences
- * for each role. For each genome, there is a THashSet identifying the roles in it.
+ * for each role. For each genome, there is a THashMap identifying the roles in it.
  *
  * @author Bruce Parrello
  *
