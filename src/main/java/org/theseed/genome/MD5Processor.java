@@ -28,6 +28,7 @@ import org.theseed.utils.BaseProcessor;
  * -c	index (1-based) or name of the column containing genome IDs
  * -b	number of genomes to process in each batch
  * -i	the input file (default is STDIN)
+ * -r	resume after an error
  *
  * @author Bruce Parrello
  *
@@ -43,6 +44,8 @@ public class MD5Processor extends BaseProcessor {
     private LinkedHashMap<String, String> batch;
     /** MD5 computer */
     private P3MD5Hex mdComputer;
+    /** ID of the last genome processed */
+    private String lastGenome;
 
     // COMMAND-LINE OPTIONS
 
@@ -57,11 +60,16 @@ public class MD5Processor extends BaseProcessor {
     @Option(name = "-i", aliases = { "--input" }, metaVar = "inFile", usage = "input file (if not STDIN)")
     private File inFile;
 
+    @Option(name = "-r", aliases = { "--resume" }, metaVar = "562.36375", usage = "resume after the specified genome")
+    private String resume;
+
     @Override
     protected void setDefaults() {
         this.gColumn = "genome_id";
         this.batchSize = 10;
         this.inFile = null;
+        this.resume = null;
+        this.lastGenome = "none";
     }
 
     @Override
@@ -87,29 +95,45 @@ public class MD5Processor extends BaseProcessor {
             // The basic approach is to read in a batch of genome IDs.  We accumulate input lines until we have a batch
             // and then compute the MD5s.
             this.batch = new LinkedHashMap<String, String>(this.batchSize);
-            // First, we write the output header.
-            System.out.println(this.inStream.header() + "\tmd5_checksum");
-            // Now loop through the data lines.
+            // If we are not resuming, we write the output header.
+            if (this.resume == null)
+                System.out.println(this.inStream.header() + "\tmd5_checksum");
             long genomeCount = 0;
+            // For resume mode, skip to the specified genome.
+            if (this.resume != null) {
+                log.info("Skipping ahead past {}.", this.resume);
+                TabbedLineReader.Line line = this.inStream.next();
+                genomeCount++;
+                while (! line.get(this.gCol).contentEquals(this.resume)) {
+                    line = this.inStream.next();
+                    genomeCount++;
+                }
+                log.info("{} lines skipped.", genomeCount);
+                this.lastGenome = this.resume;
+            }
+            // Now loop through the data lines.
             long start = System.currentTimeMillis();
+            long processCount = 0;
             for (TabbedLineReader.Line line : this.inStream) {
                 // Insure there is room for another genome in this batch.
                 if (this.batch.size() >= this.batchSize) {
                     this.processBatch();
                     this.batch.clear();
                     log.info("{} genomes processed. {} seconds/genome.", genomeCount,
-                            ((double) (System.currentTimeMillis() - start) / (1000 * genomeCount)));
+                            ((double) (System.currentTimeMillis() - start) / (1000 * processCount)));
                 }
                 // Add this genome to the batch.
                 String genomeId = line.get(this.gCol);
                 this.batch.put(genomeId, line.getAll());
                 genomeCount++;
+                processCount++;
             }
             // Process the residual batch.
             this.processBatch();
             log.info("All done. {} genomes processed.", genomeCount);
         } catch (Exception e) {
             e.printStackTrace();
+            log.error("Error after genome {}: {}", this.lastGenome, e.getMessage());
         } finally {
             this.inStream.close();
         }
@@ -127,8 +151,10 @@ public class MD5Processor extends BaseProcessor {
             String md5 = md5Map.get(genome);
             if (md5 == null)
                 log.info("{} not found in database or has no contigs.", genome);
-            else
+            else {
                 System.out.println(this.batch.get(genome) + "\t" + md5);
+                this.lastGenome = genome;
+            }
         }
     }
 

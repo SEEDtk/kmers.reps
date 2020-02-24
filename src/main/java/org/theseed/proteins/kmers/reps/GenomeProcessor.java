@@ -27,7 +27,7 @@ import org.theseed.utils.IntegerList;
 
 /**
  * This command processes the results from a quality run.  It expects as input the sorted results
- * file containing the lineage, the quality data, and ther good-genome flag.  It will create
+ * file containing the lineage, the quality data, and the good-genome flag.  It will create
  * the master seed protein FASTA file, the master binning BLAST database, and the representative-genome
  * databases at level 10, 50, 100, and 200.
  *
