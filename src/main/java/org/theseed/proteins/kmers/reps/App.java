@@ -14,6 +14,7 @@ import org.theseed.utils.ICommand;
  *  roles		Process a universal-role file against a representative genome database
  *  taxon		Create taxonomic training sets for each group
  *  genomes		Process genome evaluation results
+ *  update		Process incremental genome evaluation results
  *  md5			Compute genome MD5s
  */
 public class App
@@ -39,6 +40,9 @@ public class App
             break;
         case "genomes" :
             processor = new GenomeProcessor();
+            break;
+        case "update" :
+            processor = new UpdateProcessor();
             break;
         case "md5" :
             processor = new MD5Processor();

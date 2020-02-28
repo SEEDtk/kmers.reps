@@ -3,7 +3,10 @@
  */
 package org.theseed.proteins;
 
+import java.util.HashMap;
+import java.util.Map;
 
+import org.theseed.proteins.kmers.reps.RepGenomeDb;
 
 /**
  * This class describes the seed protein for a genome.  It contains the DNA and amino acid sequences.
@@ -33,6 +36,8 @@ public class ProteinData {
     private String domain;
     /** genetic code */
     private int geneticCode;
+    /** representative genome information for each score level */
+    private Map<Integer, RepGenomeDb.Representation> representation;
 
     /**
      * Create a new protein data object.
@@ -54,6 +59,7 @@ public class ProteinData {
         this.geneticCode = gc;
         this.score = score;
         this.domain = domain;
+        this.representation = new HashMap<Integer, RepGenomeDb.Representation>();
     }
     /**
      * @return the ID of the seed protein feature
