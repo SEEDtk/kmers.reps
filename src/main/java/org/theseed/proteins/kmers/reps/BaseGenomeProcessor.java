@@ -34,7 +34,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
     /** manager for key data about each genome and its seed protein */
     private ProteinDataFactory genomeList;
     /** list of repgen sets */
-    protected List<RepGenomeDb> repGenSets;
+    private List<RepGenomeDb> repGenSets;
     /** counters for the size of each repgen group */
     private List<QualityCountMap<String>> statMaps;
     /** repGen set used for close-genome finder */
@@ -46,14 +46,51 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
 
     /** number of genomes per batch when retrieving sequences */
     @Option(name = "-b", aliases = { "--batch", "--batchSize" }, metaVar = "200", usage = "number of genomes per batch")
-    protected int batchSize;
+    private int batchSize;
     /** output directory */
     @Argument(index = 0, metaVar = "outDir", usage = "output directory", required = true)
-    protected File outDir;
+    private File outDir;
     /** input tab-delimited file of genomes */
     @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file", required = true)
-    protected File inFile;
+    private File inFile;
 
+
+    /**
+     * @return the list of representative-genome databases
+     */
+    protected List<RepGenomeDb> getRepGenSets() {
+        return repGenSets;
+    }
+
+    /**
+     * @return the batch size
+     */
+    protected int getBatchSize() {
+        return batchSize;
+    }
+
+    /**
+     * @return the output directory
+     */
+    protected File getOutDir() {
+        return outDir;
+    }
+
+    /**
+     * @return the input file
+     */
+    protected File getInFile() {
+        return inFile;
+    }
+
+    /**
+     * Update the batch size.
+     *
+     * @param batchSize the proposed new batch size
+     */
+    protected void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
 
     public BaseGenomeProcessor() {
         super();
@@ -323,6 +360,24 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
         repFinderStream.format("%s\t%s\t%4.4f\t%s\t%d\t%s%n", genome.getGenomeId(),
                 genome.getGenomeName(), genome.getScore(), repId, genome.getGeneticCode(),
                 genome.getProtein());
+    }
+
+    /**
+     * Create the array of RepGen databases.
+     *
+     * @param size	estimated number needed
+     */
+    protected void initRepGenSets(int size) {
+        this.repGenSets = new ArrayList<RepGenomeDb>(size);
+    }
+
+    /**
+     * Store a new RepGen database in the list.
+     *
+     * @param repGenomeDb	RepGen database to store
+     */
+    protected void addRepGenSet(RepGenomeDb repGenomeDb) {
+        this.repGenSets.add(repGenomeDb);
     }
 
 }

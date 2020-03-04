@@ -3,10 +3,9 @@
  */
 package org.theseed.proteins.kmers.reps;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-
 import org.kohsuke.args4j.Option;
 import org.theseed.proteins.ProteinDataFactory;
 import org.theseed.utils.ICommand;
@@ -36,7 +35,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
 
     /** list of RepGen set thresholds */
     private IntegerList repSizes;
-    
+
 
     // COMMAND-LINE OPTIONS
 
@@ -49,22 +48,23 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
 
     @Override
     protected void setDefaults() {
-        this.batchSize = 500;
+        this.setBatchSize(500);
         this.repSizes = new IntegerList(10, 50, 100, 200);
     }
 
     @Override
     protected boolean validateParms() throws IOException {
-        if (! this.outDir.exists()) {
+        File outDir = this.getOutDir();
+        if (! outDir.exists()) {
             // Insure we have an output directory.
-            log.info("Creating output directory {}.", this.outDir);
-            if (! this.outDir.mkdir())
-                throw new IOException("Could not create output directory " + this.outDir);
-        } else if (! this.outDir.isDirectory()) {
-            throw new FileNotFoundException("Invalid output directory " + this.outDir);
+            log.info("Creating output directory {}.", outDir);
+            if (! outDir.mkdir())
+                throw new IOException("Could not create output directory " + outDir);
+        } else if (! outDir.isDirectory()) {
+            throw new FileNotFoundException("Invalid output directory " + outDir);
         }
-        if (! this.inFile.canRead())
-            throw new FileNotFoundException(this.inFile + " is not found or unreadable.");
+        if (! this.getInFile().canRead())
+            throw new FileNotFoundException(this.getInFile() + " is not found or unreadable.");
         return true;
     }
 
@@ -78,9 +78,9 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
             createFastaFiles();
             // Create a list of RepGenomeDb objects, one for each score limit.
             log.info("Creating repgen sets.");
-            this.repGenSets = new ArrayList<RepGenomeDb>(this.repSizes.size());
+            this.initRepGenSets(this.repSizes.size());
             for (int repSize : this.repSizes) {
-                this.repGenSets.add(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
+                this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
             }
             // Sort the genomes into repgen sets.
             collateGenomes();
@@ -102,5 +102,6 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
         }
 
     }
+
 
 }
