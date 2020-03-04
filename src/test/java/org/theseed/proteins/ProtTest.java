@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.Iterator;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.proteins.kmers.reps.ProteinData;
+import org.theseed.proteins.kmers.reps.ProteinDataFactory;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

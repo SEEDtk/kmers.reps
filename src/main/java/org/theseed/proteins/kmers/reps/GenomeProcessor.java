@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.kohsuke.args4j.Option;
-import org.theseed.proteins.ProteinDataFactory;
 import org.theseed.utils.ICommand;
 import org.theseed.utils.IntegerList;
 

@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.proteins;
+package org.theseed.proteins.kmers.reps;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -21,7 +21,7 @@ import java.util.Iterator;
 import org.theseed.genome.Feature;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Connection.Table;
-import org.theseed.proteins.kmers.reps.IRepGenContainer;
+import org.theseed.proteins.RoleMap;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -261,15 +261,16 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     }
 
     /**
-     * Restore ProteinData entries from the specified input directory.  The directory should contain
-     * a repXX.ser file and a repXX.list.tbl file for each repgen set, a PhenTrnaSyntAlph.fa file containing
-     * the seed protein DNA, and an allprots.fa file containing the seed protein amino acid sequences.
+     * Restore the protein data from an input directory.  The input directory will contain a
+     * repXX.ser and repXX.list.tbl file for each RepGen set, a PhenTrnaSyntAlph.fa file containing
+     * the seed protein DNA sequences, and an allprots.fa containing the seed protein amino acid
+     * sequences.
      *
-     * @param container		an object in which to save the representative-genome databases loaded
-     * @param inDir			the input directory containing all the files
+     * @param container		container in which to store the repgen sets
+     * @param inDir			input directory
      */
-    public void restoreData(IRepGenContainer repGenSets, File inDir) {
-        // TODO restore all the stuff from the input directory
+    public void restoreData(IRepGenContainer container, File inDir) {
+        // TODO read all the files and build the protein data
     }
 
 }

@@ -14,8 +14,6 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.theseed.counters.QualityCountMap;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.proteins.ProteinData;
-import org.theseed.proteins.ProteinDataFactory;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseProcessor;
