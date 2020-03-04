@@ -16,7 +16,6 @@ import org.theseed.counters.QualityCountMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.ProteinData;
 import org.theseed.proteins.ProteinDataFactory;
-import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseProcessor;
@@ -61,9 +60,9 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
     }
 
     /**
-     * Sort the genomes into RepGen sets.
+     * Separate the genomes into RepGen sets.
      */
-    protected void sortGenomes() {
+    protected void collateGenomes() {
         log.info("Sorting genomes into repgen sets.");
         int genomeCount = 0;
         long start = System.currentTimeMillis();
@@ -72,7 +71,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
             RepGenome rep = new RepGenome(genomeData.getFid(), genomeData.getGenomeName(),
                     genomeData.getProtein());
             for (RepGenomeDb repGen : this.repGenSets) {
-                if (! repGen.checkSimilarity(rep, repGen.getThreshold())) {
+                int sim = repGen.getThreshold();
+                if (! genomeData.checkRepresented(sim) && ! repGen.checkSimilarity(rep, sim)) {
                     repGen.addRep(rep);
                 }
             }
@@ -175,8 +175,6 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
             int batchCount = this.batchSize;
             long start = System.currentTimeMillis();
             for (ProteinData genome : this.genomeList) {
-                // Get the kmers for this genome.
-                ProteinKmers protein = new ProteinKmers(genome.getProtein());
                 // Get the descriptive part of the output line.
                 String header = String.format("%s\t%s\t%s\t%s\t%s", genome.getGenomeId(),
                         genome.getGenomeName(), genome.getDomain(), genome.getGenus(),
@@ -185,7 +183,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
                 for (int i = 0; i < this.repGenSets.size(); i++) {
                     // Write out the representation result.
                     RepGenomeDb repGenSet = this.repGenSets.get(i);
-                    RepGenomeDb.Representation rep = repGenSet.findClosest(protein);
+                    RepGenomeDb.Representation rep = genome.getRepresentation(repGenSet);
                     listFiles.get(i).format("%s\t%s\t%d\t%4.2f%n", header, rep.getGenomeId(),
                             rep.getSimilarity(), rep.getDistance());
                     // Update the count maps.

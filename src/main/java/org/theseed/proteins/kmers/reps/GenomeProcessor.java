@@ -83,7 +83,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
                 this.repGenSets.add(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
             }
             // Sort the genomes into repgen sets.
-            sortGenomes();
+            collateGenomes();
             // Save all the repgen sets.
             saveRepGenSets();
             // Write out the protein Fasta file for the first set.  This is used to find

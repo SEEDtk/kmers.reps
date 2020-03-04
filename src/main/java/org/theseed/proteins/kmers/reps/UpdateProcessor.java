@@ -4,7 +4,6 @@
 package org.theseed.proteins.kmers.reps;
 
 import java.io.IOException;
-
 import org.theseed.utils.ICommand;
 
 /**
@@ -29,22 +28,47 @@ import org.theseed.utils.ICommand;
  */
 public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
+    // TODO positional parameters
+
     @Override
     protected void setDefaults() {
-        // TODO Auto-generated method stub
+        // TODO initialize fields for update
 
     }
 
     @Override
     protected boolean validateParms() throws IOException {
-        // TODO Auto-generated method stub
-        return false;
+        // TODO process parameters for update
+        return true;
     }
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
-
+        try {
+            // Read all the genomes from the input file.
+            initializeProteinData();
+            // TODO create proteindata objects and repgen sets for the old genomes
+            // We need to create the FASTA files for the seed protein list and the
+            // binning BLAST database.  We do that here.
+            createFastaFiles();
+            // Sort the genomes into repgen sets.
+            collateGenomes();
+            // Save all the repgen sets.
+            saveRepGenSets();
+            // Write out the protein Fasta file for the first set.  This is used to find
+            // seed proteins.
+            writeSeedProt();
+            // Assign genomes to repgen sets.
+            log.info("Assigning genomes to repgen sets.");
+            writeListFiles();
+            // Now we write the protein FASTA files and the stats files.
+            writeProteinFasta();
+            // Now we produce the repFinder file used to find close genomes.
+            writeRepFinder();
+            log.info("All done.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -6,7 +6,9 @@ package org.theseed.proteins;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
+import org.theseed.proteins.kmers.reps.RepGenomeDb.Representation;
 
 /**
  * This class describes the seed protein for a genome.  It contains the DNA and amino acid sequences.
@@ -36,6 +38,8 @@ public class ProteinData {
     private String domain;
     /** genetic code */
     private int geneticCode;
+    /** proteinkmers object for computing representation */
+    private ProteinKmers kmers;
     /** representative genome information for each score level */
     private Map<Integer, RepGenomeDb.Representation> representation;
 
@@ -60,6 +64,7 @@ public class ProteinData {
         this.score = score;
         this.domain = domain;
         this.representation = new HashMap<Integer, RepGenomeDb.Representation>();
+        this.kmers = null;
     }
     /**
      * @return the ID of the seed protein feature
@@ -145,6 +150,28 @@ public class ProteinData {
      */
     public int getGeneticCode() {
         return geneticCode;
+    }
+
+    /**
+     * @return TRUE if this genome has a representative for the specified repgen threshold
+     *
+     * @param sim	similarity threshold to check
+     */
+    public boolean checkRepresented(int sim) {
+        return this.representation.containsKey(sim);
+    }
+    public Representation getRepresentation(RepGenomeDb repGenSet) {
+        int sim = repGenSet.getThreshold();
+        RepGenomeDb.Representation retVal = this.representation.get(sim);
+        // If we don't already have a representative, compute one.
+        if (retVal == null) {
+            // Insure we have the protein kmers.
+            if (this.kmers == null)
+                this.kmers = new ProteinKmers(this.protein);
+            // Compute the representation.
+            retVal = repGenSet.findClosest(this.kmers);
+        }
+        return retVal;
     }
 
 }
