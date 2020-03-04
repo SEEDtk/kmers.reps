@@ -27,7 +27,7 @@ import org.theseed.utils.BaseProcessor;
  * @author Bruce Parrello
  *
  */
-public abstract class BaseGenomeProcessor extends BaseProcessor {
+public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepGenContainer {
 
     // FIELDS
 
@@ -367,7 +367,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
      *
      * @param size	estimated number needed
      */
-    protected void initRepGenSets(int size) {
+    @Override
+	public void initRepGenSets(int size) {
         this.repGenSets = new ArrayList<RepGenomeDb>(size);
     }
 
@@ -376,7 +377,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor {
      *
      * @param repGenomeDb	RepGen database to store
      */
-    protected void addRepGenSet(RepGenomeDb repGenomeDb) {
+    @Override
+	public void addRepGenSet(RepGenomeDb repGenomeDb) {
         this.repGenSets.add(repGenomeDb);
     }
 

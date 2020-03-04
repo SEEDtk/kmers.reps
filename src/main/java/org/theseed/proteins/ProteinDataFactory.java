@@ -3,6 +3,7 @@
  */
 package org.theseed.proteins;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,7 @@ import java.util.Iterator;
 import org.theseed.genome.Feature;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Connection.Table;
+import org.theseed.proteins.kmers.reps.IRepGenContainer;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -187,7 +189,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         // Process the residual batch.
         if (dnaMap.size() > 0) this.processMaps(dnaMap, protMap);
         // Now run through and remove the genomes that aren't filled in or have multiple
-        // ambiguity characters in the see protein.
+        // ambiguity characters in the seed protein.
         log.info("Removing genomes with incomplete data or ambiguity.");
         int deleteCount = 0;
         Iterator<ProteinData> iter = this.master.iterator();
@@ -256,6 +258,18 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      */
     public int size() {
         return this.master.size();
+    }
+
+    /**
+     * Restore ProteinData entries from the specified input directory.  The directory should contain
+     * a repXX.ser file and a repXX.list.tbl file for each repgen set, a PhenTrnaSyntAlph.fa file containing
+     * the seed protein DNA, and an allprots.fa file containing the seed protein amino acid sequences.
+     *
+     * @param container		an object in which to save the representative-genome databases loaded
+     * @param inDir			the input directory containing all the files
+     */
+    public void restoreData(IRepGenContainer repGenSets, File inDir) {
+        // TODO restore all the stuff from the input directory
     }
 
 }
