@@ -15,7 +15,7 @@ import org.theseed.proteins.kmers.reps.RepGenomeDb.Representation;
  * @author Bruce Parrello
  *
  */
-public class ProteinData {
+public class ProteinData implements Comparable<ProteinData> {
 
     /** feature ID */
     private String fid;
@@ -65,6 +65,7 @@ public class ProteinData {
         this.representation = new HashMap<Integer, RepGenomeDb.Representation>();
         this.kmers = null;
     }
+
     /**
      * @return the ID of the seed protein feature
      */
@@ -170,6 +171,41 @@ public class ProteinData {
             // Compute the representation.
             retVal = repGenSet.findClosest(this.kmers);
         }
+        return retVal;
+    }
+
+    /**
+     * Update the taxonomic information for this genome.
+     *
+     * @param domain	domain of the genome
+     * @param genus		genus of the genome
+     * @param species	specieis of the genome
+     */
+    public void setTaxonomy(String domain, String genus, String species) {
+        this.domain = domain;
+        this.genus = genus;
+        this.species = species;
+    }
+
+    /**
+     * Store the representation information for this genome at the specified similarity threshold level.
+     *
+     * @param repDb			relevant representative-genome database
+     * @param repId			ID of the representing genome
+     * @param score			similarity score between this genome and the representative
+     * @param distance		distance between this genome and the representative
+     */
+    public void setRepresentation(RepGenomeDb repDb, String repId, int score, double distance) {
+        RepGenomeDb.Representation newRep = repDb.new Representation(repId, score, distance);
+        this.representation.put(repDb.getThreshold(), newRep);
+    }
+
+    @Override
+    public int compareTo(ProteinData other) {
+        // Note that the highest score sorts first.
+        int retVal = Double.compare(other.score, this.score);
+        if (retVal == 0)
+            retVal = this.genomeId.compareTo(other.genomeId);
         return retVal;
     }
 

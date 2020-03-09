@@ -103,7 +103,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
          * @param genomeId	representative genome's ID (or NULL if there is no representative)
          * @param score		similarity score
          */
-        private Representation(String genomeId, int score, double distance) {
+        protected Representation(String genomeId, int score, double distance) {
             this.similarity = score;
             this.distance = distance;
             this.representative = (genomeId == null ? dummy : genomeMap.get(genomeId));

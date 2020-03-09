@@ -309,12 +309,32 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     }
 
     /**
+     * Validate the output directory and input file parameters.
+     *
+     * @throws IOException
+     */
+    protected void checkParms() throws IOException {
+        File outDir = this.getOutDir();
+        if (! outDir.exists()) {
+            // Insure we have an output directory.
+            log.info("Creating output directory {}.", outDir);
+            if (! outDir.mkdir())
+                throw new IOException("Could not create output directory " + outDir);
+        } else if (! outDir.isDirectory()) {
+            throw new FileNotFoundException("Invalid output directory " + outDir);
+        }
+        if (! this.inFile.canRead())
+            throw new FileNotFoundException(this.getInFile() + " is not found or unreadable.");
+    }
+    /**
      * Read the input file and initialize the protein data genome list.
+     *
+     * @return the protein data genome list
      *
      * @throws IOException
      * @throws UnsupportedEncodingException
      */
-    protected void initializeProteinData() throws IOException, UnsupportedEncodingException {
+    protected ProteinDataFactory initializeProteinData() throws IOException, UnsupportedEncodingException {
         // Initialize the genome list.
         this.genomeList = new ProteinDataFactory();
         // We use this to decide when to output progress messages.
@@ -345,6 +365,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         log.info("{} good genomes collected.", this.genomeList.size());
         this.genomeList.finishList(this.batchSize);
         log.info("{} good genomes remaining after seed protein scan.", this.genomeList.size());
+        return this.genomeList;
     }
 
     /**
@@ -366,7 +387,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * @param size	estimated number needed
      */
     @Override
-	public void initRepGenSets(int size) {
+    public void initRepGenSets(int size) {
         this.repGenSets = new ArrayList<RepGenomeDb>(size);
     }
 
@@ -376,7 +397,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * @param repGenomeDb	RepGen database to store
      */
     @Override
-	public void addRepGenSet(RepGenomeDb repGenomeDb) {
+    public void addRepGenSet(RepGenomeDb repGenomeDb) {
         this.repGenSets.add(repGenomeDb);
     }
 

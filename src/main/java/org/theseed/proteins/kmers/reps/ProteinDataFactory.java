@@ -4,9 +4,8 @@
 package org.theseed.proteins.kmers.reps;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,14 +13,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import java.util.Iterator;
 
 import org.theseed.genome.Feature;
+import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.Connection;
+import org.theseed.p3api.Criterion;
 import org.theseed.p3api.Connection.Table;
 import org.theseed.proteins.RoleMap;
+import org.theseed.sequence.FastaInputStream;
+import org.theseed.sequence.Sequence;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -51,7 +56,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /** connection to PATRIC */
     private Connection p3;
     /** master list of ProteinData objects */
-    List<ProteinData> master;
+    SortedSet<ProteinData> master;
     /** map of ProteinData objects by genome ID */
     Map<String, ProteinData> idMap;
 
@@ -77,7 +82,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         this.genera = taxonList.stream().map(x -> Connection.getString(x, "taxon_id")).collect(Collectors.toSet());
         log.info("{} genera tabulated.", this.genera.size());
         // Create the master list and map.
-        this.master = new ArrayList<ProteinData>(200000);
+        this.master = new TreeSet<ProteinData>();
         this.idMap = new HashMap<String, ProteinData>(200000);
     }
 
@@ -142,16 +147,15 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         // role map to isolate it.
         RoleMap seedMap = new RoleMap();
         seedMap.findOrInsert(SEED_FUNCTION);
-        // Ask for all the features with this function.
-        log.info("Retrieving seed protein features.");
-        List<JsonObject> features = p3.query(Table.FEATURE,
-                "genome_id,patric_id,product,aa_sequence_md5,na_sequence_md5",
-                "eq(product," + URLEncoder.encode(SEED_FUNCTION, StandardCharsets.UTF_8.toString()) + ")",
-                "eq(annotation,PATRIC)");
         // These maps are keyed by MD5, and map each MD5 to the list of ProteinData objects for the
         // associated genomes.
         Map<String, Collection<ProteinData>> dnaMap = new HashMap<String, Collection<ProteinData>>(batchSize);
         Map<String, Collection<ProteinData>> protMap = new HashMap<String, Collection<ProteinData>>(batchSize);
+        // Ask for all the features with this function in the specified genomes.
+        log.info("Retrieving seed protein features.");
+        List<JsonObject> features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
+                "genome_id,patric_id,product,aa_sequence_md5,na_sequence_md5",
+                Criterion.EQ("product", SEED_FUNCTION), Criterion.EQ("annotation", "PATRIC"));
         // We are ready.  Loop through the features, retrieving the sequences.
         log.info("Retrieving DNA and protein sequences.");
         for (JsonObject feature : features) {
@@ -263,14 +267,107 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /**
      * Restore the protein data from an input directory.  The input directory will contain a
      * repXX.ser and repXX.list.tbl file for each RepGen set, a PhenTrnaSyntAlph.fa file containing
-     * the seed protein DNA sequences, and an allprots.fa containing the seed protein amino acid
-     * sequences.
+     * the seed protein DNA sequences, and a repFinder.db containing the seed protein amino acid
+     * sequences, the quality score, the ID, name, and the genetic code.
      *
      * @param container		container in which to store the repgen sets
      * @param inDir			input directory
+     *
+     * @throws IOException
      */
-    public void restoreData(IRepGenContainer container, File inDir) {
-        // TODO read all the files and build the protein data
+    public void restoreData(IRepGenContainer container, File inDir) throws IOException {
+        // First, we build protein-data objects from the repFinder.db file.
+        File repFinderDbFile = new File(inDir, "repFinder.db");
+        readRepFinder(repFinderDbFile);
+        // Find the repXX.ser files.
+        File[] repDbFiles = inDir.listFiles((d, n) -> n.matches("rep\\d+\\.ser"));
+        // Initialize the repget set list.
+        container.initRepGenSets(repDbFiles.length);
+        // Loop through the files.
+        for (File repDbFile : repDbFiles) {
+            log.info("Loading repgen set from {}.", repDbFile);
+            RepGenomeDb repDb = RepGenomeDb.load(repDbFile);
+            container.addRepGenSet(repDb);
+            // Now we need the list file for this RepGen set.  We read through it to get missing data.
+            int simLevel = repDb.getThreshold();
+            File repListFile = new File(inDir, "rep" + Integer.toString(simLevel) + ".list.tbl");
+            readRepListFile(repListFile, repDb);
+        }
+        // Finally, we read the DNA file.
+        File dnaFastaFile = new File(inDir, "PhenTrnaSyntAlph.fa");
+        try (FastaInputStream inStream = new FastaInputStream(dnaFastaFile)) {
+            log.info("Reading DNA from {}.", dnaFastaFile);
+            for (Sequence seq : inStream) {
+                String genomeId = StringUtils.substringBefore(seq.getComment(), "\t");
+                ProteinData genome = this.getGenome(genomeId);
+                genome.setDna(seq.getSequence());
+                genome.setFid(seq.getLabel());
+            }
+        }
+    }
+
+    /**
+     * Process the representative-genome database list file to fill in missing information
+     * in the currently-loaded ProteinData objects.
+     *
+     * @param repListFile	list file for this representative-genome database
+     * @param simLevel		similarity threshold for this representative-genome database
+     *
+     * @throws IOException
+     */
+    private void readRepListFile(File repListFile, RepGenomeDb repDb) throws IOException {
+        log.info("Reading {} for representation in RepGen{}.", repListFile, repDb.getThreshold());
+        try (TabbedLineReader inStream = new TabbedLineReader(repListFile)) {
+            int idIdx = inStream.findField("genome_id");
+            int domIdx = inStream.findField("domain");
+            int genusIdx = inStream.findField("genus");
+            int speciesIdx = inStream.findField("species");
+            int repIdIdx = inStream.findField("rep_id");
+            int simIdx = inStream.findField("score");
+            int distIdx = inStream.findField("distance");
+            for (TabbedLineReader.Line line : inStream) {
+                ProteinData genome = this.getGenome(line.get(idIdx));
+                genome.setTaxonomy(line.get(domIdx), line.get(genusIdx), line.get(speciesIdx));
+                genome.setRepresentation(repDb, line.get(repIdIdx), line.getInt(simIdx),
+                        line.getDouble(distIdx));
+
+            }
+        }
+
+    }
+
+    /**
+     * Build skeleton ProteinData objects from the specified repFinder.db file.  The skeleton objects
+     * will contain the genome ID, genome name, quality score, genetic code, and seed protein amino
+     * acid sequence.
+     *
+     * @param repFinderFile		input repFinder.db file
+     * @throws IOException
+     */
+    private void readRepFinder(File repFinderFile) throws IOException {
+        log.info("Reading genomes from {}.", repFinderFile);
+        try (TabbedLineReader inStream = new TabbedLineReader(repFinderFile)) {
+            int idIdx = inStream.findField("genome_id");
+            int nameIdx = inStream.findField("genome_name");
+            int qualIdx = inStream.findField("quality");
+            int codeIdx = inStream.findField("genetic_code");
+            int protIdx = inStream.findField("seed_prot");
+            // Loop through the input records.
+            for (TabbedLineReader.Line line : inStream) {
+                // Skip the spacer line.
+                String genomeId = line.get(idIdx);
+                if (! genomeId.contentEquals("//")) {
+                    // Note we have to defer genus and species and we default the domain.  These will all
+                    // eventually be found in the repXX.list.tbl files.
+                    ProteinData newGenome = new ProteinData(genomeId, line.get(nameIdx), "Bacteria",
+                            null, null, line.getInt(codeIdx), line.getDouble(qualIdx));
+                    // Update the protein sequence.
+                    newGenome.setProtein(line.get(protIdx));
+                    this.idMap.put(genomeId, newGenome);
+                    this.master.add(newGenome);
+                }
+            }
+        }
     }
 
 }

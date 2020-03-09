@@ -3,8 +3,6 @@
  */
 package org.theseed.proteins.kmers.reps;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.kohsuke.args4j.Option;
 import org.theseed.utils.ICommand;
@@ -53,17 +51,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
 
     @Override
     protected boolean validateParms() throws IOException {
-        File outDir = this.getOutDir();
-        if (! outDir.exists()) {
-            // Insure we have an output directory.
-            log.info("Creating output directory {}.", outDir);
-            if (! outDir.mkdir())
-                throw new IOException("Could not create output directory " + outDir);
-        } else if (! outDir.isDirectory()) {
-            throw new FileNotFoundException("Invalid output directory " + outDir);
-        }
-        if (! this.getInFile().canRead())
-            throw new FileNotFoundException(this.getInFile() + " is not found or unreadable.");
+        this.checkParms();
         return true;
     }
 

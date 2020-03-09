@@ -3,7 +3,11 @@
  */
 package org.theseed.proteins.kmers.reps;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+
+import org.kohsuke.args4j.Argument;
 import org.theseed.utils.ICommand;
 
 /**
@@ -28,17 +32,19 @@ import org.theseed.utils.ICommand;
  */
 public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
-    // TODO positional parameters
+    @Argument(index = 2, metaVar = "inDir", usage = "input directory with existing genome files", required = true)
+    private File inDir;
 
     @Override
     protected void setDefaults() {
-        // TODO initialize fields for update
-
+        this.setBatchSize(500);
     }
 
     @Override
     protected boolean validateParms() throws IOException {
-        // TODO process parameters for update
+        this.checkParms();
+        if (! this.inDir.isDirectory())
+            throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
         return true;
     }
 
@@ -46,8 +52,9 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
     public void run() {
         try {
             // Read all the genomes from the input file.
-            initializeProteinData();
-            // TODO create proteindata objects and repgen sets for the old genomes
+            ProteinDataFactory genomeList = initializeProteinData();
+            // Read all the old genomes from the input directory.
+            genomeList.restoreData(this, this.inDir);
             // We need to create the FASTA files for the seed protein list and the
             // binning BLAST database.  We do that here.
             createFastaFiles();
