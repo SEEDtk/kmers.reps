@@ -6,7 +6,7 @@ package org.theseed.proteins.kmers.reps;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.proteins.kmers.reps.RepGenomeDb.Representation;
 
 /**

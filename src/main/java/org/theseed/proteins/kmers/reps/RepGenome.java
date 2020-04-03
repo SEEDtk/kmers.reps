@@ -5,7 +5,7 @@ package org.theseed.proteins.kmers.reps;
 
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.genome.Feature;
-import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 
 /**

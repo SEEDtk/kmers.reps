@@ -204,10 +204,10 @@ public class ProtTest extends TestCase {
             // First pass through.  We expect 1869227.403 to have dropped out because of
             // an insufficient taxonomy.
             Iterator<ProteinData> iter = factory.iterator();
-            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
-            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
             assertThat(iter.next().getGenomeId(), equalTo("163164.29"));
             assertThat(iter.next().getGenomeId(), equalTo("754252.34"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4260"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4261"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4262"));
@@ -217,12 +217,12 @@ public class ProtTest extends TestCase {
             assertThat(iter.next().getGenomeId(), equalTo("571.605"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.5574"));
             assertThat(iter.next().getGenomeId(), equalTo("666.4593"));
-            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
             assertThat(iter.next().getGenomeId(), equalTo("1069623.3"));
             assertThat(iter.next().getGenomeId(), equalTo("1313.6345"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
             assertThat(iter.next().getGenomeId(), equalTo("1408469.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("2587806.3"));
             assertThat(iter.next().getGenomeId(), equalTo("83555.68"));
+            assertThat(iter.next().getGenomeId(), equalTo("2587806.3"));
             assertThat(iter.next().getGenomeId(), equalTo("1733.9145"));
             assertThat(iter.next().getGenomeId(), equalTo("1280.20957"));
             assertFalse(iter.hasNext());
@@ -231,10 +231,10 @@ public class ProtTest extends TestCase {
             // a seed protein. We use a small batch size to test the batching.
             factory.finishList(8);
             iter = factory.iterator();
-            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
-            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
             assertThat(iter.next().getGenomeId(), equalTo("163164.29"));
             assertThat(iter.next().getGenomeId(), equalTo("754252.34"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.178"));
+            assertThat(iter.next().getGenomeId(), equalTo("813.179"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4260"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4261"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.4262"));
@@ -244,9 +244,9 @@ public class ProtTest extends TestCase {
             assertThat(iter.next().getGenomeId(), equalTo("571.605"));
             assertThat(iter.next().getGenomeId(), equalTo("1639.5574"));
             assertThat(iter.next().getGenomeId(), equalTo("666.4593"));
-            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
             assertThat(iter.next().getGenomeId(), equalTo("1069623.3"));
             assertThat(iter.next().getGenomeId(), equalTo("1313.6345"));
+            assertThat(iter.next().getGenomeId(), equalTo("1639.1340"));
             assertThat(iter.next().getGenomeId(), equalTo("1408469.3"));
             assertThat(iter.next().getGenomeId(), equalTo("2587806.3"));
             assertThat(iter.next().getGenomeId(), equalTo("1733.9145"));

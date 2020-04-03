@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.ICommand;
 

@@ -3,7 +3,7 @@
  */
 package org.theseed.proteins.kmers.reps;
 
-import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 
 /**

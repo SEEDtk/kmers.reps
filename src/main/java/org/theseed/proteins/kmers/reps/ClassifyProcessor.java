@@ -12,9 +12,9 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.KmerCollectionGroup;
-import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.ICommand;
 

@@ -13,10 +13,11 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
+import org.theseed.sequence.SequenceKmers;
 
 /**
  * This class manages a set of representative genomes.  For each representative genome, it contains a
@@ -135,7 +136,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
             if (score > this.similarity) {
                 this.representative = representative;
                 this.similarity = score;
-                if (score == ProteinKmers.INFINITY) {
+                if (score == SequenceKmers.INFINITY) {
                     this.distance = 0.0;
                 } else if (score == 0) {
                     this.distance = 1.0;

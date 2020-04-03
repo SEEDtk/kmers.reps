@@ -3,7 +3,7 @@
  */
 package org.theseed.proteins.kmers.reps;
 
-import org.theseed.proteins.kmers.ProteinKmers;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 
 /**
@@ -23,19 +23,19 @@ public class SequenceInfo implements Comparable<SequenceInfo> {
     // FIELDS
 
     /** original sequence */
-    Sequence original;
+    private Sequence original;
     /** protein kmer object */
-    ProteinKmers kmers;
+    private ProteinKmers kmers;
     /** number of sequences compared */
-    int distCount;
+    private int distCount;
     /** sum of the distances */
-    double distSum;
+    private double distSum;
     /** sum of the squares of the distances */
-    double distSquareSum;
+    private double distSquareSum;
     /** maximum distance encountered */
-    double distMax;
+    private double distMax;
     /** minimum distance encountered */
-    double distMin;
+    private double distMin;
 
     /**
      * Create a sequence info object for a particular sequence.

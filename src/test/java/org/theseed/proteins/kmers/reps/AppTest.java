@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.theseed.proteins.kmers.ProteinKmers;
 import org.theseed.proteins.kmers.reps.RepGenome;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.sequence.FastaInputStream;
+import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 import junit.framework.Test;
 import junit.framework.TestCase;
