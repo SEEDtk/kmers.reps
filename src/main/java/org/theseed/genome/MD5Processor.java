@@ -88,7 +88,7 @@ public class MD5Processor extends BaseProcessor {
     }
 
     @Override
-    public void run() {
+    public void runCommand() {
         try {
             log.info("Preparing for processing.");
             this.mdComputer = new P3MD5Hex();
@@ -132,8 +132,7 @@ public class MD5Processor extends BaseProcessor {
             this.processBatch();
             log.info("All done. {} genomes processed.", genomeCount);
         } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Error after genome {}: {}", this.lastGenome, e.getMessage());
+            log.error("Error after genome {}.", this.lastGenome, e);
         } finally {
             this.inStream.close();
         }

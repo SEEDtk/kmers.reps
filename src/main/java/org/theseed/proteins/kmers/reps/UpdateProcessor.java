@@ -49,7 +49,7 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
     }
 
     @Override
-    public void run() {
+    public void runCommand() {
         try {
             // Read all the genomes from the input file.
             ProteinDataFactory genomeList = initializeProteinData();
