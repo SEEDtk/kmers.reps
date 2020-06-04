@@ -26,6 +26,9 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         ICommand processor;
         switch (command) {
+        case "distances" :
+            processor = new DistanceMatrixProcessor();
+            break;
         case "repdb" :
             processor = new RepGenomeDbProcessor();
             break;

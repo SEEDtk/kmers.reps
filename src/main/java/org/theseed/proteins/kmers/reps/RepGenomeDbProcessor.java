@@ -62,6 +62,8 @@ public class RepGenomeDbProcessor implements ICommand {
     private long startTime;
     /** target representative-genome database */
     private RepGenomeDb repDB;
+    /** saved time stamp */
+    private long lastTime;
 
     // COMMAND LINE
 
@@ -115,7 +117,6 @@ public class RepGenomeDbProcessor implements ICommand {
     /** maximum number of ambiguity characters */
     @Option(name="-x", aliases={"--maxErr"}, metaVar="20", usage="maximum number of Ns (DNA) or Xs (amino acid)")
     private int maxErr;
-    private long lastTime;
 
     /** Parse the command line parameters and options. */
     public boolean parseCommand(String[] args) {
