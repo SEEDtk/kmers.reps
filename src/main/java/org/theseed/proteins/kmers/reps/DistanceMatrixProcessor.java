@@ -75,19 +75,30 @@ public class DistanceMatrixProcessor implements ICommand {
             if (debug) System.err.println("Loading representative genome data from " + this.dbFile.getPath());
             this.repDB = RepGenomeDb.load(this.dbFile);
             // Write the output header.
-            System.out.println("genome_1\tgenome_2\tdistance");
+            System.out.println("genome_1\tgenome_2\tdistance\tsim");
             // Compute the number of pairs to process.
             int totalPairs = this.repDB.size() * (this.repDB.size() + 1) / 2;
             if (debug) System.err.format("%d total genomes, requiring %d pairs to be processed.%n", this.repDB.size(), totalPairs);
             // Loop through the representatives.
             long startTime = System.currentTimeMillis();
             int processed = 0;
+            double distSum = 0;
+            double distSqSum = 0;
+            double simSum = 0;
+            double simSqSum = 0;
+            int zeroes = 0;
             for (RepGenome rep : this.repDB) {
                 for (RepGenome rep2 : this.repDB) {
                     // Compare the two genomes to insure each pair is only processed one.
                     if (rep.compareTo(rep2) < 0) {
                         double distance = rep.distance(rep2);
-                        System.out.format("%s\t%s\t%8.6f%n", rep.getGenomeId(), rep2.getGenomeId(), distance);
+                        int sim = rep.similarity(rep2);
+                        distSum += distance;
+                        distSqSum += distance * distance;
+                        simSum += sim;
+                        simSqSum += sim * sim;
+                        if (sim == 0) zeroes++;
+                        System.out.format("%s\t%s\t%8.6f\t%d%n", rep.getGenomeId(), rep2.getGenomeId(), distance, sim);
                         processed++;
                         if (debug && processed % 5000 == 0) {
                             double rate = (double) processed / ((System.currentTimeMillis() - startTime) / 1000.0);
@@ -97,8 +108,15 @@ public class DistanceMatrixProcessor implements ICommand {
                     }
                 }
             }
-            long duration = System.currentTimeMillis() - startTime;
-            System.err.format("%d pairs processed in %d seconds.", processed, duration);
+            long duration = (System.currentTimeMillis() - startTime) / 1000;
+            System.err.format("%d pairs processed in %d seconds.%n", processed, duration);
+            double distMean = distSum / processed;
+            double distSTdev = Math.sqrt(distSqSum / processed - distMean * distMean);
+            double simMean = simSum / processed;
+            double simSTdev = Math.sqrt(simSqSum / processed - simMean * simMean);
+            System.err.format("Mean distance is %8.6f with standard deviation %8.6f.%n", distMean, distSTdev);
+            System.err.format("Mean similarity is %8.6f with standard deviation %8.6f.%n", simMean, simSTdev);
+            System.err.format("%d pairs had 0 similarity.", zeroes);
         } catch (IOException e) {
             throw new RuntimeException("Error reading FASTA file.", e);
         }

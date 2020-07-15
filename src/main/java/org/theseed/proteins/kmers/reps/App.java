@@ -3,6 +3,7 @@ package org.theseed.proteins.kmers.reps;
 import java.util.Arrays;
 
 import org.theseed.genome.MD5Processor;
+import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.utils.ICommand;
 
 /**
@@ -16,6 +17,7 @@ import org.theseed.utils.ICommand;
  *  genomes		Process genome evaluation results
  *  update		Process incremental genome evaluation results
  *  md5			Compute genome MD5s
+ *  coupling	Compute functional coupling for a set of genomes
  */
 public class App
 {
@@ -49,6 +51,9 @@ public class App
             break;
         case "md5" :
             processor = new MD5Processor();
+            break;
+        case "coupling" :
+            processor = new CouplesProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
