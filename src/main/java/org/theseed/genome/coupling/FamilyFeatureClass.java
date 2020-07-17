@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.theseed.genome.Feature;
+import org.theseed.io.TabbedLineReader.Line;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Connection.Table;
 
@@ -71,6 +72,16 @@ public class FamilyFeatureClass extends FeatureClass {
             for (Map.Entry<String, JsonObject> familyDatum : familyData.entrySet())
                 this.nameMap.put(familyDatum.getKey(), Connection.getString(familyDatum.getValue(), "family_product"));
         }
+    }
+
+    @Override
+    public Pair readPair(Line line) {
+        // The output line for protein families is of the form ID1 NAME1 ID2 NAME2.  We cache the names.
+        String class1 = line.get(0);
+        this.nameMap.put(class1, line.get(1));
+        String class2 = line.get(2);
+        this.nameMap.put(class2, line.get(3));
+        return this.new Pair(class1, class2);
     }
 
 }

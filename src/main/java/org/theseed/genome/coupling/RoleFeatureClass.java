@@ -6,6 +6,8 @@ package org.theseed.genome.coupling;
 import java.util.Collection;
 
 import org.theseed.genome.Feature;
+import org.theseed.io.TabbedLineReader.Line;
+import org.theseed.proteins.Role;
 import org.theseed.proteins.RoleMap;
 
 /**
@@ -64,6 +66,14 @@ public class RoleFeatureClass extends FeatureClass {
     @Override
     public void cacheNames(Collection<String> classes) {
         // No name cache is needed for roles, since they exist in the map.
+    }
+
+    @Override
+    public Pair readPair(Line line) {
+        // The output line consists of NAME1 NAME2.  We need the IDs.
+        Role role1 = this.roles.findOrInsert(line.get(0));
+        Role role2 = this.roles.findOrInsert(line.get(1));
+        return this.new Pair(role1.getId(), role2.getId());
     }
 
 }

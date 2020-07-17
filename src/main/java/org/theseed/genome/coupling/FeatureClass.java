@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
+import org.theseed.io.TabbedLineReader;
 import org.theseed.locations.Location;
 
 /**
@@ -49,6 +50,13 @@ public abstract class FeatureClass {
      * Insure that names are known for the specified class IDs.
      */
     public abstract void cacheNames(Collection<String> classes);
+
+    /**
+     * @return the pair of classes represented by the names in the specified report line
+     *
+     * @param line	output line from a coupling report
+     */
+    public abstract Pair readPair(TabbedLineReader.Line line);
 
     /**
      * @return a sorted list of the classifications for the features in a genome

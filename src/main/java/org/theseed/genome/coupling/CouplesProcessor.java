@@ -37,6 +37,7 @@ import org.theseed.utils.BaseProcessor;
  * -m	minimum number of genomes for a pair to be output (default 10)
  *
  * --format		report format (default GROUP)
+ * --verify		output of a previous coupling run used to guide the verification report
  *
  * @author Bruce Parrello
  *
@@ -65,8 +66,12 @@ public class CouplesProcessor extends BaseProcessor {
     @Option(name = "--format", aliases = { "--output", "--outFmt" }, usage = "output format")
     private CouplingReporter.Type reportType;
 
+    /** previous output to be verified (format = VERIFY only) */
+    @Option(name = "--verify", metaVar = "couplings.tbl", usage = "previous output to be verified (format = VERIFY only)")
+    private File oldOutput;
+
     /** minimum group size */
-    @Option(name = "-m", aliases = { "--min" }, usage = "minimum group size for output to the report")
+    @Option(name = "-m", aliases = { "--min" }, metaVar = "100", usage = "minimum group size for output to the report")
     private int minGroup;
 
     /** input directory */
@@ -80,6 +85,7 @@ public class CouplesProcessor extends BaseProcessor {
         this.reportType = CouplingReporter.Type.GROUP;
         this.minGroup = 10;
         this.maxGap = 5000;
+        this.oldOutput = null;
     }
 
     @Override
@@ -101,7 +107,7 @@ public class CouplesProcessor extends BaseProcessor {
     protected void runCommand() throws Exception {
         log.info("Initializing report.");
         // Start by creating the reporter object.
-        try (CouplingReporter reporter = this.reportType.create(System.out, this.classifier)) {
+        try (CouplingReporter reporter = this.reportType.create(System.out, this)) {
             // Initialize the report.
             reporter.writeHeader();
             // Open the genome directory.
@@ -167,6 +173,20 @@ public class CouplesProcessor extends BaseProcessor {
             log.info("Mean group size is {}. Max group size is {}.", (double) groupTotal / outputCount, groupMax);
             reporter.finish();
         }
+    }
+
+    /**
+     * @return the feature-classification object for this processor
+     */
+    public FeatureClass getClassifier() {
+        return this.classifier;
+    }
+
+    /**
+     * @return the old output file
+     */
+    public File getOldOutput() {
+        return this.oldOutput;
     }
 
 }

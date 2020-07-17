@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.theseed.genome.Genome;
+import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.FeatureClass;
 
 /**
@@ -24,8 +25,8 @@ import org.theseed.genome.coupling.FeatureClass;
 public abstract class CouplingReporter extends BaseReporter {
 
     // FIELDS
-    /** current feature classifier */
-    private FeatureClass classifier;
+    /** parent processor */
+    private CouplesProcessor processor;
     /** queue of lines to write */
     private Map<FeatureClass.Pair, Collection<String>> lineQueue;
     /** queue of classes in the lines */
@@ -37,11 +38,11 @@ public abstract class CouplingReporter extends BaseReporter {
      * Construct a coupling report for output to a specified stream.
      *
      * @param output		output stream to receive the report.
-     * @param classifier	feature classifier being used
+     * @param processor		the coupling processor producing the report
      */
-    public CouplingReporter(OutputStream output, FeatureClass classifier) {
+    public CouplingReporter(OutputStream output, CouplesProcessor processor) {
         super(output);
-        this.classifier = classifier;
+        this.processor = processor;
         this.lineQueue = new HashMap<FeatureClass.Pair, Collection<String>>(BATCH_SIZE);
         this.classQueue = new HashSet<String>(BATCH_SIZE * 2);
     }
@@ -50,7 +51,7 @@ public abstract class CouplingReporter extends BaseReporter {
      * Start the report.
      */
     public void writeHeader() {
-        this.println(this.classifier.getHeadings() + "\t" + this.getScoreHeadings());
+        this.println(this.getClassifier().getHeadings() + "\t" + this.getScoreHeadings());
     }
 
     /**
@@ -72,7 +73,12 @@ public abstract class CouplingReporter extends BaseReporter {
      * @param pair		classification pair found to be coupled
      * @param genomes	IDs of the genomes containing the coupling
      */
-    public abstract void writePairLine(FeatureClass.Pair pair, Collection<String> genomes);
+    protected abstract void writePairLine(FeatureClass.Pair pair, Collection<String> genomes);
+
+    /**
+     * This is an optional method for summarizing at the end of the report.
+     */
+    protected void summarize() { }
 
     /**
      * Process an output coupling.
@@ -98,7 +104,7 @@ public abstract class CouplingReporter extends BaseReporter {
      */
     private void processQueue() {
         // Insure we know all the class names in the queue.
-        this.classifier.cacheNames(this.classQueue);
+        this.getClassifier().cacheNames(this.classQueue);
         // Write out the lines in the queue.
         for (Map.Entry<FeatureClass.Pair, Collection<String>> entry : this.lineQueue.entrySet()) {
             this.writePairLine(entry.getKey(), entry.getValue());
@@ -110,6 +116,7 @@ public abstract class CouplingReporter extends BaseReporter {
      */
     public final void finish() {
         this.processQueue();
+        this.summarize();
     }
 
 
@@ -118,16 +125,19 @@ public abstract class CouplingReporter extends BaseReporter {
      * Enumeration of supported report types.
      */
     public static enum Type {
-        GROUP, SCORES;
+        GROUP, SCORES, VERIFY;
 
-        public CouplingReporter create(OutputStream output, FeatureClass classifier) {
+        public CouplingReporter create(OutputStream output, CouplesProcessor processor) {
             CouplingReporter retVal = null;
             switch (this) {
             case GROUP:
-                retVal = new GroupCouplingReporter(output, classifier);
+                retVal = new GroupCouplingReporter(output, processor);
                 break;
             case SCORES:
-                retVal = new ScoreCouplingReporter(output, classifier);
+                retVal = new ScoreCouplingReporter(output, processor);
+                break;
+            case VERIFY:
+                retVal = new VerifyCouplingReporter(output, processor);
                 break;
             }
             return retVal;
@@ -138,7 +148,7 @@ public abstract class CouplingReporter extends BaseReporter {
      * @return the classifier
      */
     public FeatureClass getClassifier() {
-        return classifier;
+        return this.processor.getClassifier();
     }
 
 }

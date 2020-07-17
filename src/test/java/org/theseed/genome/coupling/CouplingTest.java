@@ -14,6 +14,7 @@ import java.util.List;
 import org.hamcrest.core.IsNull;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
+import org.theseed.io.TabbedLineReader;
 
 
 /**
@@ -76,6 +77,37 @@ public class CouplingTest extends TestCase {
     }
 
     /**
+     * Test the ability to read pairs from an output report.
+     *
+     * @throws IOException
+     */
+    public void testFeatureClassReads() throws IOException {
+        // For families, we rely on the fact that each output file begins with the string representation of a pair.
+        FeatureClass fClass = FeatureClass.Type.PGFAMS.create();
+        File inFile = new File("src/test", "coupling10.tbl");
+        try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
+            for (TabbedLineReader.Line line : inStream) {
+                String whole = line.getAll();
+                FeatureClass.Pair pairIn = fClass.readPair(line);
+                String pairName = pairIn.toString() + "\t";
+                assertThat(whole, startsWith(pairName));
+            }
+        }
+        // For roles, the variability of the role IDs may cause the pair to swap.  We have to verify that the pair
+        // has matching names.
+        fClass = FeatureClass.Type.ROLES.create();
+        inFile = new File("src/test", "coupling10.roles.tbl");
+        try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
+            for (TabbedLineReader.Line line : inStream) {
+                String order1 = line.get(0) + "\t" + line.get(1);
+                String order2 = line.get(1) + "\t" + line.get(0);
+                FeatureClass.Pair pairIn = fClass.readPair(line);
+                assertThat(pairIn.toString(), anyOf(equalTo(order1), equalTo(order2)));
+            }
+        }
+    }
+
+    /**
      * test pairs
      */
     public void testPairs() {
@@ -85,8 +117,8 @@ public class CouplingTest extends TestCase {
         FeatureClass.Pair pair3 = famFC.new Pair("x1", "y2");
         assertThat(pair1, equalTo(pair2));
         assertThat(pair2, not(equalTo(pair3)));
-        assertThat(pair1.toString(), equalTo("x1\ty1"));
-        assertThat(pair2.toString(), equalTo("x1\ty1"));
+        assertThat(pair1.toString(), equalTo("x1\t\ty1\t"));
+        assertThat(pair2.toString(), equalTo("x1\t\ty1\t"));
     }
 
     /**

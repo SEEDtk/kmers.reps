@@ -6,12 +6,15 @@ package org.theseed.reports;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
+import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
+import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.FeatureClass;
-import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.SequenceKmers;
 
@@ -35,6 +38,10 @@ public class ScoreCouplingReporter extends CouplingReporter {
         private double simDist;
         /** real distance score */
         private double realDist;
+        // class1 percentage */
+        private double percent1;
+        // class2 percentage */
+        private double percent2;
 
         /**
          * Construct a score object.
@@ -67,17 +74,30 @@ public class ScoreCouplingReporter extends CouplingReporter {
         }
 
         /**
+         * Finish the scores.
+         *
+         * @param pair		pair being scored
+         * @param size		size of the group
+         */
+        protected void finish(ScoreCouplingReporter parent, FeatureClass.Pair pair, int size) {
+            double numerator = size * 100;
+            this.percent1 = numerator / parent.classCounts.getCount(pair.getClass1());
+            this.percent2 = numerator / parent.classCounts.getCount(pair.getClass2());
+        }
+
+        /**
          * @return an output string for this score object.
          */
         public String toString() {
-            return String.format("%8.4f\t%8.4f", this.simDist, this.realDist);
+            return String.format("%8.4f\t%8.4f\t%8.2f\t%8.2f", this.simDist, this.realDist,
+                    this.percent1, this.percent2);
         }
 
         /**
          * @return a header string for scores
          */
         public static String header() {
-            return "sim_distance\tphes_distance";
+            return "sim_distance\tphes_distance\tpercent1\tpercent2";
         }
 
     }
@@ -87,38 +107,63 @@ public class ScoreCouplingReporter extends CouplingReporter {
     private Map<FeatureClass.Pair, Scores> scoreMap;
     /** map of genome IDs to protein kmer objects */
     private Map<String, ProteinKmers> genomeDb;
+    /** count of genomes containing each class */
+    private CountMap<String> classCounts;
+    /** functional assignment for the seed protein */
+    private static final String SEED_PROTEIN_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain (EC 6.1.1.20)";
+
 
     /**
      * Initialize this report.
      *
      * @param output		target output stream for the report
-     * @param classifier	classifier used for this report
+     * @param processor		parent coupling processor for this report
      */
-    public ScoreCouplingReporter(OutputStream output, FeatureClass classifier) {
-        super(output, classifier);
+    public ScoreCouplingReporter(OutputStream output, CouplesProcessor processor) {
+        super(output, processor);
         // Create the genome database and the score map.
         this.scoreMap = new HashMap<FeatureClass.Pair, Scores>(100000);
         this.genomeDb = new HashMap<String, ProteinKmers>(1000);
+        this.classCounts = new CountMap<String>();
     }
 
     @Override
     public void register(Genome genome) {
-        // Find the first seed protein in this genome.
-        ProteinKmers prot = null;
-        Iterator<Feature> iter = genome.getPegs().iterator();
-        while (prot == null && iter.hasNext()) {
-            Feature feat = iter.next();
-            if (feat.getFunction().contentEquals("Phenylalanyl-tRNA synthetase alpha chain (EC 6.1.1.20)")) {
-                prot = new ProteinKmers(feat.getProteinTranslation());
-                this.genomeDb.put(genome.getId(), prot);
+        // We need to count the classes that occur in this genome and find the seed protein.
+        FeatureClass classifier = this.getClassifier();
+        // First, we get the features.
+        Collection<Feature> feats = genome.getFeatures();
+        // This will contain the longest seed protein.
+        String prot = "";
+        // This will track the features found.
+        Set<String> classes = new HashSet<String>();
+        // Loop through the features.
+        for (Feature feat : feats) {
+            // Check for the seed protein.  We keep the longest.
+            String function = feat.getFunction();
+            if (function != null && function.contentEquals(SEED_PROTEIN_FUNCTION)) {
+                String newProt = feat.getProteinTranslation();
+                if (newProt != null && newProt.length() > prot.length()) prot = newProt;
+            }
+            // Check for the classes.
+            FeatureClass.Result result = classifier.getClasses(feat);
+            if (result != null) {
+                for (String classId : result)
+                    classes.add(classId);
             }
         }
-        if (prot == null)
+        // Store the seed protein.
+        if (prot.isEmpty())
             throw new IllegalArgumentException("Invalid genome " + genome.toString() + " has no seed protein.");
+        else
+            this.genomeDb.put(genome.getId(), new ProteinKmers(prot));
+        // Count the classes.
+        for (String classId : classes)
+            this.classCounts.count(classId);
     }
 
     @Override
-    public void writePairLine(Pair pair, Collection<String> genomes) {
+    public void writePairLine(FeatureClass.Pair pair, Collection<String> genomes) {
         // Get our classifier.
         FeatureClass classifier = this.getClassifier();
         // This will hold the final scores.
@@ -130,12 +175,14 @@ public class ScoreCouplingReporter extends CouplingReporter {
             ProteinKmers protI = this.genomeDb.get(gList[i]);
             for (int j = i + 1; j < gList.length; j++) {
                 ProteinKmers protJ = this.genomeDb.get(gList[j]);
-                Pair gPair = classifier.new Pair(gList[i], gList[j]);
+                FeatureClass.Pair gPair = classifier.new Pair(gList[i], gList[j]);
                 // Find the scores for this genome pair.  If we don't know them, we compute them.
                 Scores scores = this.scoreMap.computeIfAbsent(gPair, k -> new Scores(protI, protJ));
                 result.plus(scores);
             }
         }
+        // Finish off the scores.
+        result.finish(this, pair, genomes.size());
         // Write the output line.
         this.print("%s\t%d\t%s", pair.toString(), genomes.size(), result.toString());
     }
