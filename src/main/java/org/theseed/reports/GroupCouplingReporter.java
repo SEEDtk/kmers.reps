@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.genome.Genome;
-import org.theseed.genome.coupling.CouplesProcessor;
+import org.theseed.genome.coupling.BaseCouplingProcessor;
 import org.theseed.genome.coupling.FeatureClass;
 
 /**
@@ -23,7 +23,7 @@ public class GroupCouplingReporter extends CouplingReporter {
      * @param output		target output stream
      * @param processor		parent coupling processor
      */
-    public GroupCouplingReporter(OutputStream output, CouplesProcessor processor) {
+    public GroupCouplingReporter(OutputStream output, BaseCouplingProcessor processor) {
         super(output, processor);
     }
 

@@ -33,6 +33,7 @@ public class CouplingTest extends TestCase {
         Feature feat = gto.getFeature("fig|202462.4.peg.207");
         FeatureClass roleFC = FeatureClass.Type.ROLES.create();
         FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
+        FeatureClass randFC = FeatureClass.Type.RANDOM.create();
         FeatureClass.Result res1 = roleFC.getClasses(feat);
         assertThat(res1.getFid(), equalTo(feat.getId()));
         int count = 0;
@@ -46,6 +47,35 @@ public class CouplingTest extends TestCase {
         count = 0;
         for (String fam : res3) {
             assertThat(fam, equalTo("PGF_00049893"));
+            count++;
+        }
+        assertThat(count, equalTo(1));
+        FeatureClass.Result res4 = randFC.getClasses(feat);
+        count = 0;
+        String saved = "";
+        for (String fam : res4) {
+            boolean found = false;
+            for (Feature peg : gto.getPegs()) {
+                String pegFam = peg.getPgfam();
+                if (pegFam != null && pegFam.contentEquals(fam))
+                    found = true;
+            }
+            assertTrue(found);
+            count++;
+            saved = fam;
+        }
+        assertThat(count, equalTo(1));
+        res4 = randFC.getClasses(feat);
+        count = 0;
+        for (String fam : res4) {
+            boolean found = false;
+            for (Feature peg : gto.getPegs()) {
+                String pegFam = peg.getPgfam();
+                if (pegFam != null && pegFam.contentEquals(fam))
+                    found = true;
+            }
+            assertTrue(found);
+            assertThat(fam, not(equalTo(saved)));
             count++;
         }
         assertThat(count, equalTo(1));
@@ -156,6 +186,38 @@ public class CouplingTest extends TestCase {
                 assertThat(feat.getId(), rClass, equalTo(feat.getPgfam()));
             }
         }
+        // Now we test neighbor finders.
+        CouplesProcessor processor = new CouplesProcessor();
+        processor.setDefaults();
+        NeighborFinder close = NeighborFinder.Type.CLOSE.create(processor);
+        NeighborFinder adj = NeighborFinder.Type.ADJACENT.create(processor);
+        List<FeatureClass.Result> neighbors = close.getNeighbors(results, 0);
+        assertThat(neighbors.size(), equalTo(6));
+        assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.2"));
+        assertThat(neighbors.get(1).getFid(), equalTo("fig|202462.4.peg.4"));
+        assertThat(neighbors.get(2).getFid(), equalTo("fig|202462.4.peg.5"));
+        assertThat(neighbors.get(3).getFid(), equalTo("fig|202462.4.peg.6"));
+        assertThat(neighbors.get(4).getFid(), equalTo("fig|202462.4.peg.7"));
+        assertThat(neighbors.get(5).getFid(), equalTo("fig|202462.4.peg.8"));
+        neighbors = adj.getNeighbors(results, 0);
+        assertThat(neighbors.size(), equalTo(1));
+        assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.2"));
+        neighbors = close.getNeighbors(results, 216);
+        assertThat(neighbors.size(), equalTo(0));
+        neighbors = adj.getNeighbors(results, 216);
+        assertThat(neighbors.size(), equalTo(0));
+        neighbors = close.getNeighbors(results, 217);
+        assertThat(neighbors.size(), equalTo(2));
+        assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.607"));
+        neighbors = adj.getNeighbors(results, 217);
+        assertThat(neighbors.size(), equalTo(1));
+        assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.607"));
+        neighbors = close.getNeighbors(results, 219);
+        assertThat(neighbors.size(), equalTo(0));
+        neighbors = adj.getNeighbors(results, 219);
+        assertThat(neighbors.size(), equalTo(0));
+
+
     }
 
 }

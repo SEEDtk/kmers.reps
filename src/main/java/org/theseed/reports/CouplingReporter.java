@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.theseed.genome.Genome;
+import org.theseed.genome.coupling.BaseCouplingProcessor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.FeatureClass;
 
@@ -26,7 +27,7 @@ public abstract class CouplingReporter extends BaseReporter {
 
     // FIELDS
     /** parent processor */
-    private CouplesProcessor processor;
+    private BaseCouplingProcessor processor;
     /** queue of lines to write */
     private Map<FeatureClass.Pair, Collection<String>> lineQueue;
     /** queue of classes in the lines */
@@ -40,7 +41,7 @@ public abstract class CouplingReporter extends BaseReporter {
      * @param output		output stream to receive the report.
      * @param processor		the coupling processor producing the report
      */
-    public CouplingReporter(OutputStream output, CouplesProcessor processor) {
+    public CouplingReporter(OutputStream output, BaseCouplingProcessor processor) {
         super(output);
         this.processor = processor;
         this.lineQueue = new HashMap<FeatureClass.Pair, Collection<String>>(BATCH_SIZE);

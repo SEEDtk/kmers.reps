@@ -283,7 +283,7 @@ public abstract class FeatureClass {
      * This enumerates the valid classification types.
      */
     public static enum Type {
-        ROLES, PGFAMS;
+        ROLES, PGFAMS, RANDOM;
 
         /**
          * Create the classifier for this classification type.
@@ -296,6 +296,9 @@ public abstract class FeatureClass {
                 break;
             case PGFAMS :
                 retVal = new FamilyFeatureClass();
+                break;
+            case RANDOM :
+                retVal = new RandomFeatureClass();
                 break;
             }
             return retVal;

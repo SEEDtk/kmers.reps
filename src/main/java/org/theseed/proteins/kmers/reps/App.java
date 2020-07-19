@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
+import org.theseed.genome.coupling.DownloadProcessor;
 import org.theseed.utils.ICommand;
 
 /**
@@ -18,6 +19,7 @@ import org.theseed.utils.ICommand;
  *  update		Process incremental genome evaluation results
  *  md5			Compute genome MD5s
  *  coupling	Compute functional coupling for a set of genomes
+ *  download	Create GTOs for the molecular machine web service
  */
 public class App
 {
@@ -54,6 +56,9 @@ public class App
             break;
         case "coupling" :
             processor = new CouplesProcessor();
+            break;
+        case "download" :
+            processor = new DownloadProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

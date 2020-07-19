@@ -13,7 +13,7 @@ import java.util.Set;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
-import org.theseed.genome.coupling.CouplesProcessor;
+import org.theseed.genome.coupling.BaseCouplingProcessor;
 import org.theseed.genome.coupling.FeatureClass;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.SequenceKmers;
@@ -42,6 +42,10 @@ public class ScoreCouplingReporter extends CouplingReporter {
         private double percent1;
         // class2 percentage */
         private double percent2;
+        // class1 size */
+        private int size1;
+        // class2 size */
+        private int size2;
 
         /**
          * Construct a score object.
@@ -81,23 +85,25 @@ public class ScoreCouplingReporter extends CouplingReporter {
          */
         protected void finish(ScoreCouplingReporter parent, FeatureClass.Pair pair, int size) {
             double numerator = size * 100;
-            this.percent1 = numerator / parent.classCounts.getCount(pair.getClass1());
-            this.percent2 = numerator / parent.classCounts.getCount(pair.getClass2());
+            this.size1 = parent.classCounts.getCount(pair.getClass1());
+            this.size2 = parent.classCounts.getCount(pair.getClass2());
+            this.percent1 = numerator / this.size1;
+            this.percent2 = numerator / this.size2;
         }
 
         /**
          * @return an output string for this score object.
          */
         public String toString() {
-            return String.format("%8.4f\t%8.4f\t%8.2f\t%8.2f", this.simDist, this.realDist,
-                    this.percent1, this.percent2);
+            return String.format("%8.4f\t%8.4f\t%8.2f\t%8.2f\t%d\t%d", this.simDist, this.realDist,
+                    this.percent1, this.percent2, this.size1, this.size2);
         }
 
         /**
          * @return a header string for scores
          */
         public static String header() {
-            return "sim_distance\tphes_distance\tpercent1\tpercent2";
+            return "sim_distance\tphes_distance\tpercent1\tpercent2\tfamily1\tfamily2";
         }
 
     }
@@ -119,7 +125,7 @@ public class ScoreCouplingReporter extends CouplingReporter {
      * @param output		target output stream for the report
      * @param processor		parent coupling processor for this report
      */
-    public ScoreCouplingReporter(OutputStream output, CouplesProcessor processor) {
+    public ScoreCouplingReporter(OutputStream output, BaseCouplingProcessor processor) {
         super(output, processor);
         // Create the genome database and the score map.
         this.scoreMap = new HashMap<FeatureClass.Pair, Scores>(100000);
