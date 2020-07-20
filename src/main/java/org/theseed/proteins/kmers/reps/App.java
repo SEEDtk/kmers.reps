@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
-import org.theseed.genome.coupling.DownloadProcessor;
+import org.theseed.genome.coupling.PrepareProcessor;
 import org.theseed.utils.ICommand;
 
 /**
@@ -57,8 +57,8 @@ public class App
         case "coupling" :
             processor = new CouplesProcessor();
             break;
-        case "download" :
-            processor = new DownloadProcessor();
+        case "prepare" :
+            processor = new PrepareProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
