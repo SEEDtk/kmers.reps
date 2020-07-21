@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
-import org.theseed.io.TabbedLineReader;
 import org.theseed.reports.CouplingReporter;
 
 /**
@@ -37,11 +36,15 @@ import org.theseed.reports.CouplingReporter;
  * -t	classification method for features (default PROTFAM)
  * -m	minimum number of genomes for a pair to be output (default 10)
  * -n	neighbor algorithm (default ADJACENT)
+ * -f	type of class filter (default NONE)
  *
  * --format		report format (default SCORES)
  * --verify		output of a previous coupling run used to guide the verification report
  * --skip		if specified, the name of a tab-delimited file (with headers) whose first columns contains class
- * 				IDs to be ignored
+ * 				IDs to be ignored (class filter BLACKLIST only)
+ * --limit		if specified, the maximum number of occurrences of a class allowed in a genome; more frequently-
+ * 				occurring classes are filtered out (class filter LIMITED only)
+ *
  *
  * @author Bruce Parrello
  *
@@ -53,8 +56,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     protected static Logger log = LoggerFactory.getLogger(CouplesProcessor.class);
     /** hash of pairs to genome sets */
     private Map<FeatureClass.Pair, Set<String>> pairMap;
-    /** blacklist of bad class IDs */
-    private Set<String> blackList;
+    /** class-filtering algorithm */
+    private ClassFilter filter;
 
     // COMMAND-LINE OPTIONS
 
@@ -70,10 +73,19 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     @Option(name = "-m", aliases = { "--min" }, metaVar = "100", usage = "minimum group size for output to the report")
     private int minGroup;
 
+    /** class filter algorithm */
+    @Option(name = "-f", aliases = { "--filter" }, usage = "class filtering algorithm")
+    private ClassFilter.Type filterType;
+
     /** file containing prohibited class IDs */
     @Option(name = "--skip", aliases = { "--black", "--blackList" }, metaVar = "invalid.tbl",
-            usage = "if specified, a file containing bad class IDs")
+            usage = "if specified, a file containing bad class IDs (filter type BLACKLIST)")
     private File blackListFile;
+
+    /** maximum number of class occurrences per genome */
+    @Option(name = "--limit", aliases = { "--maxPerGenome" }, metaVar = "5",
+            usage = "maximum number of class occurrences per genome (filter type LIMITED)")
+    private int classLimit;
 
     /** input directory */
     @Argument(index = 0, metaVar = "genomeDir", usage = "input genome directory", required = true)
@@ -87,6 +99,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.minGroup = 10;
         this.oldOutput = null;
         this.blackListFile = null;
+        this.classLimit = 2;
+        this.filterType = ClassFilter.Type.NONE;
         this.setDefaultConfiguration();
     }
 
@@ -99,17 +113,9 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.validateConfiguration();
         // Create the pair map.
         this.pairMap = new HashMap<FeatureClass.Pair, Set<String>>(100000);
-        // Check for a blacklist.
-        this.blackList = new HashSet<String>();
-        if (this.blackListFile != null) {
-            if (! this.blackListFile.canRead())
-                throw new FileNotFoundException("Blacklist file " + this.blackListFile + " is not found or unreadable.");
-            else try (TabbedLineReader blackStream = new TabbedLineReader(this.blackListFile)) {
-                for (TabbedLineReader.Line line : blackStream)
-                    this.blackList.add(line.get(0));
-                log.info("{} blacklisted class IDs found in {}.", this.blackList.size(), this.blackListFile);
-            }
-        }
+        // Create the filter.
+        this.filter = this.filterType.create(this);
+        log.info("Filtering type is {}.", this.filter);
         return true;
     }
 
@@ -136,6 +142,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
                 log.info("Processing genome {} of {}: {}.", count, total, genome);
                 List<FeatureClass.Result> gResults = classifier.getResults(genome);
                 log.info("{} classifiable features found.", gResults.size());
+                blacklisted += this.filter.apply(gResults);
                 // Loop through the results.  For each one, we check subsequent results up to the gap
                 // distance.
                 int n = gResults.size() - 1;
@@ -145,19 +152,15 @@ public class CouplesProcessor extends BaseCouplingProcessor {
                     Collection<FeatureClass.Result> neighbors = finder.getNeighbors(gResults, i);
                     // Here we have two neighboring features, so we pair the classes.
                     for (String classI : resI) {
-                        if (this.blackList.contains(classI))
-                            blacklisted++;
-                        else {
-                            for (FeatureClass.Result resJ : neighbors)
-                                for (String classJ : resJ) {
-                                    if (! this.blackList.contains(classJ) && ! classI.contentEquals(classJ)) {
-                                        FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
-                                        Set<String> pairList = this.pairMap.computeIfAbsent(pair, k -> new HashSet<String>(5));
-                                        pairList.add(genome.getId());
-                                        pairCount++;
-                                    }
+                        for (FeatureClass.Result resJ : neighbors)
+                            for (String classJ : resJ) {
+                                if (! classI.contentEquals(classJ)) {
+                                    FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
+                                    Set<String> pairList = this.pairMap.computeIfAbsent(pair, k -> new HashSet<String>(5));
+                                    pairList.add(genome.getId());
+                                    pairCount++;
                                 }
-                        }
+                            }
                     }
                 }
                 log.info("{} pairs found in {}.", pairCount, genome);
@@ -200,6 +203,20 @@ public class CouplesProcessor extends BaseCouplingProcessor {
      */
     public File getOldOutput() {
         return this.oldOutput;
+    }
+
+    /**
+     * @return the file containing the blacklist
+     */
+    public File getBlackListFile() {
+        return blackListFile;
+    }
+
+    /**
+     * @return the class limit for the limit filter
+     */
+    public int getClassLimit() {
+        return classLimit;
     }
 
 }

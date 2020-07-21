@@ -100,10 +100,10 @@ public class CouplingTest extends TestCase {
         assertThat(res2.getDistance(res1), equalTo(Integer.MAX_VALUE));
         feat = gto.getFeature("fig|202462.4.peg.569");
         res3 = roleFC.getClasses(feat);
-        assertThat(res3, nullValue());
+        assertFalse(res3.isGood());
         feat = gto.getFeature("fig|202462.4.rna.12");
         res2 = famFC.getClasses(feat);
-        assertThat(res2, nullValue());
+        assertFalse(res2.isGood());
     }
 
     /**
@@ -158,15 +158,9 @@ public class CouplingTest extends TestCase {
     public void testGenomeResult() throws IOException {
         FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
         Genome gto = new Genome(new File("src/test", "202462.4.gto"));
-        // Count the features we want.
-        int count = 0;
-        for (Feature feat : gto.getFeatures()) {
-            if (feat.getPgfam() != null)
-                count++;
-        }
         // Get the results and insure we got enough.
         List<FeatureClass.Result> results = famFC.getResults(gto);
-        assertThat(results.size(), equalTo(count));
+        assertThat(results.size(), equalTo(gto.getFeatures().size()));
         // Verify the sort.
         for (int i = 0; i < results.size(); i++) {
             FeatureClass.Result resI = results.get(i);
@@ -202,19 +196,19 @@ public class CouplingTest extends TestCase {
         neighbors = adj.getNeighbors(results, 0);
         assertThat(neighbors.size(), equalTo(1));
         assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.2"));
-        neighbors = close.getNeighbors(results, 216);
+        neighbors = close.getNeighbors(results, 251);
         assertThat(neighbors.size(), equalTo(0));
-        neighbors = adj.getNeighbors(results, 216);
+        neighbors = adj.getNeighbors(results, 251);
         assertThat(neighbors.size(), equalTo(0));
-        neighbors = close.getNeighbors(results, 217);
+        neighbors = close.getNeighbors(results, 252);
         assertThat(neighbors.size(), equalTo(2));
         assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.607"));
-        neighbors = adj.getNeighbors(results, 217);
+        neighbors = adj.getNeighbors(results, 252);
         assertThat(neighbors.size(), equalTo(1));
         assertThat(neighbors.get(0).getFid(), equalTo("fig|202462.4.peg.607"));
-        neighbors = close.getNeighbors(results, 219);
+        neighbors = close.getNeighbors(results, 258);
         assertThat(neighbors.size(), equalTo(0));
-        neighbors = adj.getNeighbors(results, 219);
+        neighbors = adj.getNeighbors(results, 258);
         assertThat(neighbors.size(), equalTo(0));
 
 

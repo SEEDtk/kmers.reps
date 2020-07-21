@@ -40,12 +40,10 @@ public class FamilyFeatureClass extends FeatureClass {
 
     @Override
     public Result getClasses(Feature feat) {
-        Result retVal = null;
+        Result retVal = new Result(feat);
         String family = feat.getPgfam();
-        if (family != null) {
-            retVal = new Result(feat);
+        if (family != null)
             retVal.add(family);
-        }
         return retVal;
     }
 

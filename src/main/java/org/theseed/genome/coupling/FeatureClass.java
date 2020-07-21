@@ -28,7 +28,7 @@ import org.theseed.locations.Location;
 public abstract class FeatureClass {
 
     /**
-     * @return a list of classifications for a feature, or NULL if the feature has none
+     * @return a (possibly empty) list of classifications for a feature
      *
      * @param feat	feature of interest
      */
@@ -68,8 +68,9 @@ public abstract class FeatureClass {
         List<Result> retVal = new ArrayList<Result>(feats.size());
         for (Feature feat : feats) {
             Result res = this.getClasses(feat);
-            if (res != null) retVal.add(res);
+            retVal.add(res);
         }
+        // Sort the results by location.
         retVal.sort(null);
         return retVal;
     }
@@ -190,6 +191,26 @@ public abstract class FeatureClass {
          */
         public String getFid() {
             return fid;
+        }
+
+        /**
+         * Remove all classes in the specified set from our class list.
+         *
+         * @param blacklist		set of classes to remove
+         *
+         * @return the number of classes removed
+         */
+        public int remove(Set<String> blacklist) {
+            int retVal = 0;
+            Iterator<String> iter = this.classes.iterator();
+            while (iter.hasNext()) {
+                String curr = iter.next();
+                if (blacklist.contains(curr)) {
+                    iter.remove();
+                    retVal++;
+                }
+            }
+            return retVal;
         }
 
     }

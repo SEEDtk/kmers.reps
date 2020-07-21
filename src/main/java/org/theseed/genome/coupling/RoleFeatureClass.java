@@ -46,8 +46,6 @@ public class RoleFeatureClass extends FeatureClass {
                 }
             }
         }
-        // Return NULL if no roles were found.
-        if (! retVal.isGood()) retVal = null;
         return retVal;
     }
 
