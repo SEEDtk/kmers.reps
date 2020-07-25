@@ -11,12 +11,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Scanner;
 import org.apache.commons.lang3.StringUtils;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.theseed.proteins.RoleMatrix;
+import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.FloatList;
-import org.theseed.utils.ICommand;
 
 /**
  * This class processes a universal-role file to create a rep-genome based completeness engine.
@@ -32,8 +30,6 @@ import org.theseed.utils.ICommand;
  *
  * The command-line options are as follows.
  *
- * -h	display the parameters
- * -v	show progress on STDERR
  * -i	specifies a file name to use for the standard input
  * -m	minimum number of acceptable roles for a completeness set
  *
@@ -45,7 +41,7 @@ import org.theseed.utils.ICommand;
  * @author Bruce Parrello
  *
  */
-public class RolesProcessor implements ICommand {
+public class RolesProcessor extends BaseProcessor {
 
     // FIELDS
     /** role profiles input stream */
@@ -54,14 +50,6 @@ public class RolesProcessor implements ICommand {
     FloatList targets;
 
     // COMMAND-LINE OPTIONS
-
-    /** help option */
-    @Option(name = "-h", aliases = { "--help" }, help = true)
-    protected boolean help;
-
-    /** TRUE if we want progress messages */
-    @Option(name = "-v", aliases = { "--verbose", "--debug" }, usage = "display progress on STDERR")
-    protected boolean debug;
 
     /** input file (if not using STDIN) */
     @Option(name = "--input", aliases = { "-i" }, usage = "input file (if not STDIN)")
@@ -82,44 +70,29 @@ public class RolesProcessor implements ICommand {
     private int minRoles;
 
     @Override
-    public boolean parseCommand(String[] args) {
-        boolean retVal = false;
-        // Set the defaults.
-        this.help = false;
-        this.debug = false;
+    protected void setDefaults() {
         this.inFile = null;
         this.targets = new FloatList(new double[] { 0.90, 0.80 });
         this.commonOccurrence = 0.95;
         this.minRoles = 20;
-        CmdLineParser parser = new CmdLineParser(this);
-        try {
-            parser.parseArgument(args);
-            if (this.help) {
-                parser.printUsage(System.err);
-            } else {
-                if (this.inFile == null) {
-                    this.inStream = new Scanner(System.in);
-                    if (this.debug) System.err.println("Reading from standard input.");
-                } else {
-                    FileInputStream fileStream = new FileInputStream(this.inFile);
-                    this.inStream = new Scanner(fileStream);
-                    if (this.debug) System.err.println("Reading from " + this.inFile);
-                }
-                // Denote we can run this process.
-                retVal = true;
-            }
-        } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
-        return retVal;
     }
 
     @Override
-    public void run() {
-        if (this.debug) System.err.println("Processing input.");
+    protected boolean validateParms() throws IOException {
+        if (this.inFile == null) {
+            this.inStream = new Scanner(System.in);
+            log.info("Reading from standard input.");
+        } else {
+            FileInputStream fileStream = new FileInputStream(this.inFile);
+            this.inStream = new Scanner(fileStream);
+            log.info("Reading from {}.", this.inFile);
+        }
+        return true;
+    }
+
+    @Override
+    protected void runCommand() throws Exception {
+        log.info("Processing input.");
         // Set the delimiter to tab or new-line.
         this.inStream.useDelimiter("\t|[\r\n]+");
         // Loop until we reach end-of-file.  We process one profile group at a time.
@@ -129,8 +102,7 @@ public class RolesProcessor implements ICommand {
             String groupName = this.inStream.next();
             int groupScore = this.inStream.nextInt();
             String groupSeq = this.inStream.next();
-            if (this.debug)
-                System.err.println("Processing group " + groupId + ": " + groupName);
+            log.info("Processing group {}: {}.", groupId, groupName);
             // Create the role processor for this group.
             RoleMatrix roleMtx = new RoleMatrix(100, 1000);
             int gCount = 0;
@@ -139,7 +111,7 @@ public class RolesProcessor implements ICommand {
                 roleMtx.register(g, roles);
                 gCount++;
             }
-            if (this.debug) System.err.println(gCount + " genomes in group.");
+            log.info("{} genomes in group.", gCount);
             // We are searching for a good role set.  We try marker roles at each of the
             // completeness levels in the float list, and if none of them work, we fall back
             // to common roles.  The role set found is put in here.
@@ -150,22 +122,21 @@ public class RolesProcessor implements ICommand {
             double target = 0.0;
             while (this.targets.hasNext() && roleSet.size() < this.minRoles) {
                 target = targets.next();
-                if (this.debug) System.err.println("Computing marker role set for target " + target);
+                log.debug("Computing marker role set for target {}.");
                 roleSet = roleMtx.getMarkerRoles(target);
             }
             if (roleSet.size() < this.minRoles) {
                 // Here we failed to find a role set, so we look for common roles.
-                if (this.debug) System.err.println("Computing common role set at threshold " +
-                        this.commonOccurrence);
+                log.info("Computing common role set at threshold {}.", this.commonOccurrence);
                 roleSet = roleMtx.getCommonRoles(this.commonOccurrence);
                 // Count the genomes that fail the lowest target.
                 int fCount = 0;
                 for (String genome : roleMtx.genomes()) {
                     if (roleMtx.completeness(roleSet, genome) < target) fCount++;
                 }
-                if (this.debug) System.err.println(fCount + " genomes failed the lowest target.");
+                log.info("{} genomes failed the lowest target.", fCount);
             }
-            if (this.debug) System.err.println(roleSet.size() + " roles found for " + groupId);
+            log.info("{} roles found for {}.", roleSet.size(), groupId);
             // Write out the group header.
             System.out.format("%s\t%d\t%s\t%s%n", groupId, groupScore, groupName, groupSeq);
             // Write out the roles.

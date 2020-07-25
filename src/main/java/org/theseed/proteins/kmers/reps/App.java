@@ -5,7 +5,7 @@ import java.util.Arrays;
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.PrepareProcessor;
-import org.theseed.utils.ICommand;
+import org.theseed.utils.BaseProcessor;
 
 /**
  * This program processes protein kmers.  The commands are as follows.
@@ -28,8 +28,11 @@ public class App
         // Get the control parameter.
         String command = args[0];
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
-        ICommand processor;
+        BaseProcessor processor;
         switch (command) {
+        case "cluster" :
+            processor = new ClusterProcessor();
+            break;
         case "distances" :
             processor = new DistanceMatrixProcessor();
             break;

@@ -10,16 +10,16 @@ import java.util.SortedSet;
 
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
 import org.theseed.counters.QualityCountMap;
 import org.theseed.genome.Feature;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 import org.theseed.sequence.SequenceKmers;
-import org.theseed.utils.ICommand;
+import org.theseed.utils.BaseProcessor;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the primary class for processing a representative-genome database.  A FASTA file
@@ -53,9 +53,11 @@ import org.theseed.utils.ICommand;
  * @author Bruce Parrello
  *
  */
-public class RepGenomeDbProcessor implements ICommand {
+public class RepGenomeDbProcessor extends BaseProcessor {
 
     // FIELDS
+    /** logging facility */
+    protected static Logger log = LoggerFactory.getLogger(RepGenomeDbProcessor.class);
     /** number of genomes processed */
     private int genomesProcessed;
     /** start time of run */
@@ -66,10 +68,6 @@ public class RepGenomeDbProcessor implements ICommand {
     private long lastTime;
 
     // COMMAND LINE
-
-    /** help option */
-    @Option(name="-h", aliases={"--help"}, help=true)
-    private boolean help;
 
     /** similarity threshold */
     @Option(name="-m", aliases={"--sim", "--minScore"}, metaVar="100", usage="similarity threshold for representation")
@@ -84,11 +82,6 @@ public class RepGenomeDbProcessor implements ICommand {
     /** key protein name */
     @Option(name="-p", aliases={"--prot", "--role"}, metaVar="\"role name\"", usage="name of the role for the key protein")
     private String protName;
-
-    /** representative-genome file */
-    @Argument(index=0, metaVar="repDbFile", usage="representative genome database file",
-            required=true, multiValued=false)
-    private File dbFile;
 
     /** create command */
     @Option(name="--create", metaVar="fastaFile", usage="create the database from genomes in the specified file")
@@ -106,10 +99,6 @@ public class RepGenomeDbProcessor implements ICommand {
     @Option(name="--null", usage="do not read the standard input or produce a report")
     private boolean noInput;
 
-    /** produce progress messages on STDERR */
-    @Option(name="--verbose", aliases={"-v", "--debug"}, usage="show progress on STDERR")
-    private boolean debug;
-
     /** treat the sequences as DNA instead of amino acids */
     @Option(name="--dna", usage="input is DNA instead of AA")
     private boolean dnaMode;
@@ -118,133 +107,17 @@ public class RepGenomeDbProcessor implements ICommand {
     @Option(name="-x", aliases={"--maxErr"}, metaVar="20", usage="maximum number of Ns (DNA) or Xs (amino acid)")
     private int maxErr;
 
-    /** Parse the command line parameters and options. */
-    public boolean parseCommand(String[] args) {
-        boolean retVal = false;
-        // Set the defaults.
-        this.threshold = 100;
-        this.protName = RepGenomeDb.DEFAULT_PROTEIN;
-        this.dbFile = null;
-        this.createFile = null;
-        this.listFile = null;
-        this.statFile = null;
-        this.noInput = false;
-        this.debug = false;
-        this.dnaMode = false;
-        this.maxErr = 20;
-
-        CmdLineParser parser = new CmdLineParser(this);
-        try {
-            parser.parseArgument(args);
-            if (this.help) {
-                parser.printUsage(System.err);
-            } else if (this.createFile == null && ! this.dbFile.exists()) {
-                throw new FileNotFoundException("Create not specified and specified repDB file not found.");
-            } else {
-                retVal = true;
-            }
-        } catch (CmdLineException | FileNotFoundException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        }
-        return retVal;
-    }
-
-    /** Process the representative-genome database. */
-    public void run() {
-        try {
-            long initTime = System.currentTimeMillis();
-            if (this.createFile != null) {
-                // Here we must create the rep-genome database.
-                createRepDb();
-            } else {
-                // Load the rep-genome database.
-                if (debug) System.err.println("Loading representative genome data from " + this.dbFile.getPath());
-                this.repDB = RepGenomeDb.load(this.dbFile);
-            }
-            // Now we have our database in memory.  List the genomes, if necessary.
-            if (this.listFile != null) {
-                if (debug) System.err.println("Writing representative genome names to " + this.listFile.getPath());
-                PrintWriter listStream = new PrintWriter(listFile);
-                SortedSet<RepGenome> allReps = repDB.sorted();
-                listStream.println("genome_id\tname");
-                for (RepGenome rep : allReps) {
-                    listStream.format("%s\t%s%n", rep.getGenomeId(), rep.getName());
-                }
-                listStream.close();
-                if (debug) System.err.println(allReps.size() + " genomes listed.");
-            }
-            // Only proceed if we have input data.
-            if (! noInput) {
-                // Now it's time to produce the report. Create an output header.
-                if (debug) System.err.println("Producing report.");
-                System.out.println("genome_id\tname\trep_id\tscore");
-                FastaInputStream inStream = new FastaInputStream(System.in);
-                // Set up progress timing and stats.
-                this.genomesProcessed = 0;
-                int outliers = 0;
-                QualityCountMap<RepGenome> repCounts = new QualityCountMap<RepGenome>();
-                this.startTime = System.currentTimeMillis();
-                // Loop through the input.
-                for (Sequence inSeq : inStream) {
-                    // Test this genome.
-                    RepGenomeDb.Representation result = repDB.findClosest(inSeq);
-                    this.genomesProcessed++;
-                    // Classify the result.
-                    if (! result.isRepresented()) {
-                        outliers++;
-                        repCounts.setBad(result.getRepresentative());
-                        if (debug) System.err.println(inSeq.getLabel() + " is an outlier with a score of " +
-                                result.getSimilarity() + ".");
-                    } else {
-                        repCounts.setGood(result.getRepresentative());
-                    }
-                    // Write it to the report.  Note we tweak the infinity value.
-                    int sim = result.getSimilarity();
-                    String simString = (sim == SequenceKmers.INFINITY ? "MAX" : Integer.toString(sim));
-                    String genomeId = Feature.genomeOf(inSeq.getLabel());
-                    System.out.format("%s\t%s\t%s\t%s%n", genomeId, inSeq.getComment(),
-                            result.getRepresentative().getGenomeId(), simString);
-                    if (debug && this.genomesProcessed % 100 == 0) {
-                        long rate = 0;
-                        if (genomesProcessed > 0) {
-                            rate = this.genomesProcessed * 1000 /
-                                    (System.currentTimeMillis() - this.startTime);
-                        }
-                        System.err.format("%d genomes processed, %d outliers, %d genomes/second%n",
-                                this.genomesProcessed, outliers, rate);
-                    }
-                }
-                inStream.close();
-                // End of report.
-                if (this.statFile != null) {
-                    // Here the user wants statistics.
-                    if (debug) System.err.println("Producing stat report on " + statFile.getPath() + ".");
-                    PrintWriter statStream = new PrintWriter(statFile);
-                    statStream.println("rep_id\trep_name\trepresented\toutliers");
-                    List<RepGenome> statReps = repCounts.bestKeys();
-                    for (RepGenome rep : statReps) {
-                        statStream.format("%s\t%s\t%d\t%d%n", rep.getGenomeId(),
-                                rep.getName(), repCounts.good(rep),
-                                repCounts.bad(rep));
-                    }
-                    statStream.close();
-                    if (debug) System.err.println("Statistics report done.");
-                }
-            }
-            long totalDuration = (System.currentTimeMillis() - initTime) / 60000;
-            if (debug) System.err.format("Total duration is %d minutes.%n", totalDuration);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading FASTA file.", e);
-        }
-    }
+    /** representative-genome file */
+    @Argument(index=0, metaVar="repDbFile", usage="representative genome database file",
+            required=true, multiValued=false)
+    private File dbFile;
 
     /**
      * This method is called when we need to create the database.
      * @throws IOException
      */
     private void createRepDb() throws IOException {
-        if (debug) System.err.format("Creating rep db with K=%d and threshold %d using %s.%n",
+        log.info("Creating rep db with K={} and threshold {} using {}.",
                 ProteinKmers.kmerSize(), this.threshold, this.protName);
         this.repDB = new RepGenomeDb(this.threshold, this.protName);
         FastaInputStream inStream = new FastaInputStream(this.createFile);
@@ -254,7 +127,7 @@ public class RepGenomeDbProcessor implements ICommand {
         char badChar = (this.dnaMode ? 'N' : 'X');
         // Loop through the input stream, processing representative genomes.  We can
         // do this in one statement, but we slow down to display progress.
-        if (debug) System.err.println("Processing input.");
+        log.info("Processing input.");
         genomesProcessed = 0;
         this.lastTime = System.currentTimeMillis();
         startTime = lastTime;
@@ -267,15 +140,15 @@ public class RepGenomeDbProcessor implements ICommand {
             }
         }
         if (deferred.size() > 0) {
-            if (debug) System.err.format("Processing %d deferred sequences.%n", deferred.size());
+           log.info("Processing {} deferred sequences.", deferred.size());
             for (Sequence inSequence : deferred) {
                 processSequence(inSequence);
             }
         }
-        if (debug) showCreateProgress();
+        if (log.isDebugEnabled()) showCreateProgress();
         inStream.close();
         // Save the database.
-        if (debug) System.err.println("Saving database to " + dbFile.getPath() + ".");
+        log.info("Saving database to {}", dbFile);
         repDB.save(dbFile);
     }
 
@@ -290,7 +163,7 @@ public class RepGenomeDbProcessor implements ICommand {
         genomesProcessed++;
         if ((System.currentTimeMillis() - this.lastTime) > 10000) {
             // A minute since our last progress. Show more progress.
-            if (debug) showCreateProgress();
+            if (log.isDebugEnabled()) showCreateProgress();
             this.lastTime = System.currentTimeMillis();
         }
     }
@@ -301,7 +174,111 @@ public class RepGenomeDbProcessor implements ICommand {
         if (genomesProcessed > 0) {
             rate = genomesProcessed * 1000 / (System.currentTimeMillis() - startTime);
         }
-        System.err.format("%d total genomes input, %d kept (%d genomes/second).%n",
+        log.debug("{} total genomes input, {} kept ({} genomes/second).",
                 genomesProcessed, repDB.size(), rate);
+    }
+
+    @Override
+    protected void setDefaults() {
+        this.threshold = 100;
+        this.protName = RepGenomeDb.DEFAULT_PROTEIN;
+        this.dbFile = null;
+        this.createFile = null;
+        this.listFile = null;
+        this.statFile = null;
+        this.noInput = false;
+        this.dnaMode = false;
+        this.maxErr = 20;
+    }
+
+    @Override
+    protected boolean validateParms() throws IOException {
+        if (this.createFile == null && ! this.dbFile.exists())
+            throw new FileNotFoundException("Create not specified and specified repDB file not found.");        // TODO Auto-generated method stub
+        return true;
+    }
+
+    @Override
+    protected void runCommand() throws Exception {
+        long initTime = System.currentTimeMillis();
+        if (this.createFile != null) {
+            // Here we must create the rep-genome database.
+            createRepDb();
+        } else {
+            // Load the rep-genome database.
+            log.info("Loading representative genome data from {}.", this.dbFile);
+            this.repDB = RepGenomeDb.load(this.dbFile);
+        }
+        // Now we have our database in memory.  List the genomes, if necessary.
+        if (this.listFile != null) {
+            log.info("Writing representative genome names to {}.", this.listFile);
+            PrintWriter listStream = new PrintWriter(listFile);
+            SortedSet<RepGenome> allReps = repDB.sorted();
+            listStream.println("genome_id\tname");
+            for (RepGenome rep : allReps) {
+                listStream.format("%s\t%s%n", rep.getGenomeId(), rep.getName());
+            }
+            listStream.close();
+            log.info("{} genomes listed.", allReps.size());
+        }
+        // Only proceed if we have input data.
+        if (! noInput) {
+            // Now it's time to produce the report. Create an output header.
+            log.info("Producing report.");
+            System.out.println("genome_id\tname\trep_id\tscore");
+            FastaInputStream inStream = new FastaInputStream(System.in);
+            // Set up progress timing and stats.
+            this.genomesProcessed = 0;
+            int outliers = 0;
+            QualityCountMap<RepGenome> repCounts = new QualityCountMap<RepGenome>();
+            this.startTime = System.currentTimeMillis();
+            // Loop through the input.
+            for (Sequence inSeq : inStream) {
+                // Test this genome.
+                RepGenomeDb.Representation result = repDB.findClosest(inSeq);
+                this.genomesProcessed++;
+                // Classify the result.
+                if (! result.isRepresented()) {
+                    outliers++;
+                    repCounts.setBad(result.getRepresentative());
+                    log.debug("{} is an outlier with a score of {}.", inSeq.getLabel(), result.getSimilarity());
+                } else {
+                    repCounts.setGood(result.getRepresentative());
+                }
+                // Write it to the report.  Note we tweak the infinity value.
+                int sim = result.getSimilarity();
+                String simString = (sim == SequenceKmers.INFINITY ? "MAX" : Integer.toString(sim));
+                String genomeId = Feature.genomeOf(inSeq.getLabel());
+                System.out.format("%s\t%s\t%s\t%s%n", genomeId, inSeq.getComment(),
+                        result.getRepresentative().getGenomeId(), simString);
+                if (log.isInfoEnabled() && this.genomesProcessed % 100 == 0) {
+                    long rate = 0;
+                    if (genomesProcessed > 0) {
+                        rate = this.genomesProcessed * 1000 /
+                                (System.currentTimeMillis() - this.startTime);
+                    }
+                    log.info("{} genomes processed, {} outliers, {} genomes/second.",
+                            this.genomesProcessed, outliers, rate);
+                }
+            }
+            inStream.close();
+            // End of report.
+            if (this.statFile != null) {
+                // Here the user wants statistics.
+                log.info("Producing stat report on {}.", statFile.getPath());
+                PrintWriter statStream = new PrintWriter(statFile);
+                statStream.println("rep_id\trep_name\trepresented\toutliers");
+                List<RepGenome> statReps = repCounts.bestKeys();
+                for (RepGenome rep : statReps) {
+                    statStream.format("%s\t%s\t%d\t%d%n", rep.getGenomeId(),
+                            rep.getName(), repCounts.good(rep),
+                            repCounts.bad(rep));
+                }
+                statStream.close();
+                log.info("Statistics report done.");
+            }
+        }
+        long totalDuration = (System.currentTimeMillis() - initTime) / 60000;
+        log.info("Total duration is {} minutes.", totalDuration);
     }
 }

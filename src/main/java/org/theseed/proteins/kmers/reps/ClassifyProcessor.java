@@ -7,16 +7,16 @@ import java.io.File;
 import java.io.IOException;
 
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.KmerCollectionGroup;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.ICommand;
+import org.theseed.utils.BaseProcessor;
+import org.slf4j.LoggerFactory;
 
 /**
  * This processor builds an internal database from multiple FASTA files and then, for each input sequence
@@ -35,17 +35,17 @@ import org.theseed.utils.ICommand;
  * The command-line parameters are as follows.
  *
  * -K		protein kmer size (default 8)
- * -v		display progress messages on STDERR
  * -i		input FASTA file (default is STDIN)
  * -m		maximum acceptable distance
  *
  * @author Bruce Parrello
  *
  */
-public class ClassifyProcessor implements ICommand {
+public class ClassifyProcessor extends BaseProcessor {
 
     // FIELDS
-
+    /** logging facility */
+    protected static Logger log = LoggerFactory.getLogger(ClassifyProcessor.class);
     /** input FASTA stream */
     FastaInputStream inStream;
     /** input control file stream */
@@ -56,14 +56,6 @@ public class ClassifyProcessor implements ICommand {
     FastaOutputStream outStream;
 
     // COMMAND-LINE OPTIONS
-
-    /** help option */
-    @Option(name = "-h", aliases = { "--help" }, help = true)
-    protected boolean help;
-
-    /** TRUE if we want progress messages */
-    @Option(name = "-v", aliases = { "--verbose", "--debug" }, usage = "display progress on STDERR")
-    protected boolean debug;
 
     /** kmer size */
     @Option(name="-K", aliases={"--kmer"}, metaVar="8", usage="protein kmer size (default 8)")
@@ -84,50 +76,34 @@ public class ClassifyProcessor implements ICommand {
     private File controlFile;
 
     @Override
-    public boolean parseCommand(String[] args) {
-        boolean retVal = false;
-        // Set the defaults.
-        this.help = false;
-        this.debug = false;
+    protected void setDefaults() {
         this.inFile = null;
         this.maxDist = 0.995;
         this.setKmer(8);
-        CmdLineParser parser = new CmdLineParser(this);
-        try {
-            parser.parseArgument(args);
-            if (this.help) {
-                parser.printUsage(System.err);
-            } else {
-                // Set up the input FASTA.
-                if (this.inFile != null)
-                    this.inStream = new FastaInputStream(this.inFile);
-                else
-                    this.inStream = new FastaInputStream(System.in);
-            }
-            // Open the control file.
-            this.controlStream = new TabbedLineReader(this.controlFile, 2);
-            // Create the group controller.
-            this.groups = new KmerCollectionGroup();
-            // Denote we can proceed.
-            retVal = true;
-        } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
-        return retVal;
     }
 
     @Override
-    public void run() {
+    protected boolean validateParms() throws IOException {
+        // Set up the input FASTA.
+        if (this.inFile != null)
+            this.inStream = new FastaInputStream(this.inFile);
+        else
+            this.inStream = new FastaInputStream(System.in);
+        // Open the control file.
+        this.controlStream = new TabbedLineReader(this.controlFile, 2);
+        // Create the group controller.
+        this.groups = new KmerCollectionGroup();
+        return true;
+    }
+
+    @Override
+    protected void runCommand() throws Exception {
         try {
-            if (this.debug) System.err.println("Reading control file.");
+            log.info("Reading control file.");
             for (TabbedLineReader.Line line : this.controlStream) {
                 String grp = line.get(0);
                 File fastaFile = new File(line.get(1));
-                if (this.debug) System.err.println("Reading group " + grp + " from " +
-                        fastaFile + ".");
+                log.debug("Reading group {} from {}.", grp, fastaFile);
                 try (FastaInputStream fastaStream = new FastaInputStream(fastaFile)) {
                     for (Sequence seq : fastaStream)
                         this.groups.addSequence(seq, grp);
@@ -136,7 +112,7 @@ public class ClassifyProcessor implements ICommand {
             // Write the output header.
             System.out.println("seq_id\tgroup\tdistance");
             // Process the input file.  Note we only output distances less than the max.
-            if (this.debug) System.err.println("Processing input sequences.");
+            log.info("Processing input sequences.");
             for (Sequence seq : this.inStream) {
                 double distance = this.groups.getDistance(seq, seq.getComment());
                 if (distance <= this.maxDist) {
@@ -144,8 +120,6 @@ public class ClassifyProcessor implements ICommand {
                             distance);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
         } finally {
             this.controlStream.close();
             this.inStream.close();

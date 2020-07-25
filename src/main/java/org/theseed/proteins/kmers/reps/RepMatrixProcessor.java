@@ -10,14 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.ICommand;
+import org.theseed.utils.BaseProcessor;
 
 /**
  * This command reads a FASTA file and sorts them by distance.  It then produces a list
@@ -35,7 +33,7 @@ import org.theseed.utils.ICommand;
  * @author Bruce Parrello
  *
  */
-public class RepMatrixProcessor implements ICommand {
+public class RepMatrixProcessor extends BaseProcessor {
 
     // FIELDS
 
@@ -45,14 +43,6 @@ public class RepMatrixProcessor implements ICommand {
     FastaOutputStream outStream;
 
     // COMMAND-LINE OPTIONS
-
-    /** help option */
-    @Option(name = "-h", aliases = { "--help" }, help = true)
-    protected boolean help;
-
-    /** TRUE if we want progress messages */
-    @Option(name = "-v", aliases = { "--verbose", "--debug" }, usage = "display progress on STDERR")
-    protected boolean debug;
 
     /** kmer size */
     @Option(name="-K", aliases={"--kmer"}, metaVar="8", usage="protein kmer size (default 8)")
@@ -68,39 +58,31 @@ public class RepMatrixProcessor implements ICommand {
     @Option(name = "-m", aliases = { "--max", "--maxDist" }, usage = "maximum distance for a group")
     private double maxDist;
 
-
     @Override
-    public boolean parseCommand(String[] args) {
-        boolean retVal = false;
-        // Set the defaults.
-        this.help = false;
-        this.debug = false;
+    protected void setDefaults() {
         this.inFile = null;
         this.maxDist = 0.995;
         this.setKmer(8);
-        CmdLineParser parser = new CmdLineParser(this);
-        try {
-            parser.parseArgument(args);
-            if (this.help) {
-                parser.printUsage(System.err);
-            } else {
-                // Set up the input FASTA.
-                if (this.inFile != null)
-                    this.inStream = new FastaInputStream(this.inFile);
-                else
-                    this.inStream = new FastaInputStream(System.in);
-                // Set up to write the FASTA.
-                this.outStream = new FastaOutputStream(System.out);
-                retVal = true;
-            }
-        } catch (CmdLineException e) {
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
-        return retVal;
     }
+
+    @Override
+    protected boolean validateParms() throws IOException {
+        // Set up the input FASTA.
+        if (this.inFile != null)
+            this.inStream = new FastaInputStream(this.inFile);
+        else
+            this.inStream = new FastaInputStream(System.in);
+        // Set up to write the FASTA.
+        this.outStream = new FastaOutputStream(System.out);
+        return true;
+    }
+
+    @Override
+    protected void runCommand() throws Exception {
+        // TODO Auto-generated method stub
+
+    }
+
 
     @Override
     public void run() {
@@ -109,7 +91,7 @@ public class RepMatrixProcessor implements ICommand {
             List<SequenceInfo> sequenceList = new ArrayList<SequenceInfo>(1000);
             // Loop through the input.
             for (Sequence seq : inStream) {
-                if (this.debug) System.err.println("Processing sequence " + seq.getLabel() + ".");
+                log.debug("Processing sequence {}.", seq.getLabel());
                 // Create a sequence-info object for this sequence and compare it to all previous sequences.
                 SequenceInfo info = new SequenceInfo(seq);
                 for (SequenceInfo other : sequenceList)
@@ -117,7 +99,7 @@ public class RepMatrixProcessor implements ICommand {
                 sequenceList.add(info);
             }
             // Sort by the mean distance.
-            if (this.debug) System.err.println("Sorting distances.");
+            log.info("Sorting distances.");
             List<SequenceInfo> sorted  = sequenceList.stream().sorted().collect(Collectors.toList());
             // Divide the sequences into groups.  We will store the saved sequences in this
             // list.
@@ -125,7 +107,7 @@ public class RepMatrixProcessor implements ICommand {
             for (SequenceInfo info : sorted) {
                 // If this is a singleton, write it out.
                 if (info.getMin() > this.maxDist) {
-                    if (this.debug) System.err.println(info.getId() + " is a singleton group.");
+                    log.debug("{} is a singleton group.", info.getId());
                 } else {
                     // Find out if we are close to any existing sequence.
                     SequenceInfo found = null;
@@ -138,10 +120,10 @@ public class RepMatrixProcessor implements ICommand {
                         // This sequence starts a new group.
                         sequenceList.add(info);
                         outStream.write(info.getSeq());
-                        if (this.debug) System.err.println(info.getId() + " starts a new group.");
+                        log.debug("{} starts a new group.", info.getId());
                     } else {
                         // This sequence is already in a group.
-                        if (this.debug) System.err.println(info.getId() + " is close to " + found.getId());
+                        log.debug("{} is close to {}.", info.getId(), found.getId());
                     }
                 }
             }
@@ -153,5 +135,6 @@ public class RepMatrixProcessor implements ICommand {
             outStream.close();
         }
     }
+
 
 }
