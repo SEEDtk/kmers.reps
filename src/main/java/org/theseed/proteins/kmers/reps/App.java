@@ -30,9 +30,6 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
-        case "cluster" :
-            processor = new ClusterProcessor();
-            break;
         case "distances" :
             processor = new DistanceMatrixProcessor();
             break;

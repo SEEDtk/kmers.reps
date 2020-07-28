@@ -79,13 +79,6 @@ public class RepMatrixProcessor extends BaseProcessor {
 
     @Override
     protected void runCommand() throws Exception {
-        // TODO Auto-generated method stub
-
-    }
-
-
-    @Override
-    public void run() {
         try {
             // The sequences will be stored in here.
             List<SequenceInfo> sequenceList = new ArrayList<SequenceInfo>(1000);
@@ -128,13 +121,10 @@ public class RepMatrixProcessor extends BaseProcessor {
                 }
             }
             System.err.println(sequenceList.size() + " sequences form the representation set.");
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
         } finally {
             inStream.close();
             outStream.close();
         }
     }
-
 
 }

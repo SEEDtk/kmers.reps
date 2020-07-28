@@ -194,7 +194,7 @@ public class RepGenomeDbProcessor extends BaseProcessor {
     @Override
     protected boolean validateParms() throws IOException {
         if (this.createFile == null && ! this.dbFile.exists())
-            throw new FileNotFoundException("Create not specified and specified repDB file not found.");        // TODO Auto-generated method stub
+            throw new FileNotFoundException("Create not specified and specified repDB file not found.");
         return true;
     }
 
