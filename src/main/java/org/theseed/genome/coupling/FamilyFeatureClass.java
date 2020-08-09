@@ -3,16 +3,23 @@
  */
 package org.theseed.genome.coupling;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader.Line;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Connection.Table;
+import org.theseed.sequence.FastaInputStream;
+import org.theseed.sequence.Sequence;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -25,6 +32,8 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 public class FamilyFeatureClass extends FeatureClass {
 
     // FIELDS
+    /** logging facility */
+    protected Logger log = LoggerFactory.getLogger(FamilyFeatureClass.class);
     /** connection to PATRIC */
     private Connection p3;
     /** map of family IDs to names */
@@ -80,6 +89,26 @@ public class FamilyFeatureClass extends FeatureClass {
         String class2 = line.get(2);
         this.nameMap.put(class2, line.get(3));
         return this.new Pair(class1, class2);
+    }
+
+    /**
+     * Read IDs and names from a FASTA file and cache them in this object.  This method allows
+     * specification of families not in PATRIC.
+     *
+     * @param fastaFile		FASTA file to read
+     */
+    public void cacheNames(File fastaFile) {
+        log.info("Reading family names from {}.", fastaFile);
+        try (FastaInputStream fastaStream = new FastaInputStream(fastaFile)) {
+            int count = 0;
+            for (Sequence seq : fastaStream) {
+                this.nameMap.put(seq.getLabel(), seq.getComment());
+                count++;
+            }
+            log.info("{} family names read from file.", count);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }

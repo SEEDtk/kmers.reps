@@ -31,10 +31,10 @@ import org.theseed.reports.CouplingReporter;
  * -v	display more detailed status messages
  * -d	maximum acceptable distance for features to be considered neighbors (default 5000)
  * -t	classification method for features (default PROTFAM)
- * -m	minimum weighted number of genomes for a pair to be output (default 15.0; group filters WEIGHT AND SIZE only)
+ * -m	minimum weighted/total number of genomes for a pair to be output (default 15.0; group filters WEIGHT AND SIZE only)
  * -n	neighbor algorithm (default ADJACENT)
  * -f	type of class filter (default NONE)
- * -g	type of group filter (default WEIGHT)
+ * -p	type of pair filter (default WEIGHT)
  *
  * --format		report format (default SCORES)
  * --verify		output of a previous coupling run used to guide the verification report
@@ -42,8 +42,9 @@ import org.theseed.reports.CouplingReporter;
  * 				IDs to be ignored (class filter BLACKLIST only)
  * --limit		if specified, the maximum number of occurrences of a class allowed in a genome; more frequently-
  * 				occurring classes are filtered out (class filter LIMITED only)
- * --groups		if specified, the name of a tab-delimited file (with headers) whose first column contains class
+ * --include	if specified, the name of a tab-delimited file (with headers) whose first column contains class
  * 				IDs to be included in the output (group filter WHITELIST only)
+ * --names		FASTA file containing family names (classification type PROTFAM only)
  *
  * @author Bruce Parrello
  *
@@ -56,7 +57,9 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     /** hash of pairs to genome sets and weights */
     private Map<FeatureClass.Pair, FeatureClass.PairData> pairMap;
     /** class-filtering algorithm */
-    private ClassFilter filter;
+    private ClassFilter classFilter;
+    /** pair-filtering algorithm */
+    private PairFilter pairFilter;
 
     // COMMAND-LINE OPTIONS
 
@@ -69,22 +72,34 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     private File oldOutput;
 
     /** minimum group size */
-    @Option(name = "-m", aliases = { "--min" }, metaVar = "20.0", usage = "minimum weighted group size for output to the report")
+    @Option(name = "-m", aliases = { "--min" }, metaVar = "20.0", usage = "minimum group size/weight for output to the report (pair filter types SIZE and WEIGHT)")
     private double minWeight;
 
     /** class filter algorithm */
     @Option(name = "-f", aliases = { "--filter" }, usage = "class filtering algorithm")
-    private ClassFilter.Type filterType;
+    private ClassFilter.Type classFilterType;
+
+    /** group/pair filter algorithm */
+    @Option(name = "-p", aliases = { "--pairFilter", "--groupFilter" }, usage = "pair/group filtering algorithm")
+    private PairFilter.Type pairFilterType;
 
     /** file containing prohibited class IDs */
     @Option(name = "--skip", aliases = { "--black", "--blackList" }, metaVar = "invalid.tbl",
-            usage = "if specified, a file containing bad class IDs (filter type BLACKLIST)")
+            usage = "if specified, a file containing bad class IDs (class filter type BLACKLIST)")
     private File blackListFile;
 
     /** maximum number of class occurrences per genome */
     @Option(name = "--limit", aliases = { "--maxPerGenome" }, metaVar = "5",
-            usage = "maximum number of class occurrences per genome (filter type LIMITED)")
+            usage = "maximum number of class occurrences per genome (class filter type LIMITED)")
     private int classLimit;
+
+    /** whitelist file for pair-filtering */
+    @Option(name = "--include", metaVar = "classIdFile.tbl", usage = "if specified, a file containing required class IDs (pair filter type WHITELIST)")
+    private File whiteGroupFile;
+
+    /** FASTA file containing family names (PROTFAM only) */
+    @Option(name = "--names", metaVar = "families.fa", usage = "if specified, a FASTA file containing family IDs and names (class type PROTFAM only)")
+    private File nameFastaFile;
 
     /** input directory */
     @Argument(index = 0, metaVar = "genomeDir", usage = "input genome directory", required = true)
@@ -98,8 +113,11 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.minWeight = 15.0;
         this.oldOutput = null;
         this.blackListFile = null;
+        this.whiteGroupFile = null;
         this.classLimit = 2;
-        this.filterType = ClassFilter.Type.NONE;
+        this.classFilterType = ClassFilter.Type.NONE;
+        this.pairFilterType = PairFilter.Type.WEIGHT;
+        this.nameFastaFile = null;
         this.setDefaultConfiguration();
     }
 
@@ -112,9 +130,11 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.validateConfiguration();
         // Create the pair map.
         this.pairMap = new HashMap<FeatureClass.Pair, FeatureClass.PairData>(100000);
-        // Create the filter.
-        this.filter = this.filterType.create(this);
-        log.info("Filtering type is {}.", this.filter);
+        // Create the filters.
+        this.classFilter = this.classFilterType.create(this);
+        log.info("Class filtering type is {}.", this.classFilter);
+        this.pairFilter = this.pairFilterType.create(this);
+        log.info("Pair filtering type is {}.", this.pairFilter);
         return true;
     }
 
@@ -128,6 +148,9 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             // Get the classifier and finder.
             FeatureClass classifier = this.getClassifier();
             NeighborFinder finder = this.getFinder();
+            // Check for a name file.
+            if (classifier instanceof FamilyFeatureClass && this.nameFastaFile != null)
+                ((FamilyFeatureClass) classifier).cacheNames(this.nameFastaFile);
             // Open the genome directory.
             log.info("Scanning genome directory {}.", this.genomeDir);
             GenomeDirectory genomes = new GenomeDirectory(this.genomeDir);
@@ -141,7 +164,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
                 log.info("Processing genome {} of {}: {}.", count, total, genome);
                 List<FeatureClass.Result> gResults = classifier.getResults(genome);
                 log.info("{} classifiable features found.", gResults.size());
-                blacklisted += this.filter.apply(gResults);
+                blacklisted += this.classFilter.apply(gResults);
                 // Loop through the results.  For each one, we check subsequent results up to the gap
                 // distance.
                 int n = gResults.size() - 1;
@@ -176,11 +199,12 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             count = 0;
             for (Map.Entry<FeatureClass.Pair, FeatureClass.PairData> pairEntry : this.pairMap.entrySet()) {
                 FeatureClass.PairData gSet = pairEntry.getValue();
+                FeatureClass.Pair pair = pairEntry.getKey();
                 // Only use the group if it is big enough.
-                if (gSet.weight() < this.minWeight) {
+                if (! this.pairFilter.isSignificant(pair, gSet)) {
                     skipCount++;
                 } else {
-                    reporter.writePair(pairEntry.getKey(), gSet);
+                    reporter.writePair(pair, gSet);
                     outputCount++;
                     if (gSet.size() > groupMax) groupMax = gSet.size();
                     groupTotal += gSet.size();
@@ -213,10 +237,24 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     }
 
     /**
-     * @return the class limit for the limit filter
+     * @return the class limit for the limit class-filter
      */
     public int getClassLimit() {
         return classLimit;
+    }
+
+    /**
+     * @return the size/weight limit for the pair-filter
+     */
+    public double getGroupLimit() {
+        return minWeight;
+    }
+
+    /**
+     * @return the whitelist file name for the pair-filter
+     */
+    public File getWhiteGroupFile() {
+        return this.whiteGroupFile;
     }
 
 }
