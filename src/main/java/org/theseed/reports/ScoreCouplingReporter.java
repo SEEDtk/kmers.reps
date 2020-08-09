@@ -38,13 +38,13 @@ public class ScoreCouplingReporter extends CouplingReporter {
         private double simDist;
         /** real distance score */
         private double realDist;
-        // class1 percentage */
+        /** class1 percentage */
         private double percent1;
-        // class2 percentage */
+        /** class2 percentage */
         private double percent2;
-        // class1 size */
+        /** class1 size */
         private int size1;
-        // class2 size */
+        /** class2 size */
         private int size2;
 
         /**
@@ -169,14 +169,14 @@ public class ScoreCouplingReporter extends CouplingReporter {
     }
 
     @Override
-    public void writePairLine(FeatureClass.Pair pair, Collection<String> genomes) {
+    public void writePairLine(FeatureClass.Pair pair, FeatureClass.PairData genomeData) {
         // Get our classifier.
         FeatureClass classifier = this.getClassifier();
         // This will hold the final scores.
         Scores result = new Scores();
         // The tricky part here is we need to compute the scores for every pair of genomes in the group.
-        String[] gList = new String[genomes.size()];
-        gList = genomes.toArray(gList);
+        String[] gList = new String[genomeData.size()];
+        gList = genomeData.getGenomes().toArray(gList);
         for (int i = 0; i < gList.length; i++) {
             ProteinKmers protI = this.genomeDb.get(gList[i]);
             for (int j = i + 1; j < gList.length; j++) {
@@ -188,14 +188,14 @@ public class ScoreCouplingReporter extends CouplingReporter {
             }
         }
         // Finish off the scores.
-        result.finish(this, pair, genomes.size());
+        result.finish(this, pair, genomeData.size());
         // Write the output line.
-        this.print("%s\t%d\t%s", pair.toString(), genomes.size(), result.toString());
+        this.print("%s\t%d\t%8.4f\t%s", pair.toString(), genomeData.size(), genomeData.weight(), result.toString());
     }
 
     @Override
     protected String getScoreHeadings() {
-        return ("size\t" + Scores.header());
+        return ("size\tweight\t" + Scores.header());
     }
 
 }

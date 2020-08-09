@@ -98,7 +98,7 @@ public class VerifyCouplingReporter extends CouplingReporter {
     }
 
     @Override
-    protected void writePairLine(Pair pair, Collection<String> genomes) {
+    protected void writePairLine(Pair pair, FeatureClass.PairData genomeData) {
         // Get the number of occurrences of the pair.
         int occurs = this.countMap.getCount(pair);
         // If the pair is new, we display it with an empty percentage.
@@ -106,13 +106,13 @@ public class VerifyCouplingReporter extends CouplingReporter {
         String oString = "";
         if (this.goodPairs.contains(pair)) {
             // Here the pair is being verified, so we show its percentage.
-            percent = String.format(PCT_FORMAT, genomes.size() * 100.0 / occurs);
+            percent = String.format(PCT_FORMAT, genomeData.size() * 100.0 / occurs);
             // Remove it from the good-pair list so it doesn't appear in the summary.
             this.goodPairs.remove(pair);
             oString = String.format("%d", occurs);
         }
         // Format the scores.
-        this.print("%s\t%d\t%s\t%s", pair.toString(), genomes.size(), oString, percent);
+        this.print("%s\t%d\t%s\t%s", pair.toString(), genomeData.size(), oString, percent);
     }
 
     @Override

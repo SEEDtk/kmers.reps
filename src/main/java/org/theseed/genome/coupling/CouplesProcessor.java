@@ -8,11 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -34,9 +31,10 @@ import org.theseed.reports.CouplingReporter;
  * -v	display more detailed status messages
  * -d	maximum acceptable distance for features to be considered neighbors (default 5000)
  * -t	classification method for features (default PROTFAM)
- * -m	minimum number of genomes for a pair to be output (default 10)
+ * -m	minimum weighted number of genomes for a pair to be output (default 15.0; group filters WEIGHT AND SIZE only)
  * -n	neighbor algorithm (default ADJACENT)
  * -f	type of class filter (default NONE)
+ * -g	type of group filter (default WEIGHT)
  *
  * --format		report format (default SCORES)
  * --verify		output of a previous coupling run used to guide the verification report
@@ -44,7 +42,8 @@ import org.theseed.reports.CouplingReporter;
  * 				IDs to be ignored (class filter BLACKLIST only)
  * --limit		if specified, the maximum number of occurrences of a class allowed in a genome; more frequently-
  * 				occurring classes are filtered out (class filter LIMITED only)
- *
+ * --groups		if specified, the name of a tab-delimited file (with headers) whose first column contains class
+ * 				IDs to be included in the output (group filter WHITELIST only)
  *
  * @author Bruce Parrello
  *
@@ -54,8 +53,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(CouplesProcessor.class);
-    /** hash of pairs to genome sets */
-    private Map<FeatureClass.Pair, Set<String>> pairMap;
+    /** hash of pairs to genome sets and weights */
+    private Map<FeatureClass.Pair, FeatureClass.PairData> pairMap;
     /** class-filtering algorithm */
     private ClassFilter filter;
 
@@ -70,8 +69,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     private File oldOutput;
 
     /** minimum group size */
-    @Option(name = "-m", aliases = { "--min" }, metaVar = "100", usage = "minimum group size for output to the report")
-    private int minGroup;
+    @Option(name = "-m", aliases = { "--min" }, metaVar = "20.0", usage = "minimum weighted group size for output to the report")
+    private double minWeight;
 
     /** class filter algorithm */
     @Option(name = "-f", aliases = { "--filter" }, usage = "class filtering algorithm")
@@ -96,7 +95,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     @Override
     public void setDefaults() {
         this.reportType = CouplingReporter.Type.SCORES;
-        this.minGroup = 10;
+        this.minWeight = 15.0;
         this.oldOutput = null;
         this.blackListFile = null;
         this.classLimit = 2;
@@ -106,13 +105,13 @@ public class CouplesProcessor extends BaseCouplingProcessor {
 
     @Override
     protected boolean validateParms() throws IOException {
-        if (this.minGroup < 1)
+        if (this.minWeight < 1)
             throw new IllegalArgumentException("Invalid minimum group size.  Must be at least 1.");
         if (! this.genomeDir.isDirectory())
             throw new FileNotFoundException("Specified genome directory" + this.genomeDir + " is not found or invalid.");
         this.validateConfiguration();
         // Create the pair map.
-        this.pairMap = new HashMap<FeatureClass.Pair, Set<String>>(100000);
+        this.pairMap = new HashMap<FeatureClass.Pair, FeatureClass.PairData>(100000);
         // Create the filter.
         this.filter = this.filterType.create(this);
         log.info("Filtering type is {}.", this.filter);
@@ -156,8 +155,9 @@ public class CouplesProcessor extends BaseCouplingProcessor {
                             for (String classJ : resJ) {
                                 if (! classI.contentEquals(classJ)) {
                                     FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
-                                    Set<String> pairList = this.pairMap.computeIfAbsent(pair, k -> new HashSet<String>(5));
-                                    pairList.add(genome.getId());
+                                    double weight = resI.getWeight(classI) * resJ.getWeight(classJ);
+                                    FeatureClass.PairData pairList = this.pairMap.computeIfAbsent(pair, k -> new FeatureClass.PairData());
+                                    pairList.addGenome(genome.getId(), weight);
                                     pairCount++;
                                 }
                             }
@@ -174,13 +174,13 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             int groupMax = 0;
             int skipCount = 0;
             count = 0;
-            for (Map.Entry<FeatureClass.Pair, Set<String>> pairData : this.pairMap.entrySet()) {
-                Set<String> gSet = pairData.getValue();
+            for (Map.Entry<FeatureClass.Pair, FeatureClass.PairData> pairEntry : this.pairMap.entrySet()) {
+                FeatureClass.PairData gSet = pairEntry.getValue();
                 // Only use the group if it is big enough.
-                if (gSet.size() < this.minGroup) {
+                if (gSet.weight() < this.minWeight) {
                     skipCount++;
                 } else {
-                    reporter.writePair(pairData.getKey(), gSet);
+                    reporter.writePair(pairEntry.getKey(), gSet);
                     outputCount++;
                     if (gSet.size() > groupMax) groupMax = gSet.size();
                     groupTotal += gSet.size();

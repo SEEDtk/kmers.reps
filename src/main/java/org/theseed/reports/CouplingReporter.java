@@ -4,7 +4,6 @@
 package org.theseed.reports;
 
 import java.io.OutputStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,7 +28,7 @@ public abstract class CouplingReporter extends BaseReporter {
     /** parent processor */
     private BaseCouplingProcessor processor;
     /** queue of lines to write */
-    private Map<FeatureClass.Pair, Collection<String>> lineQueue;
+    private Map<FeatureClass.Pair, FeatureClass.PairData> lineQueue;
     /** queue of classes in the lines */
     private Set<String> classQueue;
     /** maximum size for queue */
@@ -44,7 +43,7 @@ public abstract class CouplingReporter extends BaseReporter {
     public CouplingReporter(OutputStream output, BaseCouplingProcessor processor) {
         super(output);
         this.processor = processor;
-        this.lineQueue = new HashMap<FeatureClass.Pair, Collection<String>>(BATCH_SIZE);
+        this.lineQueue = new HashMap<FeatureClass.Pair, FeatureClass.PairData>(BATCH_SIZE);
         this.classQueue = new HashSet<String>(BATCH_SIZE * 2);
     }
 
@@ -71,10 +70,10 @@ public abstract class CouplingReporter extends BaseReporter {
     /**
      * Write a single line of output.
      *
-     * @param pair		classification pair found to be coupled
-     * @param genomes	IDs of the genomes containing the coupling
+     * @param pair			classification pair found to be coupled
+     * @param genomeData	list of genomes and weight for the coupled pair
      */
-    protected abstract void writePairLine(FeatureClass.Pair pair, Collection<String> genomes);
+    protected abstract void writePairLine(FeatureClass.Pair pair, FeatureClass.PairData genomeData);
 
     /**
      * This is an optional method for summarizing at the end of the report.
@@ -84,10 +83,10 @@ public abstract class CouplingReporter extends BaseReporter {
     /**
      * Process an output coupling.
      *
-     * @param pair		classification pair found to be coupled
-     * @param genomes	IDs of the genomes containing the coupling
+     * @param pair			classification pair found to be coupled
+     * @param genomeData	list of genomes and weight for the coupled pair
      */
-    public final void writePair(FeatureClass.Pair pair, Collection<String> genomes) {
+    public final void writePair(FeatureClass.Pair pair, FeatureClass.PairData genomeData) {
         // Insure there is room for a new line.
         if (this.lineQueue.size() >= BATCH_SIZE) {
             this.processQueue();
@@ -95,7 +94,7 @@ public abstract class CouplingReporter extends BaseReporter {
             this.classQueue.clear();
         }
         // Queue this line for the next batch.
-        this.lineQueue.put(pair, genomes);
+        this.lineQueue.put(pair, genomeData);
         this.classQueue.add(pair.getClass1());
         this.classQueue.add(pair.getClass2());
     }
@@ -107,7 +106,7 @@ public abstract class CouplingReporter extends BaseReporter {
         // Insure we know all the class names in the queue.
         this.getClassifier().cacheNames(this.classQueue);
         // Write out the lines in the queue.
-        for (Map.Entry<FeatureClass.Pair, Collection<String>> entry : this.lineQueue.entrySet()) {
+        for (Map.Entry<FeatureClass.Pair, FeatureClass.PairData> entry : this.lineQueue.entrySet()) {
             this.writePairLine(entry.getKey(), entry.getValue());
         }
     }

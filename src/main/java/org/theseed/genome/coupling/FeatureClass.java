@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
@@ -66,8 +67,16 @@ public abstract class FeatureClass {
     public List<Result> getResults(Genome genome) {
         Collection<Feature> feats = genome.getFeatures();
         List<Result> retVal = new ArrayList<Result>(feats.size());
+        // We will compute the weights in here.
+        CountMap<String> weightMap = new CountMap<String>();
+        // Loop through the features, creating results for each.
         for (Feature feat : feats) {
             Result res = this.getClasses(feat);
+            // Count the classes for the weighting computation.
+            for (String classId : res)
+                weightMap.count(classId);
+            res.connectWeights(weightMap);
+            // Add this feature to the results.
             retVal.add(res);
         }
         // Sort the results by location.
@@ -87,14 +96,28 @@ public abstract class FeatureClass {
         private Location loc;
         /** list of classes found */
         private Set<String> classes;
+        /** map of class occurrence counts */
+        private CountMap<String> weightMap;
 
         /**
          * Construct an empty result for a specified feature.
+         *
+         * @param feat			feature of interest
          */
         protected Result(Feature feat) {
             this.fid = feat.getId();
             this.loc = feat.getLocation();
             this.classes = new HashSet<String>(5);
+            this.weightMap = null;
+        }
+
+        /**
+         * Connect the genome's weight map to this result.
+         *
+         * @param weightMap		class occurrence counts for the feature's genome
+         */
+        protected void connectWeights(CountMap<String> weightMap) {
+            this.weightMap = weightMap;
         }
 
         /**
@@ -194,6 +217,15 @@ public abstract class FeatureClass {
         }
 
         /**
+         * Return the weight for a specified class.
+         *
+         * @param classId	ID of the class whose weight is desired
+         */
+        public double getWeight(String classId) {
+            return 1.0 / (double) this.weightMap.getCount(classId);
+        }
+
+        /**
          * Remove all classes in the specified set from our class list.
          *
          * @param blacklist		set of classes to remove
@@ -215,8 +247,10 @@ public abstract class FeatureClass {
 
     }
 
+
+
     /**
-     * This represents an unordered pair of feature classifications.
+     * This represents an unordered pair of strings, usually feature classes but not always.
      *
      * The name of a pair is the names of the two classes, tab-delimited.
      */
@@ -296,6 +330,59 @@ public abstract class FeatureClass {
          */
         public String getClass2() {
             return this.class2;
+        }
+
+    }
+
+    /**
+     * This represents the data about a feature pair.
+     */
+    public static class PairData {
+
+        // FIELDS
+        /** set of genomes with this class pair */
+        private Set<String> genomes;
+        /** weight of the pair */
+        private double weight;
+
+        /**
+         * Create a pair datum.
+         */
+        public PairData() {
+            this.genomes = new HashSet<String>(10);
+            this.weight = 0.0;
+        }
+
+        /**
+         * Record a genome.
+         *
+         * @param genomeId		ID of the genome
+         * @param increment		weight of the genome
+         */
+        public void addGenome(String genomeId, double increment) {
+            if (this.genomes.add(genomeId))
+                this.weight += increment;
+        }
+
+        /**
+         * @return the group size
+         */
+        public int size() {
+            return this.genomes.size();
+        }
+
+        /**
+         * @return the group weight
+         */
+        public double weight() {
+            return this.weight;
+        }
+
+        /**
+         * @return the list of genomes
+         */
+        public Collection<String> getGenomes() {
+            return this.genomes;
         }
 
     }

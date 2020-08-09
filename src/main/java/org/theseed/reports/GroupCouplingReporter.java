@@ -4,7 +4,6 @@
 package org.theseed.reports;
 
 import java.io.OutputStream;
-import java.util.Collection;
 import org.apache.commons.lang3.StringUtils;
 import org.theseed.genome.Genome;
 import org.theseed.genome.coupling.BaseCouplingProcessor;
@@ -36,8 +35,8 @@ public class GroupCouplingReporter extends CouplingReporter {
     }
 
     @Override
-    public void writePairLine(FeatureClass.Pair pair, Collection<String> genomes) {
-        this.print("%s\t%s", pair.toString(), StringUtils.join(genomes, ','));
+    public void writePairLine(FeatureClass.Pair pair, FeatureClass.PairData genomeData) {
+        this.print("%s\t%s", pair.toString(), StringUtils.join(genomeData.getGenomes(), ','));
     }
 
 }

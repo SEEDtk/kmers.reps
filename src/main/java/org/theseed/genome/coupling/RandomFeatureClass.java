@@ -37,10 +37,9 @@ public class RandomFeatureClass extends FeatureClass {
 
     @Override
     public Result getClasses(Feature feat) {
-        Result retVal = null;
+        Result retVal = new Result(feat);
         if (feat.getPgfam() != null) {
             this.validateGenome(feat.getParent());
-            retVal = new Result(feat);
             String classId = families.get(this.pos);
             this.pos++;
             retVal.add(classId);
