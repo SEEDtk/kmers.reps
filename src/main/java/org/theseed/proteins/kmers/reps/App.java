@@ -20,6 +20,7 @@ import org.theseed.utils.BaseProcessor;
  *  md5			Compute genome MD5s
  *  coupling	Compute functional coupling for a set of genomes
  *  download	Create GTOs for the molecular machine web service
+ *  prepare		Prepare a GTO directory for use in the coupling website
  */
 public class App
 {
