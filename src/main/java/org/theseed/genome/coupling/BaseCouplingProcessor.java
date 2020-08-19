@@ -40,7 +40,7 @@ public abstract class BaseCouplingProcessor extends BaseProcessor {
      */
     protected void setDefaultConfiguration() {
         this.classType = FeatureClass.Type.PGFAMS;
-        this.neighborType = NeighborFinder.Type.ADJACENT;
+        this.neighborType = NeighborFinder.Type.CLOSE;
         this.maxGap = 5000;
     }
 

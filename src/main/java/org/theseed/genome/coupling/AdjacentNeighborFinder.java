@@ -6,8 +6,6 @@ package org.theseed.genome.coupling;
 import java.util.Collections;
 import java.util.List;
 
-import org.theseed.genome.coupling.FeatureClass;
-
 /**
  * This is the simplest neighbor finder.  It returns the next feature if it is within the gap distance,
  * and an empty set otherwise.

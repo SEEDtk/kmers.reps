@@ -6,8 +6,6 @@ package org.theseed.genome.coupling;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.theseed.genome.coupling.FeatureClass;
-
 /**
  * This neighbor finder returns all subsequent features within the gap distance.  Note that being on a different
  * strand or contig puts you out of range, and that the incoming result list is sorted by location within strand,

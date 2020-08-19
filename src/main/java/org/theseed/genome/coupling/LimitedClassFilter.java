@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.theseed.counters.CountMap;
-import org.theseed.genome.coupling.FeatureClass;
 
 /**
  * This filter removes classes that occur too often in the genome.  No processing is done during construction.
