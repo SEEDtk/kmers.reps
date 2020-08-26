@@ -14,13 +14,12 @@ import org.theseed.utils.BaseProcessor;
  *	group		Analyze proteins and group them together.
  *  classify	Compare proteins to multiple protein lists
  *  roles		Process a universal-role file against a representative genome database
- *  taxon		Create taxonomic training sets for each group
  *  genomes		Process genome evaluation results
  *  update		Process incremental genome evaluation results
  *  md5			Compute genome MD5s
  *  coupling	Compute functional coupling for a set of genomes
- *  download	Create GTOs for the molecular machine web service
  *  prepare		Prepare a GTO directory for use in the coupling website
+ *  distances	Create a distance matrix for representative genomes
  */
 public class App
 {
