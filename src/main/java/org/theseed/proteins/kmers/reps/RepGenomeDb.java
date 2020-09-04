@@ -56,7 +56,7 @@ public class RepGenomeDb implements Iterable<RepGenome> {
     /** similarity threshold for representation */
     private int threshold;
     /** dummy representative-genome object for outliers */
-    private RepGenome dummy = new RepGenome(null, "", "");
+    private final RepGenome dummy = new RepGenome(null, "", "");
 
     /**
      * Construct a blank, empty representative-genome database.

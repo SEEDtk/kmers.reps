@@ -10,6 +10,7 @@ import org.theseed.utils.BaseProcessor;
 /**
  * This program processes protein kmers.  The commands are as follows.
  *
+ *  gtoReps		find the representative genome of each GTO in a directory
  * 	repdb		Create a representative-genome database from a FASTA file of protein sequences.
  *	group		Analyze proteins and group them together.
  *  classify	Compare proteins to multiple protein lists
@@ -30,6 +31,9 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
+        case "gtoReps" :
+            processor = new GtoRepGenomeProcessor();
+            break;
         case "distances" :
             processor = new DistanceMatrixProcessor();
             break;
