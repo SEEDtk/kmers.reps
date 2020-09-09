@@ -15,6 +15,7 @@ import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.coupling.BaseCouplingProcessor;
 import org.theseed.genome.coupling.FeatureClass;
+import org.theseed.proteins.Function;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.SequenceKmers;
 
@@ -147,7 +148,7 @@ public class ScoreCouplingReporter extends CouplingReporter {
         for (Feature feat : feats) {
             // Check for the seed protein.  We keep the longest.
             String function = feat.getFunction();
-            if (function != null && function.contentEquals(SEED_PROTEIN_FUNCTION)) {
+            if (function != null && Function.commentFree(function).contentEquals(SEED_PROTEIN_FUNCTION)) {
                 String newProt = feat.getProteinTranslation();
                 if (newProt != null && newProt.length() > prot.length()) prot = newProt;
             }
