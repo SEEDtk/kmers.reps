@@ -45,6 +45,7 @@ import org.theseed.reports.CouplingReporter;
  * --include	if specified, the name of a tab-delimited file (with headers) whose first column contains class
  * 				IDs to be included in the output (group filter WHITELIST only)
  * --names		FASTA file containing family names (classification type PROTFAM only)
+ * --seed		if specified, genomes without a valid seed protein will be skipped
  *
  * @author Bruce Parrello
  *
@@ -60,6 +61,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     private ClassFilter classFilter;
     /** pair-filtering algorithm */
     private PairFilter pairFilter;
+    /** functional assignment for the seed protein */
+    private static final String SEED_PROTEIN_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain (EC 6.1.1.20)";
 
     // COMMAND-LINE OPTIONS
 
@@ -101,6 +104,10 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     @Option(name = "--names", metaVar = "families.fa", usage = "if specified, a FASTA file containing family IDs and names (class type PROTFAM only)")
     private File nameFastaFile;
 
+    /** TRUE to filter out genomes without a seed protein */
+    @Option(name = "--seed", usage = "if specified, genomes without a seed protein will be ignored")
+    private boolean seedFiltering;
+
     /** input directory */
     @Argument(index = 0, metaVar = "genomeDir", usage = "input genome directory", required = true)
     private File genomeDir;
@@ -118,6 +125,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.classFilterType = ClassFilter.Type.NONE;
         this.pairFilterType = PairFilter.Type.WEIGHT;
         this.nameFastaFile = null;
+        this.seedFiltering = false;
         this.setDefaultConfiguration();
     }
 
@@ -160,35 +168,39 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             int count = 0;
             int blacklisted = 0;
             for (Genome genome : genomes) {
-                count++;
-                log.info("Processing genome {} of {}: {}.", count, total, genome);
-                List<FeatureClass.Result> gResults = classifier.getResults(genome);
-                log.info("{} classifiable features found.", gResults.size());
-                blacklisted += this.classFilter.apply(gResults);
-                // Loop through the results.  For each one, we check subsequent results up to the gap
-                // distance.
-                int n = gResults.size() - 1;
-                int pairCount = 0;
-                for (int i = 0; i < n; i++) {
-                    FeatureClass.Result resI = gResults.get(i);
-                    Collection<FeatureClass.Result> neighbors = finder.getNeighbors(gResults, i);
-                    // Here we have two neighboring features, so we pair the classes.
-                    for (String classI : resI) {
-                        for (FeatureClass.Result resJ : neighbors)
-                            for (String classJ : resJ) {
-                                if (! classI.contentEquals(classJ)) {
-                                    FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
-                                    double weight = resI.getWeight(classI) * resJ.getWeight(classJ);
-                                    FeatureClass.PairData pairList = this.pairMap.computeIfAbsent(pair, k -> new FeatureClass.PairData());
-                                    pairList.addGenome(genome.getId(), weight);
-                                    pairCount++;
+                if (this.seedFiltering && genome.getByFunction(SEED_PROTEIN_FUNCTION) == null)
+                    log.info("{} skipped-- no seed protein.", genome);
+                else {
+                    count++;
+                    log.info("Processing genome {} of {}: {}.", count, total, genome);
+                    List<FeatureClass.Result> gResults = classifier.getResults(genome);
+                    log.info("{} classifiable features found.", gResults.size());
+                    blacklisted += this.classFilter.apply(gResults);
+                    // Loop through the results.  For each one, we check subsequent results up to the gap
+                    // distance.
+                    int n = gResults.size() - 1;
+                    int pairCount = 0;
+                    for (int i = 0; i < n; i++) {
+                        FeatureClass.Result resI = gResults.get(i);
+                        Collection<FeatureClass.Result> neighbors = finder.getNeighbors(gResults, i);
+                        // Here we have two neighboring features, so we pair the classes.
+                        for (String classI : resI) {
+                            for (FeatureClass.Result resJ : neighbors)
+                                for (String classJ : resJ) {
+                                    if (! classI.contentEquals(classJ)) {
+                                        FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
+                                        double weight = resI.getWeight(classI) * resJ.getWeight(classJ);
+                                        FeatureClass.PairData pairList = this.pairMap.computeIfAbsent(pair, k -> new FeatureClass.PairData());
+                                        pairList.addGenome(genome.getId(), weight);
+                                        pairCount++;
+                                    }
                                 }
-                            }
+                        }
                     }
+                    log.info("{} pairs found in {}.", pairCount, genome);
+                    // Register the genome with the report facility.
+                    reporter.register(genome);
                 }
-                log.info("{} pairs found in {}.", pairCount, genome);
-                // Register the genome with the report facility.
-                reporter.register(genome);
             }
             // Now we produce the output.
             log.info("{} distinct pairs found in genome set.", this.pairMap.size());
