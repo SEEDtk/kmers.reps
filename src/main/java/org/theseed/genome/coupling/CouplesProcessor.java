@@ -30,7 +30,7 @@ import org.theseed.reports.CouplingReporter;
  * -h	display command usage
  * -v	display more detailed status messages
  * -d	maximum acceptable distance for features to be considered neighbors (default 5000)
- * -t	classification method for features (default PROTFAM)
+ * -t	classification method for features (default PGFAMS)
  * -m	minimum weighted/total number of genomes for a pair to be output (default 15.0; group filters WEIGHT AND SIZE only)
  * -n	neighbor algorithm (default ADJACENT)
  * -f	type of class filter (default NONE)
