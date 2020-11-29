@@ -27,6 +27,7 @@ import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.utils.ParseFailureException;
 
 /**
  * This command creates specially-augmented GTOs that can be used to drive the molecular machine processor.  Each
@@ -99,7 +100,7 @@ public class PrepareProcessor extends BaseCouplingProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected boolean validateParms() throws IOException, ParseFailureException {
         // Validate the base-class parameters.
         this.validateConfiguration();
         // Verify the input directory.

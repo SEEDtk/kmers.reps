@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.genome.coupling.FeatureClass.PairData;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.utils.ParseFailureException;
 
 
 /**
@@ -31,12 +32,12 @@ public class WhitePairFilter extends PairFilter {
     /** set of acceptable classes */
     private Set<String> whiteSet;
 
-    public WhitePairFilter(CouplesProcessor processor) {
+    public WhitePairFilter(CouplesProcessor processor) throws ParseFailureException {
         super(processor);
         // Get the input file.
         File whiteFile = processor.getWhiteGroupFile();
         if (whiteFile == null)
-            throw new IllegalArgumentException("Whitelist file required for pair-filtering of type WHITELIST.");
+            throw new ParseFailureException("Whitelist file required for pair-filtering of type WHITELIST.");
         try (TabbedLineReader whiteStream = new TabbedLineReader(whiteFile)) {
             this.whiteSet = new HashSet<String>();
             for (TabbedLineReader.Line line : whiteStream)

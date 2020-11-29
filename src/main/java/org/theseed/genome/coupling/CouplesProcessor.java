@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.reports.CouplingReporter;
+import org.theseed.utils.ParseFailureException;
 
 /**
  * This command computes functional couplings using genomes in a specific genome directory.  It allows specification of
@@ -130,9 +131,9 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected boolean validateParms() throws IOException, ParseFailureException {
         if (this.minWeight < 1)
-            throw new IllegalArgumentException("Invalid minimum group size.  Must be at least 1.");
+            throw new ParseFailureException("Invalid minimum group size.  Must be at least 1.");
         if (! this.genomeDir.isDirectory())
             throw new FileNotFoundException("Specified genome directory" + this.genomeDir + " is not found or invalid.");
         this.validateConfiguration();

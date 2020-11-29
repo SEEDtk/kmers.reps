@@ -5,6 +5,7 @@ package org.theseed.genome.coupling;
 
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.genome.coupling.FeatureClass.PairData;
+import org.theseed.utils.ParseFailureException;
 
 /**
  * This pair filter only accepts pairings whose genome group has a weighted size at or above a certain limit.
@@ -20,11 +21,11 @@ public class WeightPairFilter extends PairFilter {
     /** minimum group weight */
     private double minWeight;
 
-    public WeightPairFilter(CouplesProcessor processor) {
+    public WeightPairFilter(CouplesProcessor processor) throws ParseFailureException {
         super(processor);
         this.minWeight = processor.getGroupLimit();
         if (this.minWeight < 0.0)
-            throw new IllegalArgumentException("Minimum weight limit must be non-negative.");
+            throw new ParseFailureException("Minimum weight limit must be non-negative.");
     }
 
     @Override

@@ -10,6 +10,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.coupling.FeatureClass.Result;
+import org.theseed.utils.ParseFailureException;
 
 
 /**
@@ -75,7 +76,7 @@ public abstract class ClassFilter {
     public static enum Type {
         NONE, BLACKLIST, LIMITED;
 
-        public ClassFilter create(CouplesProcessor processor) throws IOException {
+        public ClassFilter create(CouplesProcessor processor) throws IOException, ParseFailureException {
             ClassFilter retVal = null;
             switch (this) {
             case NONE:

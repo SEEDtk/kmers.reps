@@ -3,6 +3,8 @@
  */
 package org.theseed.genome.coupling;
 
+import org.theseed.utils.ParseFailureException;
+
 /**
  * This is the base class for an object that filters potentially-coupled class pairs based on group characteristics.
  *
@@ -48,8 +50,10 @@ public abstract class PairFilter {
          * @param processor		parent couples processor
          *
          * @return the new group filter
+         *
+         * @throws ParseFailureException
          */
-        public PairFilter create(CouplesProcessor processor) {
+        public PairFilter create(CouplesProcessor processor) throws ParseFailureException {
             PairFilter retVal = null;
             switch (this) {
             case SIZE:

@@ -12,6 +12,7 @@ import java.util.Set;
 
 import org.theseed.genome.coupling.FeatureClass.Result;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.utils.ParseFailureException;
 
 /**
  * This filter removes classes found in a tab-delimited blacklist file.  The file is read in during the constructor
@@ -28,13 +29,13 @@ public class BlacklistClassFilter extends ClassFilter {
     /** source blacklist file */
     private File blackListFile;
 
-    public BlacklistClassFilter(CouplesProcessor processor) throws IOException {
+    public BlacklistClassFilter(CouplesProcessor processor) throws IOException, ParseFailureException {
         super(processor);
         this.blackList = new HashSet<String>();
         // Get the blacklist file.
         this.blackListFile = processor.getBlackListFile();
         if (blackListFile == null)
-            throw new IllegalArgumentException("Blacklist file is required for filter type BLACKLIST.");
+            throw new ParseFailureException("Blacklist file is required for filter type BLACKLIST.");
         if (! blackListFile.canRead())
             throw new FileNotFoundException("Blacklist file " + blackListFile + " is not found or unreadable.");
         else try (TabbedLineReader blackStream = new TabbedLineReader(blackListFile)) {

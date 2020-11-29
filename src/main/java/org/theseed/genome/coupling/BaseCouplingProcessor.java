@@ -4,6 +4,7 @@ import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.utils.BaseProcessor;
+import org.theseed.utils.ParseFailureException;
 
 /**
  * This is a base class for coupling-related commands.  It provides common methods for manipulating feature classes
@@ -46,10 +47,12 @@ public abstract class BaseCouplingProcessor extends BaseProcessor {
 
     /**
      * Validate the common parameters.
+     *
+     * @throws ParseFailureException
      */
-    protected void validateConfiguration() {
+    protected void validateConfiguration() throws ParseFailureException {
         if (this.maxGap < 1)
-            throw new IllegalArgumentException("Invalid maximum gap size.  Must be at least 1.");
+            throw new ParseFailureException("Invalid maximum gap size.  Must be at least 1.");
         // Create the feature classifier.
         this.classifier = this.classType.create();
         // Create the neighbor finder.
