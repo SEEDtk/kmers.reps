@@ -231,7 +231,7 @@ public class PrepareProcessor extends BaseCouplingProcessor {
                         genome, gResults.size(), eligibleCount, isolatedCount);
                 File outFile = this.inputGenomes.currFile();
                 log.info("Updating to file {}. {} couplings were found.", outFile, couplingCount);
-                genome.update(outFile);
+                genome.save(outFile);
                 if (couplingCount <= 0)
                     log.warn("No couplings were found.");
                 else {
