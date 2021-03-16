@@ -29,7 +29,7 @@ public class CouplingTest extends TestCase {
      * @throws IOException
      */
     public void testFeatureClasses() throws IOException {
-        Genome gto = new Genome(new File("src/test", "202462.4.gto"));
+        Genome gto = new Genome(new File("data", "202462.4.gto"));
         Feature feat = gto.getFeature("fig|202462.4.peg.207");
         FeatureClass roleFC = FeatureClass.Type.ROLES.create();
         FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
@@ -114,7 +114,7 @@ public class CouplingTest extends TestCase {
     public void testFeatureClassReads() throws IOException {
         // For families, we rely on the fact that each output file begins with the string representation of a pair.
         FeatureClass fClass = FeatureClass.Type.PGFAMS.create();
-        File inFile = new File("src/test", "coupling10.tbl");
+        File inFile = new File("data", "coupling10.tbl");
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
             for (TabbedLineReader.Line line : inStream) {
                 String whole = line.getAll();
@@ -126,7 +126,7 @@ public class CouplingTest extends TestCase {
         // For roles, the variability of the role IDs may cause the pair to swap.  We have to verify that the pair
         // has matching names.
         fClass = FeatureClass.Type.ROLES.create();
-        inFile = new File("src/test", "coupling10.roles.tbl");
+        inFile = new File("data", "coupling10.roles.tbl");
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
             for (TabbedLineReader.Line line : inStream) {
                 String order1 = line.get(0) + "\t" + line.get(1);
@@ -157,7 +157,7 @@ public class CouplingTest extends TestCase {
      */
     public void testGenomeResult() throws IOException {
         FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
-        Genome gto = new Genome(new File("src/test", "202462.4.gto"));
+        Genome gto = new Genome(new File("data", "202462.4.gto"));
         // Get the results and insure we got enough.
         List<FeatureClass.Result> results = famFC.getResults(gto);
         assertThat(results.size(), equalTo(gto.getFeatures().size()));

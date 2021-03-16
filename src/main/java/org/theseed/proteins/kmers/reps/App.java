@@ -20,6 +20,7 @@ import org.theseed.utils.BaseProcessor;
  *  coupling	Compute functional coupling for a set of genomes
  *  prepare		Prepare a GTO directory for use in the coupling website
  *  distances	Create a distance matrix for representative genomes
+ *  seqTable	Create a table of identifying sequences for each representative genome
  */
 public class App
 {
@@ -59,6 +60,9 @@ public class App
             break;
         case "prepare" :
             processor = new PrepareProcessor();
+            break;
+        case "seqTable" :
+            processor = new SeqTableProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

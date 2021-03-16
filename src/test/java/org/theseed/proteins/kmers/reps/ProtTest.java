@@ -35,7 +35,7 @@ public class ProtTest {
         // Set up the protein data factory.
         ProteinDataFactory factory = new ProteinDataFactory();
         // Load in the genomes. One of them should fail on genus/species.
-        try (TabbedLineReader tabReader = new TabbedLineReader(new File("src/test", "quality.tbl"))) {
+        try (TabbedLineReader tabReader = new TabbedLineReader(new File("data", "quality.tbl"))) {
             int idCol = tabReader.findField("genome_id");
             int nameCol = tabReader.findField("genome_name");
             int lineageCol = tabReader.findField("taxon_lineage_ids");
@@ -157,7 +157,7 @@ public class ProtTest {
      */
     @Test
     public void testSeqInfo() throws IOException {
-        FastaInputStream testStream = new FastaInputStream(new File("src/test", "VapbProt.fa"));
+        FastaInputStream testStream = new FastaInputStream(new File("data", "VapbProt.fa"));
         // Get the first sequence and build the info object.
         Sequence baseSeq = testStream.next();
         SequenceInfo baseInfo = new SequenceInfo(baseSeq);
