@@ -14,7 +14,6 @@ import org.theseed.utils.BaseProcessor;
  * 	repdb		Create a representative-genome database from a FASTA file of protein sequences.
  *	group		Analyze proteins and group them together.
  *  classify	Compare proteins to multiple protein lists
- *  roles		Process a universal-role file against a representative genome database
  *  genomes		Process genome evaluation results
  *  update		Process incremental genome evaluation results
  *  md5			Compute genome MD5s
@@ -45,9 +44,6 @@ public class App
             break;
         case "classify" :
             processor = new ClassifyProcessor();
-            break;
-        case "roles" :
-            processor = new RolesProcessor();
             break;
         case "genomes" :
             processor = new GenomeProcessor();
