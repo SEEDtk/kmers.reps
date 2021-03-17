@@ -40,7 +40,7 @@ public class TestRolePatterns {
                 log.info("PHES in {}: {}", feat.getId(), function);
                 pheCount++;
             } else {
-                m = SeqTableProcessor.SSU_R_RNA.matcher(function);
+                m = Genome.SSU_R_RNA.matcher(function);
                 if (m.matches()) {
                     log.info("SSU in {}: {}", feat.getId(), function);
                     ssuCount++;

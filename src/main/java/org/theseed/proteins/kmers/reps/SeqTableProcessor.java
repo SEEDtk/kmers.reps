@@ -46,8 +46,6 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(SeqTableProcessor.class);
-    /** match pattern for SSU rRNA */
-    public static final Pattern SSU_R_RNA = Pattern.compile("SSU\\s+rRNA|Small\\s+Subunit\\s+(?:Ribosomal\\s+r)?RNA|ssuRNA|16S\\s+(?:r(?:ibosomal\\s+)?)?RNA", Pattern.CASE_INSENSITIVE);
     /** match pattern for seed protein */
     public static final Pattern SEED_PROTEIN = Pattern.compile("Phenylalanyl-tRNA\\s+synthetase\\s+alpha\\s+chain(?:\\s+\\(E[^)]+\\))?", Pattern.CASE_INSENSITIVE);
     /** list of sequence names */
@@ -128,14 +126,14 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
             case "CDS" :
                 // For a peg, we check for the seed protein.
                 if (SEED_PROTEIN.matcher(function).matches()) {
-                    String proposed = feat.getPegFunction();
+                    String proposed = feat.getProteinTranslation();
                     if (proposed.length() > retVal[0].length())
                         retVal[0] = proposed;
                 }
                 break;
             case "rna" :
                 // For an RNA, we check for an SSU.
-                if (SSU_R_RNA.matcher(function).find()) {
+                if (Genome.SSU_R_RNA.matcher(function).find()) {
                     Location loc = feat.getLocation();
                     if (loc.getLength() > retVal[1].length())
                         retVal[1] = genome.getDna(feat.getLocation());

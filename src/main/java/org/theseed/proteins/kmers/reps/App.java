@@ -21,6 +21,7 @@ import org.theseed.utils.BaseProcessor;
  *  prepare		Prepare a GTO directory for use in the coupling website
  *  distances	Create a distance matrix for representative genomes
  *  seqTable	Create a table of identifying sequences for each representative genome
+ *  seqComp		Create a table comparing PheS distance to SSU-rRNA distance
  */
 public class App
 {
@@ -63,6 +64,9 @@ public class App
             break;
         case "seqTable" :
             processor = new SeqTableProcessor();
+            break;
+        case "seqComp" :
+            processor = new SeqCompProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
