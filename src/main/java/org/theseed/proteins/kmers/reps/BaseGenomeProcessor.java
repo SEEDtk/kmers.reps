@@ -342,11 +342,11 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         // Read in the input file and get the protein data we need.
         try (TabbedLineReader inStream = new TabbedLineReader(this.inFile)) {
             // Compute the field indices.
-            int idCol = inStream.findField("genome_id");
-            int nameCol = inStream.findField("genome_name");
-            int lineageCol = inStream.findField("taxon_lineage_ids");
-            int scoreCol = inStream.findField("score");
-            int goodCol = inStream.findField("Good Genome");
+            int idCol = inStream.findField("Genome");
+            int nameCol = inStream.findField("Name");
+            int lineageCol = inStream.findField("Taxonomy");
+            int scoreCol = inStream.findField("Score");
+            int goodCol = inStream.findField("Good");
             // Loop through the file.
             for (TabbedLineReader.Line line : inStream) {
                 // Only process good genomes.
