@@ -22,6 +22,7 @@ import org.theseed.utils.BaseProcessor;
  *  distances	Create a distance matrix for representative genomes
  *  seqTable	Create a table of identifying sequences for each representative genome
  *  seqComp		Create a table comparing PheS distance to SSU-rRNA distance
+ *  target		Find a kmer target in a set of genomes
  */
 public class App
 {
@@ -67,6 +68,9 @@ public class App
             break;
         case "seqComp" :
             processor = new SeqCompProcessor();
+            break;
+        case "target" :
+            processor = new TargetProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

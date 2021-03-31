@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.utils.BaseProcessor;
@@ -35,10 +34,6 @@ public class DistanceMatrixProcessor extends BaseProcessor {
     private RepGenomeDb repDB;
 
     // COMMAND-LINE OPTIONS
-
-    /** help option */
-    @Option(name="-h", aliases={"--help"}, help=true)
-    private boolean help;
 
     /** representative-genome file */
     @Argument(index=0, metaVar="repDbFile", usage="representative genome database file",

@@ -21,7 +21,7 @@ import org.theseed.utils.ParseFailureException;
 import org.theseed.utils.RestartableBaseProcessor;
 
 /**
- * This command reads a directory of GTOs and outputs a table of genome ID, seed protein sequence, and SSU rRNA
+ * This command reads a directory of GTOs and outputs a table of genome ID, seed protein sequences, and SSU rRNA
  * nucleotide sequence.  These can be used by other programs to find the closest representative of an input
  * genome fragment.
  *
@@ -49,7 +49,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     /** match pattern for seed protein */
     public static final Pattern SEED_PROTEIN = Pattern.compile("Phenylalanyl-tRNA\\s+synthetase\\s+alpha\\s+chain(?:\\s+\\(E[^)]+\\))?", Pattern.CASE_INSENSITIVE);
     /** list of sequence names */
-    private static final String[] funSeqNames = new String[] { "seed_protein", "ssu_rna" };
+    private static final String[] funSeqNames = new String[] { "seed_protein", "seed_DNA", "ssu_rna" };
 
     // COMMAND-LINE OPTIONS
 
@@ -58,7 +58,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     private GenomeSource.Type inType;
 
     /** genome source to process */
-    @Argument(index = 0, metaVar = "gtoDir", usage = "genome directory to scan")
+    @Argument(index = 0, metaVar = "gtoDir", usage = "genome directory to scan", required = true)
     private File gtoDir;
 
     @Override
@@ -118,19 +118,40 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
         Arrays.fill(retVal, "");
         // Loop through the pegs.
         log.info("Searching {}.", genome);
+        String bestId = findSeed(genome);
+        // Get the seed sequences.
+        if (bestId != null) {
+            retVal[0] = genome.getFeature(bestId).getProteinTranslation();
+            retVal[1] = genome.getDna(bestId);
+        }
+        // Get the SSU rRNA.
+        retVal[2] = genome.getSsuRRna();
+        // Return both sequences.
+        return retVal;
+    }
+
+    /**
+     * Find the seed protein in a genome.
+     *
+     * @param genome	genome to search
+     *
+     * @return the ID of the seed protein, or NULL if none was found
+     */
+    public static String findSeed(Genome genome) {
+        String bestId = null;
+        int bestProt = 0;
         for (Feature feat : genome.getPegs()) {
             String function = Function.commentFree(feat.getPegFunction());
             // For a peg, we check for the seed protein.
             if (SEED_PROTEIN.matcher(function).matches()) {
-                String proposed = feat.getProteinTranslation();
-                if (proposed.length() > retVal[0].length())
-                    retVal[0] = proposed;
+                int proposed = feat.getProteinTranslation().length();
+                if (proposed > bestProt) {
+                    bestProt = proposed;
+                    bestId = feat.getId();
+                }
             }
         }
-        // Get the SSU rRNA.
-        retVal[1] = genome.getSsuRRna();
-        // Return both sequences.
-        return retVal;
+        return bestId;
     }
 
 }
