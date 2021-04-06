@@ -2,6 +2,7 @@ package org.theseed.proteins.kmers.reps;
 
 import java.util.Arrays;
 
+import org.theseed.proteins.UniRoleProcessor;
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.PrepareProcessor;
@@ -23,6 +24,7 @@ import org.theseed.utils.BaseProcessor;
  *  seqTable	Create a table of identifying sequences for each representative genome
  *  seqComp		Create a table comparing PheS distance to SSU-rRNA distance
  *  target		Find a kmer target in a set of genomes
+ *  univ		create a report on the singly-occurring roles in a group of genomes
  */
 public class App
 {
@@ -71,6 +73,9 @@ public class App
             break;
         case "target" :
             processor = new TargetProcessor();
+            break;
+        case "univ" :
+            processor = new UniRoleProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

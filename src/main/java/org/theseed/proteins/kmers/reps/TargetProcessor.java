@@ -19,6 +19,7 @@ import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.GenomeKmers;
+import org.theseed.sequence.SequenceKmers;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
@@ -32,7 +33,9 @@ import org.theseed.utils.ParseFailureException;
  * -v	display more frequent log messages
  * -K	kmer size (default 20)
  *
- * --type	type of genome source (MASTER, DIR, or PATRIC)
+ * --type		type of genome source (MASTER, DIR, or PATRIC)
+ * --strict		if specified, the target will be verified against the entire large-set genome;
+ * 				the default is to only scan the seed protein
  *
  * @author Bruce Parrello
  *
@@ -53,6 +56,10 @@ public class TargetProcessor extends BaseProcessor {
     @Option(name = "--type", usage = "type of input (master directory, GTO directory, PATRIC ID file)")
     private GenomeSource.Type inType;
 
+    /** scan whole genomes instead of only seed proteins in large set */
+    @Option(name = "--strict", usage = "if specified, all DNA from large-set genomes is scanned")
+    private boolean strict;
+
     /** DNA kmer length */
     @Option(name = "-K", aliases = { "--kmer" }, metaVar = "21", usage = "length of kmer to target")
     private int kmerSize;
@@ -69,6 +76,7 @@ public class TargetProcessor extends BaseProcessor {
     protected void setDefaults() {
         this.inType = GenomeSource.Type.DIR;
         this.kmerSize = 20;
+        this.strict = false;
     }
 
     @Override
@@ -118,7 +126,11 @@ public class TargetProcessor extends BaseProcessor {
             else {
                 gCount++;
                 log.info("Processing genome {}: {}.", gCount, genome);
-                GenomeKmers gKmers = new GenomeKmers(genome);
+                SequenceKmers gKmers;
+                if (this.strict)
+                    gKmers = new GenomeKmers(genome);
+                else
+                    gKmers = this.getSeedKmers(genome);
                 kmerSet.removeAll(gKmers);
                 log.info("{} kmers after processing genome {}.", kmerSet.size(), genome);
             }
@@ -145,6 +157,20 @@ public class TargetProcessor extends BaseProcessor {
     private DnaKmers getSeedKmers(File targetFile) throws IOException {
         Genome genome = new Genome(targetFile);
         log.info("Processing {} from {}.", genome, targetFile);
+        DnaKmers retVal = getSeedKmers(genome);
+        return retVal;
+    }
+
+    /**
+     * Find the DNA kmer set for the seed protein in the specified genome.
+     *
+     * @param genome	genome to check
+     *
+     * @return the DNA kmers for the genome's seed protein
+     *
+     * @throws IOException
+     */
+    public DnaKmers getSeedKmers(Genome genome) {
         this.targets.add(genome.getId());
         String fid = SeqTableProcessor.findSeed(genome);
         if (fid == null)
