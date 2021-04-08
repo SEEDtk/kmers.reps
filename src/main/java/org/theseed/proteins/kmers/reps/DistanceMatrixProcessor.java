@@ -82,9 +82,9 @@ public class DistanceMatrixProcessor extends BaseProcessor {
                     if (sim == 0) zeroes++;
                     System.out.format("%s\t%s\t%8.6f\t%d%n", rep.getGenomeId(), rep2.getGenomeId(), distance, sim);
                     processed++;
-                    if (log.isDebugEnabled() && processed % 5000 == 0) {
+                    if (log.isInfoEnabled() && processed % 50000 == 0) {
                         double rate = (double) processed / ((System.currentTimeMillis() - startTime) / 1000.0);
-                        log.debug("{} of {} pairs processed, {} genomes/second.", processed, totalPairs,
+                        log.info("{} of {} pairs processed, {} pairs/second.", processed, totalPairs,
                                 rate);
                     }
                 }
