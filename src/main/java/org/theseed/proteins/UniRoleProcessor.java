@@ -17,8 +17,6 @@ import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
-import org.theseed.proteins.Role;
-import org.theseed.proteins.RoleMap;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
