@@ -149,12 +149,12 @@ public class UniRoleProcessor extends BaseProcessor {
             else {
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
-                    writer.println("role\tcount");
+                    writer.println("role\tcount\tname");
                     // Loop through the roles of interest.
                     for (CountMap<String>.Count counter : this.roleCounts.sortedCounts()) {
                         int rCount = counter.getCount();
                         if (rCount >= this.minCount)
-                            writer.format("%s\t%d%n", counter.getKey(), rCount);
+                            writer.format("%s\t%d\t%s%n", counter.getKey(), rCount, this.roleMap.getName(counter.getKey()));
                     }
                 }
             }
