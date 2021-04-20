@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Metagenomic RepGen Maintenance Pipeline</title>
+    </head>
+    <body>
+        <h1>Metagenomic RepGen Maintenance Pipeline</h1>
+        
+        <h2>How the RepGen Set is Stored</h2>
+        <p>A RepGen set is maintained by two files and a directory.  For convenience, these are all usually packaged in a
+            directory by themselves.</p>
+        <ol>
+            <li>A database file (<i>repXXX.ser</i>) that describes the repgen set.</li>
+            <li>A directory (<i>GTOXXX</i>) containing the representative genomes themselves.</li>
+            <li>A sequence table (<i>repXXX.seq.tbl</i>) containing the PheS and SSU rRNA sequences for each representative genome.</li>
+        </ol>
+        <p>The directory can be in one of two formats.</p>
+        <ol>
+            <li><b>DIR</b> format is simply a flat directory of GenomeTypeObjects (GTOs).</li>
+            <li><b>MASTER</b> format is a set of directories containing compressed GenomeTypeObjects (GTOZ).</li>
+        </ol>
+        <p>The MASTER format is more compact, but the genomes are not human-readable.  Most of the Java-based SEEDtk utilities
+        can operate on both types of directories.</p>
+        
+        <h2>Updating the RepGen Set</h2>
+        <p>Let us say you have a PATRIC workspace directory that is full of metagenome binning jobs and you want to update
+        the RepGen set <i>XXX</i> described above that are stored in directory <i>Old</i>.  We want to create a directory <i>New</i>
+        that contains a new RepGen set that covers all the good genomes found.</p>
+        
+        <ol>
+            <li>Copy the genome directory from <i>Old</i> to <i>New</i>.  This is important.  If something goes wrong, it gives
+            you the ability to start over.</li>
+            <li>Run <b>cli.utils binReport</b> to get a report of the good genomes.</li>
+            <li>Run <b>kmers.reps gtoReps</b> to update the database file and the genome directory.</li>
+            <li>Run <b>kmers.reps seqTable</b> to generate a new sequence table.</li>
+        </ol>
+        
+        <p>In the detailed examples below, the old directory is called <b>Italians</b> and the new directory is <b>Rep200A</b>.  The
+            PATRIC metagenome binning jobs are in <b>/Vparrello@patricbrc.org/ParkinsonsGutBacteriaBinning/MetagenomicBinning</b>.
+            These programs require an active installation of the P3 scripts, with the variable <b>CLI_PATH</b> pointing to that
+            installation's <b>bin</b> directory.  The examples run in a SEEDtk environment, which creates shell scripts to
+            invoke the programs.  Otherwise, rather than (for example) <b>kmers.reps</b> you would have to invoke</p>
+        
+        <pre>java -Xms16g -jar <i>full-path-to</i>/kmers.reps.jar</pre>
+            
+        <p>and you also have to make sure your logging defaults are set up properly.</p>
+        
+        <h3>Run <b>cli.utils binReport</b></h3>
+        
+        <pre>cli.utils binReport --format GENOMES -o good.tbl /Vparrello@patricbrc.org/ParkinsonsGutBacteriaBinning/MetagenomicBinning Vparrello@patricbrc.org</pre>
+        
+        <p>The first positional parameter is the directory containing the metagenome binning jobs.  The second is the user name
+        under which you are currently logged in.  Use <b>p3-login --status</b> to verify that you are logged in and what your name is.</p>
+        <p>The <b>-o</b> option names the output file for the genome IDs. The <b>--format</b> option specifies that we want the good-bin
+        genome IDs sorted in quality order.  (The default format displays more information about the content of the samples.)</p>
+        <p><b>good.tbl</b> now contains the list of genomes we want to process.  These genomes are all in PATRIC as private genomes.
+        This means that the next step will only work for the user who submitted the jobs.</p>
+        
+        <h3>Run <b>kmers.reps gtoReps</b></h3>
+        
+        <pre>kmers.reps gtoReps --filter good.tbl --saveType MASTER --save Rep200A/GTO200 --rna --update Rep200A/rep200.ser -t PATRIC -o report.tbl Italians/rep200.ser good.tbl</pre>
+        
+        <p>There are a lot of options to this command.</p>
+        
+        <ul>
+            <li><b>--filter good.tbl</b> insures that the genomes will be processed in quality order.  The <b>--filter</b> option is normally
+            used to insure only certain input genomes are processed; but it also specifies the processing order, which is very important.
+            In this case, nothing will be filtered out, but we still want the processing order to be correct.</li>
+            <li><b>--saveType MASTER</b> indicates that the new GTO directory is a compressed master directory, not a normal GTO directory
+                (which is the default assumption).  This needs to be correct, since we are adding to an existing directory, not creating
+            a new one.</li>
+            <li><b>--save Rep200A/GTO200</b> specifies the name of the new GTO directory.  We've already filled it with the current representative 
+                genomes.</li>
+            <li><b>--rna</b> specifies that genomes without a known SSU rRNA annotation should be skipped.  The current evaluator used by the
+                binning service is Eval.11, which does not check for SSU rRNA.  When Eval.13 is installed, this option will no longer be needed.</li>
+            <li><b>--update Rep200A/rep200.ser</b> specifies that when we are done finding new representatives, we should write the updated database
+            to <b>Rep200A/rep200.ser</b>.</li>
+            <li><b>-t PATRIC</b> means that the input is a list of PATRIC genome IDs.  It is also possible to specify a master genome directory or a
+                normal genome directory as the input, but in this case, we are processing binning results that have been stored in PATRIC.</li>
+            <li><b>-o report.tbl</b> specifies the output file for the report.  We don't use the report right now, but it's nice to look at.</li>
+            <li><b>Italians/rep200.ser</b> is the old RepGen database file.</li>
+            <li><b>good.tbl</b> is the input file.  In this case, the input type is <b>PATRIC</b>, which means the file contains PATRIC genome IDs
+            in the first column.  For the other input types (MASTER and DIR), this parameter would be a directory name.  Note that it is normal
+            for the Java commands to process genomes in lexical order.  We use the <b>--filter</b> option to override this, which is why the same
+            file is specified twice.</li>
+        </ul>
+        
+        <p>It takes from 5 to 10 seconds to download a genome from PATRIC, so this can be a slow operation.  At the end, the database file and
+        the GTO directory have been updated with the new outliers. The last step is to create the sequence table.</p>
+        
+        <h3>Run <b>kmers.reps seqTable</b></h3>
+        
+        <pre>kmers.reps seqTable --type MASTER --resume Rep200A/rep200.seqs.tbl Rep200A/GTO200</pre>
+        
+        <p>Here <b>--type MASTER</b> indicates that the genomes are stored in a master directory (the default is a normal GTO directory).
+        The <b>--resume Rep200A/rep200.seqs.tbl</b> specifies the output file name.  If the program fails due to a transient error, you
+        can resubmit and it will start from where it left off.  This is not a big issue for MASTER directories, but like the <b>gtoReps</b>
+        subcommand, <b>seqTable</b> has a PATRIC input mode, and transient errors are common in that mode.  Finally, <b>Rep200A/GTO200</b>
+        is the directory containing the representative genomes.  When this command is complete, the new RepGen set will be fully operational.</p>
+        <p>In this particular test, no new representative genomes were found.  The 36 samples contained 152 good bins, of which only 44 had annotated
+            SSU rRNA sequences.  None of these were outliers.</p>
+        
+        
+    </body>
+</html>
