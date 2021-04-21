@@ -9,6 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -55,6 +59,8 @@ public class UniRoleProcessor extends BaseProcessor {
     private OutputStream output;
     /** count of role occurrences */
     private CountMap<String> roleCounts;
+    /** map of role IDs to length statistics */
+    private Map<String, DescriptiveStatistics> roleStats;
     /** output threshold */
     private int minCount;
 
@@ -119,8 +125,9 @@ public class UniRoleProcessor extends BaseProcessor {
     @Override
     protected void runCommand() throws Exception {
         try {
-            // Create the role count map.
+            // Create the role maps.
             this.roleCounts = new CountMap<String>();
+            this.roleStats = new HashMap<String, DescriptiveStatistics>(5000);
             // Loop through the genomes.
             int count = 0;
             for (Genome genome : genomes) {
@@ -128,17 +135,23 @@ public class UniRoleProcessor extends BaseProcessor {
                 log.info("Processing genome {} of {}: {}.", count, genomes.size(), genome);
                 // Count the role occurrences.
                 CountMap<String> gRoleCounts = new CountMap<String>();
+                CountMap<String> gRoleLengths = new CountMap<String>();
                 for (Feature feat : genome.getPegs()) {
                     for (Role role : feat.getUsefulRoles(this.roleMap)) {
                         String roleId = role.getId();
                         gRoleCounts.count(roleId);
+                        gRoleLengths.setCount(roleId, feat.getProteinLength());
                     }
                 }
-                // Now output the roles with only one feature.
+                // Now output the roles with only one feature.  For each role we must also add its length
+                // to the statistics for that role.
                 int rCount = 0;
                 for (CountMap<String>.Count counter : gRoleCounts.counts()) {
                     if (counter.getCount() == 1) {
-                        this.roleCounts.count(counter.getKey());
+                        String roleId = counter.getKey();
+                        this.roleCounts.count(roleId);
+                        DescriptiveStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new DescriptiveStatistics());
+                        stats.addValue(gRoleLengths.getCount(roleId));
                         rCount++;
                     }
                 }
@@ -149,12 +162,17 @@ public class UniRoleProcessor extends BaseProcessor {
             else {
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
-                    writer.println("role\tcount\tname");
+                    writer.println("role\tcount\tname\tmean_len\tsdev_len");
                     // Loop through the roles of interest.
                     for (CountMap<String>.Count counter : this.roleCounts.sortedCounts()) {
                         int rCount = counter.getCount();
-                        if (rCount >= this.minCount)
-                            writer.format("%s\t%d\t%s%n", counter.getKey(), rCount, this.roleMap.getName(counter.getKey()));
+                        if (rCount >= this.minCount) {
+                            // We need to compute the mean and standard deviation.
+                            String roleId = counter.getKey();
+                            DescriptiveStatistics stats = this.roleStats.get(roleId);
+                            writer.format("%s\t%d\t%s\t%8.2f\t%8.2f%n", roleId, rCount, this.roleMap.getName(roleId),
+                                    stats.getMean(), stats.getStandardDeviation());
+                        }
                     }
                 }
             }
