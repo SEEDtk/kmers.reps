@@ -71,7 +71,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
         // Verify the input genome source.
         this.genomes = this.inType.create(this.gtoDir);
         // Setup the output/resume file.
-        String header = "genome_id\t" + StringUtils.join(funSeqNames, "\t");
+        String header = "genome_id\tgenome_name\t" + StringUtils.join(funSeqNames, "\t");
         this.setup(header, "genome_id");
         return true;
     }
@@ -94,7 +94,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
                     }
                 }
                 if (ok)
-                    this.println(genomeId + "\t" + StringUtils.join(seqsFound, "\t"));
+                    this.println(genomeId + "\t" + genome.getName() + "\t" + StringUtils.join(seqsFound, "\t"));
                 else
                     badCount++;
                 this.markProcessed(genomeId);

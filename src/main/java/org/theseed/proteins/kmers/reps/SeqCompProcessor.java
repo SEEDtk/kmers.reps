@@ -91,13 +91,16 @@ public class SeqCompProcessor extends BaseProcessor {
     protected void runCommand() throws Exception {
         // Write the output header.
         System.out.println("prot_dist\tssu_dist");
+        // Get the input columns.
+        int protCol = this.inStream.findField("seed_protein");
+        int dnaCol = this.inStream.findField("ssu_rna");
         // We fill two lists with the input data.
         List<ProteinKmers> proteins = new ArrayList<ProteinKmers>(200);
         List<DnaKmers> ssuRnas = new ArrayList<DnaKmers>(200);
         log.info("Reading sequences from input file.");
         for (TabbedLineReader.Line line : this.inStream) {
-            proteins.add(new ProteinKmers(line.get(1)));
-            ssuRnas.add(new DnaKmers(line.get(2)));
+            proteins.add(new ProteinKmers(line.get(protCol)));
+            ssuRnas.add(new DnaKmers(line.get(dnaCol)));
         }
         this.inStream.close();
         // Set up to create the pairwise distances.
