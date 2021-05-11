@@ -163,4 +163,12 @@ public class GenomeDescriptor implements Comparable<GenomeDescriptor> {
         return retVal;
     }
 
+    /**
+     * @return the ID and name of this genome
+     */
+    @Override
+    public String toString() {
+        return this.genomeId + " (" + this.name + ")";
+    }
+
 }

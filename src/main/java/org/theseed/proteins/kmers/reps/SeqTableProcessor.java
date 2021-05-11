@@ -49,7 +49,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     /** match pattern for seed protein */
     public static final Pattern SEED_PROTEIN = Pattern.compile("Phenylalanyl-tRNA\\s+synthetase\\s+alpha\\s+chain(?:\\s+\\(E[^)]+\\))?", Pattern.CASE_INSENSITIVE);
     /** list of sequence names */
-    private static final String[] funSeqNames = new String[] { "seed_protein", "seed_DNA", "ssu_rna" };
+    private static final String[] funSeqNames = new String[] { "seed_protein", "ssu_rna" };
 
     // COMMAND-LINE OPTIONS
 
@@ -122,10 +122,9 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
         // Get the seed sequences.
         if (bestId != null) {
             retVal[0] = genome.getFeature(bestId).getProteinTranslation();
-            retVal[1] = genome.getDna(bestId);
         }
         // Get the SSU rRNA.
-        retVal[2] = genome.getSsuRRna();
+        retVal[1] = genome.getSsuRRna();
         // Return both sequences.
         return retVal;
     }

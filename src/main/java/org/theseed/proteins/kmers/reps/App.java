@@ -27,6 +27,7 @@ import org.theseed.utils.BaseProcessor;
  *  seqTest2	Analyze output from seqTest
  *  target		Find a kmer target in a set of genomes
  *  univ		create a report on the singly-occurring roles in a group of genomes
+ *  gtoClass	Find representatives for GTOs in multiple RepGen databases
  */
 public class App
 {
@@ -81,6 +82,9 @@ public class App
             break;
         case "univ" :
             processor = new UniRoleProcessor();
+            break;
+        case "gtoClass" :
+            processor = new GtoClassProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
