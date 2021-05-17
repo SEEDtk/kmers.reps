@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.GenomeDescriptor;
 import org.theseed.genome.GenomeDescriptorSet;
+import org.theseed.reports.ErrorSummaryReport;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.utils.BaseReportProcessor;
@@ -35,6 +36,10 @@ import org.theseed.utils.ParseFailureException;
  * -k	dna kmer size (default 15)
  * -o	output file (if not STDOUT)
  *
+ * --summary	name of a file to contain a summary report that displays the mean and standard deviation of the
+ * 				distance error for each genome
+ * --summType	type of summary report
+ *
  * @author Bruce Parrello
  *
  */
@@ -45,6 +50,8 @@ public class SeqCompProcessor extends BaseReportProcessor {
     protected static Logger log = LoggerFactory.getLogger(SeqCompProcessor.class);
     /** genome descriptors from the input file */
     private GenomeDescriptorSet refGenomes;
+    /** error summary reporting object */
+    private ErrorSummaryReport summaryReporter;
 
     // COMMAND-LINE OPTIONS
 
@@ -56,6 +63,14 @@ public class SeqCompProcessor extends BaseReportProcessor {
     @Option(name = "-k", aliases = { "--dnaKmer" }, metaVar = "15", usage = "DNA kmer size")
     private int dnaK;
 
+    /** summary report file (optional) */
+    @Option(name = "--summary", metaVar = "summaryReport.tbl", usage = "if specified, the name of a file to contain an error summary report")
+    private File summaryFile;
+
+    /** summary report type */
+    @Option(name = "--summType", usage = "type of summary report (if a summary report is requested)")
+    private ErrorSummaryReport.Type summType;
+
     /** input file name (if not STDIN) */
     @Argument(index = 0, metaVar = "rep.seqs.tbl", usage = "RepGen file containing PheS and SSU rRNA sequences", required = true)
     private File inFile;
@@ -65,6 +80,8 @@ public class SeqCompProcessor extends BaseReportProcessor {
     protected void setReporterDefaults() {
         this.protK = 8;
         this.dnaK = 15;
+        this.summaryFile = null;
+        this.summType = ErrorSummaryReport.Type.STATS;
     }
 
     @Override
@@ -82,6 +99,8 @@ public class SeqCompProcessor extends BaseReportProcessor {
         // Set up the kmer sizes.
         DnaKmers.setKmerSize(this.dnaK);
         ProteinKmers.setKmerSize(this.protK);
+        // Initialize the summary report (if any).
+        this.summaryReporter = ErrorSummaryReport.create(this.summType, this.summaryFile);
     }
 
     @Override
@@ -102,10 +121,13 @@ public class SeqCompProcessor extends BaseReportProcessor {
         for (GenomeDescriptor genome1 : this.refGenomes) {
             count++;
             log.info("Processing genome {} of {}: {},", count, gCount, genome1);
+            this.summaryReporter.registerGenome(genome1.getId(), genome1.getName());
             // Loop through all subsequent genomes.
             for (GenomeDescriptor genome2 :this.refGenomes.tailSet(genome1, false)) {
                 protDists[pairCount] = genome1.getSeedDistance(genome2);
                 ssuDists[pairCount] = genome1.getRnaDistance(genome2);
+                this.summaryReporter.recordDistances(genome1.getId(), genome2.getId(), protDists[pairCount],
+                        ssuDists[pairCount]);
                 writer.format("%s\t%s\t%s\t%s\t%6.4f\t%6.4f%n", genome1.getId(), genome1.getName(), genome2.getId(),
                         genome2.getName(), protDists[pairCount], ssuDists[pairCount]);
                 pairCount++;
@@ -117,7 +139,8 @@ public class SeqCompProcessor extends BaseReportProcessor {
                 }
             }
         }
-        // Display the statistics.
+        // Display the summary report and the statistics.
+        this.summaryReporter.writeReport();
         PearsonsCorrelation pComputer = new PearsonsCorrelation();
         double pCorr = pComputer.correlation(protDists, ssuDists);
         KendallsCorrelation kComputer = new KendallsCorrelation();
