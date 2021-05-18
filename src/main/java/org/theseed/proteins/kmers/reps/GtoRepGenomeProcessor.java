@@ -263,6 +263,8 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
         } finally {
             if (this.outFile != null)
                 this.outStream.close();
+            if (this.target != null)
+                this.target.close();
         }
     }
 
