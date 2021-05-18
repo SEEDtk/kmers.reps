@@ -260,11 +260,12 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
                 log.info("Writing new database to {}.", this.updateFile);
                 repDb.save(this.updateFile);
             }
+            // Insure the output directory (if any) is cleanly finished.
+            if (this.target != null)
+                this.target.finish();
         } finally {
             if (this.outFile != null)
                 this.outStream.close();
-            if (this.target != null)
-                this.target.close();
         }
     }
 
