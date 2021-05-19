@@ -10,7 +10,6 @@ import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.io.TabbedLineReader;
 import org.theseed.utils.ParseFailureException;
 
 /**
@@ -47,14 +46,9 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
      * @param inFile	file containing the four-column table
      */
     public GenomeDescriptorSet(File inFile) throws IOException {
-        try (TabbedLineReader reader = new TabbedLineReader(inFile)) {
-            int idCol = reader.findField("genome_id");
-            int nameCol = reader.findField("genome_name");
-            int seedCol = reader.findField("seed_protein");
-            int rnaCol = reader.findField("ssu_rna");
-            for (TabbedLineReader.Line line : reader) {
-                GenomeDescriptor newGenome = new GenomeDescriptor(line.get(idCol), line.get(nameCol),
-                        line.get(seedCol), line.get(rnaCol));
+        try (GenomeDescriptor.FileIter iter = new GenomeDescriptor.FileIter(inFile)) {
+            while (iter.hasNext()) {
+                GenomeDescriptor newGenome = iter.next();
                 this.add(newGenome);
             }
         }
@@ -140,7 +134,7 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
     /**
      * This class represents the results of an attempt to find the closest genome in the set.
      */
-    public static class CloseGenome implements Comparable<CloseGenome> {
+    public static class Rating implements Comparable<Rating> {
 
         private GenomeDescriptor genome;
         private double proximity;
@@ -148,7 +142,7 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
         /**
          * Construct an empty close-genome result.
          */
-        protected CloseGenome() {
+        protected Rating() {
             this.genome = null;
             this.proximity = 0.0;
         }
@@ -157,7 +151,7 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
          * The closest genome (highest proximity) always sorts first.
          */
         @Override
-        public int compareTo(CloseGenome o) {
+        public int compareTo(Rating o) {
             int retVal = Double.compare(o.proximity, this.proximity);
             if (retVal == 0)
                 retVal = this.genome.compareTo(o.genome);
@@ -201,7 +195,7 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
          *
          * @param other		other result to compare
          */
-        public boolean isSameGenome(CloseGenome other) {
+        public boolean isSameGenome(Rating other) {
             boolean retVal;
             if (this.genome == null)
                 retVal = (other.genome == null);
@@ -218,9 +212,9 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
          * @param results		a list of the results for all the types
          * @param positions		an array of the relevant positions in the list
          */
-        public static boolean test(List<CloseGenome> results, int[] positions) {
+        public static boolean test(List<Rating> results, int[] positions) {
             boolean retVal = true;
-            CloseGenome result0 = results.get(positions[0]);
+            Rating result0 = results.get(positions[0]);
             for (int i = 1; i < positions.length && retVal; i++) {
                 retVal = result0.isSameGenome(results.get(positions[i]));
             }
@@ -275,9 +269,9 @@ public class GenomeDescriptorSet extends TreeSet<GenomeDescriptor> {
      *
      * @return a close-genome object describing the result
      */
-    public CloseGenome findClosest(GenomeDescriptor testGenome, FinderType type) {
+    public Rating findClosest(GenomeDescriptor testGenome, FinderType type) {
         // Start with no result.
-        CloseGenome retVal = new CloseGenome();
+        Rating retVal = new Rating();
         // Loop through the set, finding the closest.
         for (GenomeDescriptor refGenome : this)
             retVal.check(testGenome, refGenome, type);

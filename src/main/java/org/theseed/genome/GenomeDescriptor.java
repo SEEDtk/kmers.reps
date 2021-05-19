@@ -3,6 +3,11 @@
  */
 package org.theseed.genome;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.reps.SeqTableProcessor;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
@@ -64,6 +69,59 @@ public class GenomeDescriptor implements Comparable<GenomeDescriptor> {
         this.name = name;
         this.seedKmers = new ProteinKmers(seedProt);
         this.rnaKmers = new DnaKmers(ssuRna);
+    }
+
+    /**
+     * This is an iterator for reading genome descriptors from a tab-delimited sequence file.
+     */
+    public static class FileIter implements Iterator<GenomeDescriptor>, AutoCloseable {
+
+        /** input stream for the file */
+        private TabbedLineReader reader;
+        /** genome ID column index */
+        private int idCol;
+        /** genome name column index */
+        private int nameCol;
+        /** seed protein column index */
+        private int seedCol;
+        /** 16s RNA column index */
+        private int rnaCol;
+
+        /**
+         * Construct a genome descriptor iterator for a file.
+         *
+         * @param inFile	tab-delimited file containing the sequences
+         *
+         * @throws IOException
+         */
+        public FileIter(File inFile) throws IOException {
+            // Connect to the file.
+            this.reader = new TabbedLineReader(inFile);
+            // Locate the data columns.
+            this.idCol = reader.findField("genome_id");
+            this.nameCol = reader.findField("genome_name");
+            this.seedCol = reader.findField("seed_protein");
+            this.rnaCol = reader.findField("ssu_rna");
+        }
+
+        @Override
+        public boolean hasNext() {
+            return this.reader.hasNext();
+        }
+
+        @Override
+        public GenomeDescriptor next() {
+            TabbedLineReader.Line line = this.reader.next();
+            GenomeDescriptor retVal = new GenomeDescriptor(line.get(idCol), line.get(nameCol),
+                    line.get(seedCol), line.get(rnaCol));
+            return retVal;
+        }
+
+        @Override
+        public void close() throws IOException {
+            this.reader.close();
+        }
+
     }
 
     /**

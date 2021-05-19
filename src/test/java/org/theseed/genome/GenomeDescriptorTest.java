@@ -72,18 +72,18 @@ public class GenomeDescriptorTest {
         }
         Genome testGenome = new Genome(new File("data", "1280.25101.gto"));
         GenomeDescriptor testDescriptor = new GenomeDescriptor(testGenome);
-        List<GenomeDescriptorSet.CloseGenome> resultList = new ArrayList<>(6);
+        List<GenomeDescriptorSet.Rating> resultList = new ArrayList<>(6);
         for (GenomeDescriptorSet.FinderType type : GenomeDescriptorSet.FinderType.values()) {
-            GenomeDescriptorSet.CloseGenome result = refSet.findClosest(testDescriptor, type);
+            GenomeDescriptorSet.Rating result = refSet.findClosest(testDescriptor, type);
             assertThat(result.getGenomeId(), equalTo("1280.21158"));
             assertThat(result.getGenomeName(), equalTo("Staphylococcus aureus strain BPH2869"));
             assertThat(result.getProximity(), greaterThan(0.0));
             resultList.add(result);
         }
-        assertThat(GenomeDescriptorSet.CloseGenome.test(resultList, new int[] { 0, 1, 2, 3} ), isTrue());
-        resultList.add(new GenomeDescriptorSet.CloseGenome());
-        assertThat(GenomeDescriptorSet.CloseGenome.test(resultList, new int[] { 4, 0, 1, 2, 3 }), isFalse());
-        assertThat(GenomeDescriptorSet.CloseGenome.test(resultList, new int[] { 1, 0, 4, 2, 3 }), isFalse());
+        assertThat(GenomeDescriptorSet.Rating.test(resultList, new int[] { 0, 1, 2, 3} ), isTrue());
+        resultList.add(new GenomeDescriptorSet.Rating());
+        assertThat(GenomeDescriptorSet.Rating.test(resultList, new int[] { 4, 0, 1, 2, 3 }), isFalse());
+        assertThat(GenomeDescriptorSet.Rating.test(resultList, new int[] { 1, 0, 4, 2, 3 }), isFalse());
         assertThat(resultList.get(0).isSameGenome(resultList.get(4)), isFalse());
         assertThat(resultList.get(1).isSameGenome(resultList.get(2)), isTrue());
     }

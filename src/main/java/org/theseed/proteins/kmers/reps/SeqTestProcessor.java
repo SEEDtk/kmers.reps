@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDescriptor;
 import org.theseed.genome.GenomeDescriptorSet;
-import org.theseed.genome.GenomeDescriptorSet.CloseGenome;
+import org.theseed.genome.GenomeDescriptorSet.Rating;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
@@ -141,12 +141,12 @@ public class SeqTestProcessor extends BaseReportProcessor {
                 // Get this genome's identifying sequences.
                 GenomeDescriptor testDescriptor = new GenomeDescriptor(testGenome);
                 // Find the closest in each mode.
-                List<GenomeDescriptorSet.CloseGenome> results = new ArrayList<>();
+                List<GenomeDescriptorSet.Rating> results = new ArrayList<>();
                 for (GenomeDescriptorSet.FinderType type : GenomeDescriptorSet.FinderType.values()) {
-                    GenomeDescriptorSet.CloseGenome result = this.refGenomes.findClosest(testDescriptor, type);
+                    GenomeDescriptorSet.Rating result = this.refGenomes.findClosest(testDescriptor, type);
                     results.add(result);
                 }
-                if (GenomeDescriptorSet.CloseGenome.test(results, GenomeDescriptorSet.SIM_TYPES))
+                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.SIM_TYPES))
                     goodSims++;
                 else {
                     log.warn("Sims mismatch for {}.", testGenome);
@@ -155,11 +155,11 @@ public class SeqTestProcessor extends BaseReportProcessor {
                                 results.get(GenomeDescriptorSet.FinderType.SEED_SIMILARITY.ordinal()),
                                 results.get(GenomeDescriptorSet.FinderType.RNA_SIMILARITY.ordinal()));
                 }
-                if (GenomeDescriptorSet.CloseGenome.test(results, GenomeDescriptorSet.DIST_TYPES))
+                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.DIST_TYPES))
                     goodDist++;
                 else
                     log.warn("Distance mismatch for {}.", testGenome);
-                if (GenomeDescriptorSet.CloseGenome.test(results, GenomeDescriptorSet.SEED_TYPES))
+                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.SEED_TYPES))
                     goodSeed++;
                 else
                     log.warn("Seed mismatch for {}.", testGenome);
@@ -183,7 +183,7 @@ public class SeqTestProcessor extends BaseReportProcessor {
      * @param resultSeed	closest-genome result using SEED protein
      * @param resultRna		closest-genome result using RNA sequence
      */
-    private void produceOutlierReport(GenomeDescriptor testGenome, CloseGenome resultSeed, CloseGenome resultRna) {
+    private void produceOutlierReport(GenomeDescriptor testGenome, Rating resultSeed, Rating resultRna) {
         // Compute the converse proximities.  We know the seed-similarity to the seed-closest.  Find the RNA similarity of the seed-closest.
         double seedRnaSim = testGenome.getRnaSim(resultSeed.getGenome());
         // Similarly, we know the RNA similarity of the RNA-closest.  Find the seed similarity of the RNA-closest.

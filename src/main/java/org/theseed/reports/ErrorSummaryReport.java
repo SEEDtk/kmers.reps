@@ -75,6 +75,7 @@ public abstract class ErrorSummaryReport {
             }
         };
 
+
         public abstract ErrorSummaryReport create(File summaryFile);
     }
 
