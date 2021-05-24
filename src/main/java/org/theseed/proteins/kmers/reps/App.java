@@ -28,6 +28,7 @@ import org.theseed.utils.BaseProcessor;
  *  target		Find a kmer target in a set of genomes
  *  univ		create a report on the singly-occurring roles in a group of genomes
  *  gtoClass	Find representatives for GTOs in multiple RepGen databases
+ *  missing		Produce the missing-roles report for a directory of GTOs
  */
 public class App
 {

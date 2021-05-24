@@ -5,8 +5,6 @@ package org.theseed.reports;
 
 import java.io.PrintWriter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.theseed.genome.CloseSets;
 
 /**
@@ -15,13 +13,7 @@ import org.theseed.genome.CloseSets;
  * @author Bruce Parrello
  *
  */
-public abstract class NeighborReporter {
-
-    // FIELDS
-    /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(NeighborReporter.class);
-    /** output writer */
-    private PrintWriter writer;
+public abstract class NeighborReporter extends BaseWritingReporter {
 
     /**
      * This enum describes the report types.
@@ -31,11 +23,6 @@ public abstract class NeighborReporter {
             @Override
             public NeighborReporter create(PrintWriter writer) {
                 return new StatsNeighborReporter(writer);
-            }
-        }, SETS {
-            @Override
-            public NeighborReporter create(PrintWriter writer) {
-                return new SetsNeighborReporter(writer);
             }
         };
 
@@ -52,29 +39,7 @@ public abstract class NeighborReporter {
      * @param writer	output writer for report
      */
     public NeighborReporter(PrintWriter writer) {
-        this.writer = writer;
-    }
-
-    /**
-     * Write a formatted output line.
-     */
-    protected void print(String format, Object... args) {
-        this.writer.format(format, args);
-        this.writer.println();
-    }
-
-    /**
-     * Write an unformatted output line.
-     */
-    protected void println(String line) {
-        this.writer.println(line);
-    }
-
-    /**
-     * Write a blank output line.
-     */
-    protected void println() {
-        this.writer.println();
+        super(writer);
     }
 
     /**

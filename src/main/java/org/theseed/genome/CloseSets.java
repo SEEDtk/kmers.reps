@@ -17,16 +17,16 @@ public class CloseSets {
 
     // FIELDS
     /** set of neighbors computed using PheS */
-    private NavigableSet<CloseGenome> protNeighbors;
+    private NavigableSet<NearbyGenome> protNeighbors;
     /** set of neighbors computed using SSU rRNA */
-    private NavigableSet<CloseGenome> rnaNeighbors;
+    private NavigableSet<NearbyGenome> rnaNeighbors;
 
     /**
      * Create an empty neighbor set.
      */
     public CloseSets() {
-        this.protNeighbors = new TreeSet<CloseGenome>();
-        this.rnaNeighbors = new TreeSet<CloseGenome>();
+        this.protNeighbors = new TreeSet<NearbyGenome>();
+        this.rnaNeighbors = new TreeSet<NearbyGenome>();
     }
 
     /**
@@ -36,8 +36,8 @@ public class CloseSets {
      * @param genomeId		ID of the neighbor genome
      * @param dist			distance to the neighbor genome
      */
-    private void addGenome(NavigableSet<CloseGenome> set, String genomeId, double dist) {
-        CloseGenome closeness = new CloseGenome(genomeId, dist);
+    private void addGenome(NavigableSet<NearbyGenome> set, String genomeId, double dist) {
+        NearbyGenome closeness = new NearbyGenome(genomeId, dist);
         set.add(closeness);
     }
 
@@ -57,15 +57,15 @@ public class CloseSets {
     /**
      * @return a list of the close genomes, sorted by protein distance
      */
-    public List<CloseGenome> getProtResults() {
-        return new ArrayList<CloseGenome>(this.protNeighbors);
+    public List<NearbyGenome> getProtResults() {
+        return new ArrayList<NearbyGenome>(this.protNeighbors);
     }
 
     /**
      * @return a list of the close genomes, sorted by RNA distance
      */
-    public List<CloseGenome> getRnaResults() {
-        return new ArrayList<CloseGenome>(this.rnaNeighbors);
+    public List<NearbyGenome> getRnaResults() {
+        return new ArrayList<NearbyGenome>(this.rnaNeighbors);
     }
 
 }

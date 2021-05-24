@@ -11,8 +11,11 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -60,9 +63,13 @@ public class UniRoleProcessor extends BaseProcessor {
     /** count of role occurrences */
     private CountMap<String> roleCounts;
     /** map of role IDs to length statistics */
-    private Map<String, DescriptiveStatistics> roleStats;
+    private Map<String, SummaryStatistics> roleStats;
+    /** map of role IDs to protein families */
+    private Map<String, Set<String>> familyMap;
     /** output threshold */
     private int minCount;
+    /** estimated number of roles for map creation */
+    private static final int ESTIMATED_ROLES = 5000;
 
     // COMMAND-LINE OPTIONS
 
@@ -127,7 +134,8 @@ public class UniRoleProcessor extends BaseProcessor {
         try {
             // Create the role maps.
             this.roleCounts = new CountMap<String>();
-            this.roleStats = new HashMap<String, DescriptiveStatistics>(5000);
+            this.roleStats = new HashMap<String, SummaryStatistics>(ESTIMATED_ROLES);
+            this.familyMap = new HashMap<String, Set<String>>(ESTIMATED_ROLES);
             // Loop through the genomes.
             int count = 0;
             for (Genome genome : genomes) {
@@ -141,6 +149,7 @@ public class UniRoleProcessor extends BaseProcessor {
                         String roleId = role.getId();
                         gRoleCounts.count(roleId);
                         gRoleLengths.setCount(roleId, feat.getProteinLength());
+                        this.updateFamilies(roleId, feat);
                     }
                 }
                 // Now output the roles with only one feature.  For each role we must also add its length
@@ -150,7 +159,7 @@ public class UniRoleProcessor extends BaseProcessor {
                     if (counter.getCount() == 1) {
                         String roleId = counter.getKey();
                         this.roleCounts.count(roleId);
-                        DescriptiveStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new DescriptiveStatistics());
+                        SummaryStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new SummaryStatistics());
                         stats.addValue(gRoleLengths.getCount(roleId));
                         rCount++;
                     }
@@ -162,16 +171,18 @@ public class UniRoleProcessor extends BaseProcessor {
             else {
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
-                    writer.println("role\tcount\tname\tmean_len\tsdev_len");
+                    writer.println("role\tcount\tname\tmean_len\tsdev_len\tfamilies");
                     // Loop through the roles of interest.
                     for (CountMap<String>.Count counter : this.roleCounts.sortedCounts()) {
                         int rCount = counter.getCount();
                         if (rCount >= this.minCount) {
-                            // We need to compute the mean and standard deviation.
                             String roleId = counter.getKey();
-                            DescriptiveStatistics stats = this.roleStats.get(roleId);
-                            writer.format("%s\t%d\t%s\t%8.2f\t%8.2f%n", roleId, rCount, this.roleMap.getName(roleId),
-                                    stats.getMean(), stats.getStandardDeviation());
+                            // Get the protein families.
+                            String families = StringUtils.join(this.familyMap.get(roleId), ", ");
+                            // We need to compute the mean and standard deviation.
+                            SummaryStatistics stats = this.roleStats.get(roleId);
+                            writer.format("%s\t%d\t%s\t%8.2f\t%8.2f\t%s%n", roleId, rCount, this.roleMap.getName(roleId),
+                                    stats.getMean(), stats.getStandardDeviation(), families);
                         }
                     }
                 }
@@ -184,6 +195,18 @@ public class UniRoleProcessor extends BaseProcessor {
             if (this.outFile != null)
                 this.output.close();
         }
+    }
+
+    /**
+     * Add the global pattyfam and figfam for a role to the family map.
+     *
+     * @param roleId	ID of the role of interest
+     * @param feat		feature containing the role
+     */
+    private void updateFamilies(String roleId, Feature feat) {
+        Set<String> families = this.familyMap.computeIfAbsent(roleId, x -> new TreeSet<String>());
+        if (feat.getFigfam() != null) families.add(feat.getFigfam());
+        if (feat.getPgfam() != null) families.add(feat.getPgfam());
     }
 
 }

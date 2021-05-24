@@ -60,6 +60,7 @@ public class GtoClassProcessor extends BaseReportProcessor {
 
     // COMMAND-LINE OPTIONS
 
+    /** input genome source type */
     @Option(name = "--type", aliases = { "-t" }, usage = "type of input genome source")
     private GenomeSource.Type sourceType;
 

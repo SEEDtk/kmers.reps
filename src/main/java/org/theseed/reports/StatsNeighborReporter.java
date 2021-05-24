@@ -7,7 +7,7 @@ import java.io.PrintWriter;
 import java.util.List;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.theseed.genome.CloseGenome;
+import org.theseed.genome.NearbyGenome;
 import org.theseed.genome.CloseSets;
 
 /**
@@ -41,7 +41,7 @@ public class StatsNeighborReporter extends NeighborReporter {
      * @param type			type of distance
      * @param results		sorted list of distance results
      */
-    private void output(String id, String name, String type, List<CloseGenome> results) {
+    private void output(String id, String name, String type, List<NearbyGenome> results) {
         DescriptiveStatistics stats = new DescriptiveStatistics(results.stream().mapToDouble(x -> x.getDistance())
                 .toArray());
         double q1 = stats.getPercentile(25.0);
