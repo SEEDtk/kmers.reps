@@ -10,7 +10,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -39,12 +42,16 @@ import org.theseed.utils.ParseFailureException;
  * -t	type of genome directory source (MASTER, DIR, PATRIC)
  * -o	output file (if not STDOUT)
  *
- * --filter		if specified, a tab-delimited file of genome IDs; only the genome IDs listed in the first column
- * 				will be processed, and they will be processed in the order presented
- * --rna		if specified, genomes without a valid SSU rRNA will be skipped
+ * --filter		if specified, a tab-delimited file of genome IDs; only the genome whose IDs are listed in the
+ * 				first column will be processed, and they will be processed in the order presented
+ * --blackList	if specified, a tab-delimited file of genome IDs; the genomes whose IDs are specified will
+ * 				be processed last
+ * --rna		if specified, genomes without a valid SSU rRNA will be skipped; genomes with a short SSU rRNA
+ * 				will be processed before the blacklist
  * --update		if specified, a file name; the repGenomeDB will be updated and stored in the named file
  * --save		if specified, a genome target to which outliers should be saved
  * --saveType	type of genome target (MASTER or DIR)
+ * --create		create a new representative-genome database with default parameters and the specified similarity threshold
  *
  * @author Bruce Parrello
  *
@@ -66,9 +73,65 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     private IGenomeTarget target;
     /** output stream */
     private OutputStream outStream;
+    /** list of genome IDs to defer */
+    private Set<String> blacklist;
+    /** deferred-genome list */
+    private List<Deferral> deferrals;
+    /** outlier count */
+    private int outCount;
+    /** minimum acceptable rRNA length */
+    private static final int MIN_RNA_LEN = 1400;
 
+
+    /**
+     * This is a dinky structure for storing a deferral.
+     */
+    protected class Deferral {
+
+        /** genome being deferred */
+        private Genome genome;
+        /** ID of the seed protein */
+        private String seedFid;
+        /** sequence of the seed protein */
+        private String seedFound;
+
+        /**
+         * Construct a deferral for a specified genome.
+         *
+         * @param genome		genome of interest
+         * @param seedFid		ID of its seed protein
+         * @param seedFound		sequence of its seed protein
+         */
+        protected Deferral(Genome genome, String seedFid, String seedFound) {
+            this.genome = genome;
+            this.seedFid = seedFid;
+            this.seedFound = seedFound;
+        }
+
+        /**
+         * Process the deferral.
+         *
+         * @param writer	output writer for the result
+         *
+         * @throws IOException
+         */
+        protected void process(PrintWriter writer) throws IOException {
+            GtoRepGenomeProcessor.this.processGenome(writer, this.genome, this.seedFound, this.seedFid);
+        }
+
+        /**
+         * @return the genome being deferred
+         */
+        public Genome getGenome() {
+            return this.genome;
+        }
+    }
 
     // COMMAND-LINE OPTIONS
+
+    /** similarity threshold; indicates a new database will be created */
+    @Option(name = "--create", metaVar = "200", usage = "if specified, indicates that the rep-genome database should be created with the indicated threshold")
+    private int createFlag;
 
     /** genome source type */
     @Option(name = "-t", aliases = { "--type" }, usage = "genome source type")
@@ -98,6 +161,10 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     @Option(name = "--rna", usage = "if specified, genomes without a valid SSU rRNA will be skipped")
     private boolean rnaFlag;
 
+    /** blacklist file */
+    @Option(name = "--blackList", metaVar = "blacklistFile.tbl", usage = "if specified, a file of genome IDs to defer")
+    private File blackListFile;
+
     /** representative-genome database */
     @Argument(index = 0, metaVar = "repDb.ser", usage = "name of representaitve-genome database file")
     private File repDbFile;
@@ -116,17 +183,32 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
         this.saveDir = null;
         this.outFile = null;
         this.rnaFlag = false;
+        this.createFlag = 0;
+        this.blackListFile = null;
     }
 
     @Override
     protected boolean validateParms() throws IOException, ParseFailureException {
-        if (! this.repDbFile.canRead())
-            throw new FileNotFoundException("Representative-genome database " + this.repDbFile + " not found or unreadable.");
         if (! this.gtoDir.exists())
             throw new FileNotFoundException("Input source " + this.gtoDir + " not found.");
         // Load the genome source.
         this.source = this.type.create(this.gtoDir);
         log.info("{} genomes in source {}.", this.source.size(), this.gtoDir);
+        // Load the rep-genome database.
+        if (this.createFlag == 0) {
+            log.info("Loading representative-genome database from {}.", this.repDbFile);
+            this.repDb = RepGenomeDb.load(this.repDbFile);
+            // Report on the update status.
+            if (this.updateFile != null)
+                log.info("Outliers will be added to the database and the updated database written to {}.", this.updateFile);
+        } else if (this.updateFile != null)
+            throw new ParseFailureException("Update file is mutually exclusive with create mode.");
+        else {
+            // Set up to write the resulting database to the specified rep-genome file.
+            log.info("Creating new representative-genome database in {}.", this.repDbFile);
+            this.repDb = new RepGenomeDb(this.createFlag);
+            this.updateFile = this.repDbFile;
+        }
         // If there is a filter file, create the filter set.
         if (this.filterFile == null) {
             log.info("All input genomes will be processed.");
@@ -134,6 +216,13 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
         } else {
             this.idList = TabbedLineReader.readColumn(this.filterFile, "1");
             log.info("{} genomes specified in filter file {}.", this.idList.size(), this.filterFile);
+        }
+        // If there is a blacklist file, set up the black list.
+        if (this.blackListFile == null) {
+            this.blacklist = Collections.emptySet();
+        } else {
+            this.blacklist = TabbedLineReader.readSet(this.blackListFile, "1");
+            log.info("{} genomes in blacklist read from {}.", this.blackListFile);
         }
         // Set up the outlier output directory.
         if (this.saveDir == null)
@@ -150,18 +239,12 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             log.info("Output will be to {}.", this.outFile);
             this.outStream = new FileOutputStream(this.outFile);
         }
-        // Report on the update status.
-        if (this.updateFile != null)
-            log.info("Outliers will be added to the database and the updated database written to {}.", this.updateFile);
         return true;
     }
 
     @Override
     protected void runCommand() throws Exception {
         try (PrintWriter writer = new PrintWriter(this.outStream)) {
-            // Load the rep-genome database.
-            log.info("Loading representative-genome database from {}.", this.repDbFile);
-            this.repDb = RepGenomeDb.load(this.repDbFile);
             // Start the output report.
             writer.println("genome_id\tgenome_name\trep_id\trep_name\tsimilarity\tdistance\toutlier");
             // Create a role map from the seed protein.
@@ -170,7 +253,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             // Now read through the genome directory.
             log.info("Scanning genome directory {}.", this.gtoDir);
             int skipCount = 0;
-            int outCount = 0;
+            this.outCount = 0;
             for (String genomeId : this.idList) {
                 Genome genome = this.source.getGenome(genomeId);
                 // It is completely acceptable for the genome to not be in the source.
@@ -196,66 +279,37 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
                     if (seedFound.isEmpty()) {
                         log.warn("{} does not have a seed protein.", genome);
                         skip = true;
+                        skipCount++;
+                    } else if (this.blacklist.contains(genome.getId())) {
+                        log.info("{} deferred due to blacklist.", genome);
+                        this.defer(genome, seedFid, seedFound);
+                        skip = true;
                     } else if (this.rnaFlag) {
                         String ssuRRNA = genome.getSsuRRna();
                         if (ssuRRNA.isEmpty()) {
                             log.warn("{} does not have an SSU rRNA.", genome);
                             skip = true;
+                            skipCount++;
+                        } else if (ssuRRNA.length() < MIN_RNA_LEN) {
+                            log.warn("{} deferred due to short RNA.", genome);
+                            this.defer(genome, seedFid, seedFound);
+                            skip = true;
                         }
                     }
-                    if (skip)
-                        skipCount++;
-                    else {
+                    if (! skip) {
                         // Look for the closest representative.
-                        RepGenomeDb.Representation result = this.repDb.findClosest(seedFound);
-                        String repId;
-                        String repName;
-                        String outlierFlag = "";
-                        int sim = 0;
-                        double dist = 1.0;
-                        if (result.getSimilarity() == 0) {
-                            // Here there is nothing close.
-                            repId = "";
-                            repName = "";
-                            outCount++;
-                            outlierFlag = "*";
-                        } else {
-                            // Compute the ID and name of the closest rep.
-                            repId = result.getGenomeId();
-                            repName = result.getRepresentative().getName();
-                            sim = result.getSimilarity();
-                            dist = result.getDistance();
-                            if (sim < repDb.getThreshold()) {
-                                outCount++;
-                                outlierFlag = "*";
-                            }
-                        }
-                        if (! outlierFlag.isEmpty()) {
-                            // Here we have an outlier.
-                            if (this.updateFile != null) {
-                                // Here we are updating the database and we need to add this outlier.
-                                repName = genome.getName();
-                                RepGenome rep = new RepGenome(seedFid, repName, seedFound);
-                                this.repDb.addRep(rep);
-                                repId = genome.getId();
-                                sim = 9999;
-                                dist = 0.0;
-                                log.info("{} added to representative genome database.", genome);
-                            }
-                            if (this.saveDir != null) {
-                                // Here we are saving the outliers.
-                                this.target.add(genome);
-                                log.info("{} saved to {}.", genome, this.saveDir);
-                            }
-                        }
-                        // Write the output line.
-                        writer.format("%s\t%s\t%s\t%s\t%d\t%8.4f\t%s%n", genome.getId(), genome.getName(), repId, repName,
-                                sim, dist, outlierFlag);
+                        processGenome(writer, genome, seedFound, seedFid);
                     }
                 }
             }
+            // Now process the deferrals.
+            log.info("Processing {} deferred genomes.", this.deferrals.size());
+            for (Deferral deferral : this.deferrals) {
+                log.info("Processing deferred genome {}.", deferral.getGenome());
+                deferral.process(writer);
+            }
             log.info("{} outliers found, {} skipped due to missing seed protein.",
-                    outCount, skipCount);
+                    this.outCount, skipCount);
             if (this.updateFile != null) {
                 log.info("Writing new database to {}.", this.updateFile);
                 repDb.save(this.updateFile);
@@ -267,6 +321,75 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             if (this.outFile != null)
                 this.outStream.close();
         }
+    }
+
+    /**
+     * Process a genome to find its representative.
+     *
+     * @param writer		print writer for the output line
+     * @param genome		genome to process
+     * @param seedFound		seed protein string
+     * @param seedFid		seed protein feature ID
+     *
+     * @throws IOException
+     */
+    protected void processGenome(PrintWriter writer, Genome genome, String seedFound, String seedFid) throws IOException {
+        RepGenomeDb.Representation result = this.repDb.findClosest(seedFound);
+        String repId;
+        String repName;
+        String outlierFlag = "";
+        int sim = 0;
+        double dist = 1.0;
+        if (result.getSimilarity() == 0) {
+            // Here there is nothing close.
+            repId = "";
+            repName = "";
+            this.outCount++;
+            outlierFlag = "*";
+        } else {
+            // Compute the ID and name of the closest rep.
+            repId = result.getGenomeId();
+            repName = result.getRepresentative().getName();
+            sim = result.getSimilarity();
+            dist = result.getDistance();
+            if (sim < repDb.getThreshold()) {
+                this.outCount++;
+                outlierFlag = "*";
+            }
+        }
+        if (! outlierFlag.isEmpty()) {
+            // Here we have an outlier.
+            if (this.updateFile != null) {
+                // Here we are updating the database and we need to add this outlier.
+                repName = genome.getName();
+                RepGenome rep = new RepGenome(seedFid, repName, seedFound);
+                this.repDb.addRep(rep);
+                repId = genome.getId();
+                sim = 9999;
+                dist = 0.0;
+                log.info("{} added to representative genome database.", genome);
+            }
+            if (this.saveDir != null) {
+                // Here we are saving the outliers.
+                this.target.add(genome);
+                log.info("{} saved to {}.", genome, this.saveDir);
+            }
+        }
+        // Write the output line.
+        writer.format("%s\t%s\t%s\t%s\t%d\t%8.4f\t%s%n", genome.getId(), genome.getName(), repId, repName,
+                sim, dist, outlierFlag);
+    }
+
+    /**
+     * Defer a genome for later processing.
+     *
+     * @param genome		genome of interest
+     * @param seedFid		seed protein feature ID
+     * @param seedFound		seed protein sequence
+     */
+    private void defer(Genome genome, String seedFid, String seedFound) {
+        Deferral deferral = new Deferral(genome, seedFid, seedFound);
+        this.deferrals.add(deferral);
     }
 
 }
