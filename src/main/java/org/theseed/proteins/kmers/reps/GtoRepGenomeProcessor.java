@@ -89,7 +89,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     protected class Deferral {
 
         /** genome being deferred */
-        private Genome genome;
+        private String genomeId;
         /** ID of the seed protein */
         private String seedFid;
         /** sequence of the seed protein */
@@ -103,7 +103,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
          * @param seedFound		sequence of its seed protein
          */
         protected Deferral(Genome genome, String seedFid, String seedFound) {
-            this.genome = genome;
+            this.genomeId = genome.getId();
             this.seedFid = seedFid;
             this.seedFound = seedFound;
         }
@@ -116,15 +116,11 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
          * @throws IOException
          */
         protected void process(PrintWriter writer) throws IOException {
-            GtoRepGenomeProcessor.this.processGenome(writer, this.genome, this.seedFound, this.seedFid);
+            Genome genome = GtoRepGenomeProcessor.this.source.getGenome(this.genomeId);
+            log.info("Processing deferred genome {}.", genome);
+            GtoRepGenomeProcessor.this.processGenome(writer, genome, this.seedFound, this.seedFid);
         }
 
-        /**
-         * @return the genome being deferred
-         */
-        public Genome getGenome() {
-            return this.genome;
-        }
     }
 
     // COMMAND-LINE OPTIONS
@@ -250,16 +246,20 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             // Create a role map from the seed protein.
             this.seedMap = new RoleMap();
             this.seedMap.findOrInsert(this.repDb.getProtName());
+            // Set up the deferral list.
+            this.deferrals = new ArrayList<Deferral>(2000);
             // Now read through the genome directory.
             log.info("Scanning genome directory {}.", this.gtoDir);
             int skipCount = 0;
             this.outCount = 0;
+            int gCount = 0;
             for (String genomeId : this.idList) {
+                gCount++;
                 Genome genome = this.source.getGenome(genomeId);
                 // It is completely acceptable for the genome to not be in the source.
                 // We only process if it's found.
                 if (genome != null) {
-                    log.info("Processing genome {}.", genome);
+                    log.info("Processing genome {} of {}: {}.", gCount, this.idList.size(), genome);
                     // Search for the seed protein.  We keep the longest.
                     String seedFound = "";
                     String seedFid = "";
@@ -305,7 +305,6 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             // Now process the deferrals.
             log.info("Processing {} deferred genomes.", this.deferrals.size());
             for (Deferral deferral : this.deferrals) {
-                log.info("Processing deferred genome {}.", deferral.getGenome());
                 deferral.process(writer);
             }
             log.info("{} outliers found, {} skipped due to missing seed protein.",
