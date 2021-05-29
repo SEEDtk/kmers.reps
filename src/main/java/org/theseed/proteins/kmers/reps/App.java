@@ -29,6 +29,7 @@ import org.theseed.utils.BaseProcessor;
  *  univ		create a report on the singly-occurring roles in a group of genomes
  *  gtoClass	Find representatives for GTOs in multiple RepGen databases
  *  missing		Produce the missing-roles report for a directory of GTOs
+ *  prio		prioritize a list of genomes using a second list
  */
 public class App
 {
@@ -92,6 +93,9 @@ public class App
             break;
         case "seqFind" :
             processor = new BadRnaProcessor();
+            break;
+        case "prio" :
+            processor = new PrioritizeProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

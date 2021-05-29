@@ -218,7 +218,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             this.blacklist = Collections.emptySet();
         } else {
             this.blacklist = TabbedLineReader.readSet(this.blackListFile, "1");
-            log.info("{} genomes in blacklist read from {}.", this.blackListFile);
+            log.info("{} genomes in blacklist read from {}.", this.blacklist.size(), this.blackListFile);
         }
         // Set up the outlier output directory.
         if (this.saveDir == null)
