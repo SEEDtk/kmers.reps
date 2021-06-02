@@ -113,8 +113,7 @@ public class GtoClassProcessor extends BaseReportProcessor {
             // Find this genome's seed protein.
             String protId = SeqTableProcessor.findSeed(genome);
             if (protId == null) {
-                // Here there is no seed protein, so the genome is always its own representative.
-                Arrays.fill(repIds, genome.getId());
+                // Here there is no seed protein, so we skip the genome.
                 errorCount += repIds.length;
             } else {
                 // Get the seed protein kmers.
@@ -133,14 +132,14 @@ public class GtoClassProcessor extends BaseReportProcessor {
                         errorCount++;
                     }
                 }
+                // Write this genome's record.
+                List<String> columns = new ArrayList<String>(repIds.length + 2);
+                columns.add(genome.getId());
+                columns.add(genome.getName());
+                for (String repId : repIds)
+                    columns.add(repId);
+                writer.println(StringUtils.join(columns, '\t'));
             }
-            // Write this genome's record.
-            List<String> columns = new ArrayList<String>(repIds.length + 2);
-            columns.add(genome.getId());
-            columns.add(genome.getName());
-            for (String repId : repIds)
-                columns.add(repId);
-            writer.println(StringUtils.join(columns, '\t'));
         }
         log.info("{} genomes processed. {} representatives found; {} failures.", gCount, foundCount, errorCount);
         if (log.isInfoEnabled()) {
