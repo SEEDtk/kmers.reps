@@ -30,6 +30,7 @@ import org.theseed.utils.BaseProcessor;
  *  gtoClass	Find representatives for GTOs in multiple RepGen databases
  *  missing		Produce the missing-roles report for a directory of GTOs
  *  prio		prioritize a list of genomes using a second list
+ *  list		list the genomes in a representative genome database
  */
 public class App
 {
@@ -96,6 +97,9 @@ public class App
             break;
         case "prio" :
             processor = new PrioritizeProcessor();
+            break;
+        case "list" :
+            processor = new ListProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
