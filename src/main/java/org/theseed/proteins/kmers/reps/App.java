@@ -24,7 +24,7 @@ import org.theseed.utils.BaseProcessor;
  *  seqTable	Create a table of identifying sequences for each representative genome
  *  seqComp		Create a table comparing PheS distance to SSU-rRNA distance
  *  seqTest		Compare the closest PheS genome to the closest SSU-rRNA genome
- *  seqFind		Find bad SSU rRNA sequences by comparing neighborhoods
+ *  ssuCheck	Find bad SSU rRNA sequences by blasting against SILVA
  *  target		Find a kmer target in a set of genomes
  *  univ		create a report on the singly-occurring roles in a group of genomes
  *  gtoClass	Find representatives for GTOs in multiple RepGen databases
@@ -92,7 +92,7 @@ public class App
         case "gtoClass" :
             processor = new GtoClassProcessor();
             break;
-        case "seqFind" :
+        case "ssuCheck" :
             processor = new BadRnaProcessor();
             break;
         case "prio" :
