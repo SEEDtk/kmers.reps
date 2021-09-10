@@ -14,19 +14,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
 import java.util.Iterator;
 
 import org.theseed.genome.Feature;
+import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Criterion;
 import org.theseed.p3api.Connection.Table;
 import org.theseed.proteins.RoleMap;
+import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
+import org.theseed.counters.GenomeEval;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -43,8 +46,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ProteinDataFactory implements Iterable<ProteinData> {
 
-    public static final String SEED_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain";
-
     // FIELDS
 
     /** logging facility */
@@ -56,9 +57,23 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /** connection to PATRIC */
     private Connection p3;
     /** master list of ProteinData objects */
-    SortedSet<ProteinData> master;
+    private SortedSet<ProteinData> master;
     /** map of ProteinData objects by genome ID */
-    Map<String, ProteinData> idMap;
+    private Map<String, ProteinData> idMap;
+    /** map of special NCBI genomes to ratings */
+    protected Map<String, ProteinData.Rating> ncbiRefMap;
+    /** genome statistics */
+    private GenomeEval statistics;
+    /** minimum SSU rRNA length */
+    public static final int MIN_SSU_LEN = 1400;
+    /** minimum SSU rRNA length for validation */
+    public static final int USEFUL_SSU_LEN = 700;
+    /** maximum SSU rRNA distance */
+    public static final double MAX_SSU_DISTANCE = 0.5;
+    /** maximum SSU rRNA distance within a genus*/
+    public static final double MAX_GENUS_SSU_DISTANCE = 0.75;
+    /** seed protein function */
+    public static final String SEED_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain";
 
     /**
      * Initialize the PATRIC connection and read in the genus and species sets.
@@ -81,9 +96,28 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         taxonList = p3.query(Table.TAXONOMY, "taxon_id", "eq(taxon_rank,genus)");
         this.genera = taxonList.stream().map(x -> Connection.getString(x, "taxon_id")).collect(Collectors.toSet());
         log.info("{} genera tabulated.", this.genera.size());
+        // Get the NCBI reference and representative genomes.
+        List<JsonObject> ncbiGenomes = p3.query(Table.GENOME, "genome_id,reference_genome",
+                Criterion.IN("reference_genome", "Representative", "Reference"));
+        log.info("{} NCBI special genomes found.", ncbiGenomes.size());
+        this.ncbiRefMap = new HashMap<String, ProteinData.Rating>(ncbiGenomes.size());
+        for (JsonObject genome : ncbiGenomes) {
+            String genomeId = Connection.getString(genome, "genome_id");
+            if (genomeId != null && ! genomeId.isEmpty()) {
+                String type = Connection.getString(genome, "reference_genome");
+                if (type != null) {
+                    if (type.contentEquals("Reference"))
+                        this.ncbiRefMap.put(genomeId, ProteinData.Rating.NCBI_REF);
+                    else if (type.contentEquals("Representative"))
+                        this.ncbiRefMap.put(genomeId, ProteinData.Rating.NCBI_REP);
+                }
+            }
+        }
         // Create the master list and map.
         this.master = new TreeSet<ProteinData>();
         this.idMap = new HashMap<String, ProteinData>(200000);
+        // Create the statistics object.
+        this.statistics = new GenomeEval();
     }
 
     /**
@@ -122,6 +156,9 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         if (retVal) {
             ProteinData newGenome = new ProteinData(genomeId, genomeName, domain, genus, species,
                     gc, score);
+            // Initialize the rating to one of the three good ones.
+            newGenome.setRating(this.ncbiRefMap.getOrDefault(genomeId, ProteinData.Rating.NORMAL));
+            // Put the genome in the data structures.
             this.master.add(newGenome);
             this.idMap.put(genomeId, newGenome);
         } else {
@@ -131,10 +168,22 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     }
 
     /**
-     * Finish the master list.  The list is traversed sequentially, retrieving the DNA and protein
+     * Analyze a summary file line to update the statistics.
+     *
+     * @param line	summary file line to analyze
+     */
+    public void analyze(TabbedLineReader.Line line) {
+        this.statistics.analyze(line);
+    }
+
+    /**
+     * Finish the master list.  The list is traversed twice sequentially, retrieving the DNA and protein
      * sequences.  This is a slow, expensive operation requiring a lot of PATRIC access.  The
      * genus and species sets are released at the beginning, since they are no longer needed and
      * we are about to use a lot of memory for the sequences.
+     *
+     * Note that for the seed protein, we will only find one, because a good genome has only one.
+     * For the SSU rRNAs, we may find many, so we need a different strategy.
      *
      * @param batchSize		number of genomes to process in each batch
      *
@@ -157,7 +206,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 "genome_id,patric_id,product,aa_sequence_md5,na_sequence_md5",
                 Criterion.EQ("product", SEED_FUNCTION), Criterion.EQ("annotation", "PATRIC"));
         // We are ready.  Loop through the features, retrieving the sequences.
-        log.info("Retrieving DNA and protein sequences.");
+        log.info("Retrieving seed protein DNA and AA sequences.");
         for (JsonObject feature : features) {
             // Check this feature for a valid function.  It usually IS valid.  Rarely, we get a substring match of something that
             // is similar, but not correct.
@@ -199,8 +248,20 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         Iterator<ProteinData> iter = this.master.iterator();
         while (iter.hasNext()) {
             ProteinData genomeData = iter.next();
-            if (genomeData.getDna() == null || genomeData.getProtein() == null ||
-                    genomeData.getProtein().contains("XX")) {
+            boolean removeFlag = false;
+            if (genomeData.getDna() == null) {
+                removeFlag = true;
+                this.statistics.count("Missing Seed DNA", 1);
+            }
+            if (genomeData.getProtein() == null) {
+                removeFlag = true;
+                this.statistics.count("Missing Seed AA", 1);
+            }
+            if (genomeData.getProtein().contains("XX")) {
+                removeFlag = true;
+                this.statistics.count("Ambiguous Seed", 1);
+            }
+            if (removeFlag) {
                 iter.remove();
                 this.idMap.remove(genomeData.getGenomeId());
                 deleteCount++;
@@ -208,6 +269,132 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         }
         log.info("{} incomplete or ambiguous genomes removed.",
                 deleteCount);
+        // Now we do the SSU rRNAs with our slightly-reduced genome set.
+        log.info("Retrieving SSU rRNA features.");
+        features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
+                "genome_id,patric_id,product,na_sequence_md5",
+                Criterion.IN("feature_type", "rrna", "misc_RNA"),
+                Criterion.EQ("annotation", "PATRIC"));
+        log.info("{} total rRNAs found.", features.size());
+        // Form the features into a map based on genome ID.  Also, we create a map that will
+        // eventually map each sequence MD5 to its DNA and one to list all the SSU rRNA features
+        // for each genome.
+        Map<String, String> seqMap = new HashMap<String, String>(features.size());
+        Map<String, List<JsonObject>> genomeMap = new HashMap<String, List<JsonObject>>(this.master.size());
+        int found = 0;
+        for (JsonObject feature : features) {
+            String product = Connection.getString(feature, "product");
+            if (Genome.SSU_R_RNA.matcher(product).find()) {
+                // Here we have a real 16S feature.
+                seqMap.put(Connection.getString(feature, "na_sequence_md5"), null);
+                String genomeId = Connection.getString(feature, "genome_id");
+                List<JsonObject> feats = genomeMap.computeIfAbsent(genomeId, x -> new ArrayList<JsonObject>(5));
+                feats.add(feature);
+                found++;
+            }
+        }
+        log.info("{} 16s features found in {} genomes.", found, genomeMap.size());
+        // We no longer need the feature list.
+        features = null;
+        // We now fill the map with the actual sequences.
+        log.info("Reading {} SSU nucleotide sequences from PATRIC.", seqMap.size());
+        p3.getRecords(Table.SEQUENCE, "md5", seqMap.keySet(), "md5,sequence").stream()
+                .forEach(x -> seqMap.put(Connection.getString(x, "md5"),
+                        Connection.getString(x, "sequence")));
+        // We have all the SSU rRNA sequences, which is quite an accomplishment.  Run through the
+        // genomes, collecting them and updating the SSUs.  This involves changing the key to a
+        // sorted set, so we clear the master and rebuild it.
+        List<ProteinData> masterClone = new ArrayList<ProteinData>(this.master);
+        this.master.clear();
+        // For single-RNA genomes, this tracks good-RNA genomes for each genus.
+        Map<String, DnaKmers> genusMap = new HashMap<String, DnaKmers>(10000);
+        List<ProteinData> retryQueue = new ArrayList<ProteinData>(masterClone.size());
+        // We need some counters to display.
+        deleteCount = 0;
+        int badCount = 0;
+        int shortCount = 0;
+        int processCount = 0;
+        for (ProteinData genomeData : masterClone) {
+            String genomeId = genomeData.getGenomeId();
+            List<JsonObject> jsons = genomeMap.get(genomeId);
+            if (jsons == null) {
+                // Here we can't find a 16s.  Reject the genome.
+                log.warn("No 16S sequence found for {}: {}.", genomeId, genomeData.getGenomeName());
+                deleteCount++;
+            } else {
+                // Get all the sequences for this genome.
+                List<String> rnas = jsons.stream().map(x -> seqMap.get(Connection.getString(x, "na_sequence_md5")))
+                        .filter(x -> x != null).collect(Collectors.toList());
+                if (rnas.isEmpty()) {
+                    // Here the SSUs had no valid sequences.  Reject the genome.
+                    log.warn("All 16s sequences invalid in {}: {}.", genomeId, genomeData.getGenomeName());
+                    deleteCount++;
+                    this.statistics.count("16s Seq Not Found", 1);
+                } else {
+                    // We have sequences.  Merge them into the protein data.  This may change the rating.
+                    ProteinData.Rating rating = genomeData.setSsuSequence(rnas);
+                    switch (rating) {
+                    case BAD_SSU :
+                        badCount++;
+                        this.master.add(genomeData);
+                        break;
+                    case SHORT_SSU :
+                        shortCount++;
+                        this.master.add(genomeData);
+                        break;
+                    case SINGLE_SSU :
+                        // Here we want to queue the genome for a second pass.
+                        retryQueue.add(genomeData);
+                        break;
+                    default :
+                        // Here the genome is good.  If it is the first for this genus, save it
+                        // for the retry queue.
+                        genusMap.putIfAbsent(genomeData.getGenus(),
+                                new DnaKmers(genomeData.getSsuSequence()));
+                        this.master.add(genomeData);
+                    }
+                }
+            }
+            processCount++;
+            if (log.isInfoEnabled() && processCount % 2000 == 0)
+                log.info("{} genomes processed, {} bad, {} short, {} queued for retry.", processCount,
+                        badCount, shortCount, retryQueue.size());
+        }
+        log.info("{} genomes deleted due to missing sequences.  {} flagged as bad, {} as short",
+                deleteCount, badCount, shortCount);
+        // Now we try once again for the single-SSU genomes.  We are hoping that we can use the reference
+        // genome for the genus to verify the single SSU.
+        log.info("Retrying {} genomes at genus level.", retryQueue.size());
+        int reclaimed = 0;
+        int processed = 0;
+        for (ProteinData genomeData : retryQueue) {
+            DnaKmers genusKmers = genusMap.get(genomeData.getGenus());
+            // The rating at this point is SINGLE_SSU which is worse than short.
+            if (genusKmers != null) {
+                // Here there is data we can use to reclaim the genome.
+                DnaKmers genomeKmers = new DnaKmers(genomeData.getSsuSequence());
+                double dist = genusKmers.distance(genomeKmers);
+                ProteinData.Rating rating;
+                if (dist >= MAX_GENUS_SSU_DISTANCE) {
+                    // The SSU is outside the genus, so it is bad.
+                    rating = ProteinData.Rating.BAD_SSU;
+                } else {
+                    // Here we can reclaim it, but it might still be short.
+                    if (genusKmers.getLen() < MIN_SSU_LEN)
+                        rating = ProteinData.Rating.SHORT_SSU;
+                    else
+                        rating = ProteinData.Rating.NORMAL;
+                    reclaimed++;
+                }
+                genomeData.setRating(rating);
+            }
+            this.master.add(genomeData);
+            processed++;
+            if (log.isInfoEnabled() && this.master.size() % 5000 == 0)
+                log.info("{} genomes checked.  {} reclaimed.", processed, reclaimed);
+        }
+        log.info("Final genome count is {}.  {} were reclaimed by genus testing.",
+                this.master.size(), reclaimed);
     }
 
     /**
@@ -217,7 +404,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      * @param protMap	map of protein MD%s to ProteinData objects
      */
     private void processMaps(Map<String, Collection<ProteinData>> dnaMap, Map<String, Collection<ProteinData>> protMap) {
-        log.info("Retrieving DNA sequences for {} proteins.", dnaMap.size());
+        log.info("Retrieving DNA sequences for {} features.", dnaMap.size());
         Map<String, JsonObject> sequences = p3.getRecords(Table.SEQUENCE, dnaMap.keySet(), "sequence");
         int dnaSet = 0;
         int protSet = 0;
@@ -229,7 +416,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 dnaSet++;
             }
         }
-        log.info("Retrieving protein sequences for {} proteins.", protMap.size());
+        log.info("Retrieving protein sequences for {} features.", protMap.size());
         sequences = p3.getRecords(Table.SEQUENCE, protMap.keySet(), "sequence");
         for (Map.Entry<String, JsonObject> sequence : sequences.entrySet()) {
             Collection<ProteinData> genomeData = protMap.get(sequence.getKey());
@@ -281,7 +468,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         readRepFinder(repFinderDbFile);
         // Find the repXX.ser files.
         File[] repDbFiles = inDir.listFiles((d, n) -> n.matches("rep\\d+\\.ser"));
-        // Initialize the repget set list.
+        // Initialize the repgen set list.
         container.initRepGenSets(repDbFiles.length);
         // Loop through the files.
         for (File repDbFile : repDbFiles) {
@@ -368,6 +555,45 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 }
             }
         }
+    }
+
+    /**
+     * Remove genomes from the list with a low rating.
+     *
+     * @param rating	minimum rating to keep
+     */
+    public void prune(ProteinData.Rating rating) {
+        // We create a tiny little map for the rating names.
+        Map<ProteinData.Rating, String> ratingNames = new TreeMap<ProteinData.Rating, String>();
+        Arrays.stream(ProteinData.Rating.values())
+                .forEach(x -> ratingNames.put(x, "Rating-" + x.toString()));
+        int deleteCount = 0;
+        Iterator<ProteinData> iter = this.master.iterator();
+        while (iter.hasNext()) {
+            ProteinData curr = iter.next();
+            ProteinData.Rating currR = curr.getRating();
+            // Count the genome.
+            this.statistics.count(ratingNames.get(currR), 1);
+            // Remove the genome if it is rated too low.
+            if (curr.getRating().compareTo(rating) > 0) {
+                iter.remove();
+                deleteCount++;
+            }
+        }
+        log.info("{} genomes with rating less than {} deleted.", deleteCount, rating);
+        this.statistics.count("Low Rating", deleteCount);
+        this.statistics.count("Final Genome Count", this.master.size());
+    }
+
+    /**
+     * Write the statistics to the specified file.
+     *
+     * @param outfile	output file name
+     *
+     * @throws IOException
+     */
+    public void writeStats(File outFile) throws IOException {
+        this.statistics.write(outFile);
     }
 
 }

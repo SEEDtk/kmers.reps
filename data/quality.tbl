@@ -1,23 +1,21 @@
-genome.genome_id	genome.genome_name	genome.taxon_lineage_ids	Coarse Consistency	Fine Consistency	Completeness	Contamination	Completeness Group	Good Seed	Contigs	Pct Hypothetical	Score	Good Genome
-813.178	Chlamydia trachomatis strain SQ06	131567::2::1783257::204428::204429::51291::809::1113537::810::813	99.9	99.9	100	0	R200 (Chlamydia trachomatis D/UW-3/CX)	Y	1	0	308.881	1
-813.179	Chlamydia trachomatis strain SQ07	131567::2::1783257::204428::204429::51291::809::1113537::810::813	99.9	99.9	100	0	R200 (Chlamydia trachomatis D/UW-3/CX)	Y	1	0	308.881	1
-163164.29	Wolbachia endosymbiont of Drosophila melanogaster strain wMel	131567::2::1224::28211::766::942::952::953::163164	99.9	99.9	100	0	R200 (Wolbachia endosymbiont of Drosophila simulans wHa)	Y	1	0	308.881	1
-754252.34	Propionibacterium freudenreichii subsp. shermanii CIRM-BIA1 strain CIRM-B1AI	131567::2::1783272::201174::1760::85009::31957::1743::1744::1752::754252	99.9	99.9	100	0	R200 (Propionibacterium freudenreichii subsp. freudenreichii strain 20271T)	Y	1	0	308.881	1
-1639.4260	Listeria monocytogenes strain MF4562	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	1	0	308.772	1
-1639.4261	Listeria monocytogenes strain MF4697	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
-1639.4262	Listeria monocytogenes strain MF6172	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
-1639.4263	Listeria monocytogenes strain MF4545	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	2	0	308.762	1
-2702.133	Gardnerella vaginalis strain UMB0912	131567::2::1783272::201174::1760::85004::31953::2701::2702	99.9	99.8	100	0	R200 (Gardnerella vaginalis JCP8481B)	Y	4	0	308.742	1
-406327.12	Methanococcus vannielii SB	131567::2157::28890::2283794::183939::2182::2183::2184::2187::406327	100.0	99.9	100	0	root	Y	1	14	294.881	1
-571.605	Klebsiella oxytoca strain 4928STDY7071345	131567::2::1224::1236::91347::543::570::571	99.0	96.6	100	0.2	R200 (Kluyvera ascorbata ATCC 33433)	Y	80	15.871422	287.622578	1
-1639.5574	Listeria monocytogenes strain FLAG-41283-A	131567::2::1783272::1239::91061::1385::186820::1637::1639	99.9	98.0	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	19	19.007732	287.622268	1
-666.4593	Vibrio cholerae strain N2753	131567::2::1224::1236::135623::641::662::666	99.9	98.6	100	0.4	R200 (Vibrio mimicus VM223)	Y	59	17.261904	287.622096	1
-1639.1340	Listeria monocytogenes strain MF5377	131567::2::1783272::1239::91061::1385::186820::1637::1639	100.0	99.8	100	0	R50 (Listeria welshimeri serovar 6b str. SLCC5334)	Y	16	21	287.622	1
-1069623.3	Streptococcus pneumoniae GA05578	131567::2::1783272::1239::91061::186826::1300::1301::1313::1069623	99.2	98.8	100	0	R200 (Streptococcus pseudopneumoniae IS7493)	Y	7	20	287.622	1
-1313.6345	Streptococcus pneumoniae strain MD5070	131567::2::1783272::1239::91061::186826::1300::1301::1313	99.3	98.8	100	0	R200 (Streptococcus pseudopneumoniae IS7493)	Y	107	19	287.622	1
-1408469.3	Mycoplasma simbae ATCC 49888	131567::2::1783272::544448::31969::2085::2092::2093::36744::1408469	97.9	97.8	100	0	root	Y	12	50	256.482	1
-2587806.3	Beggiatoa sp. 'Gulf of Mexico' strain Beggiatoa GOM9	131567::2::1224::1236::72273::135617::1021::2587806	91.3	70.8	98.4	52.3	R50 (Nitrosococcus watsonii C-113)	Y	63965	84.173965	-709.751965	0
-83555.68	Chlamydia abortus strain 162STDY5437299	131567::2::1783257::204428::204429::51291::809::1113537::810::83555	93.9	93.9	0	0	root		161	94.59459	106.14641	0
-1733.9145	Mycobacterium tuberculosis 14.0602981	131567::2::1783272::201174::1760::85007::1762::1763::77643::1773	97.8	83.8	99.8	28.1	R200 (Mycobacterium bovis AF2122/97)		79186	87.197983	-728.415983	0
-1869227.403	bacterium strain F3_7	131567::2::2323::49928::1869227	76.3	37.5	100	83.7	root		48629	70.05748	-733.97248	0
-1280.20957	Staphylococcus aureus strain DEU25	131567::2::1783272::1239::91061::1385::90964::1279::1280	90.9	32.5	100	86.7	R200 (Staphylococcus aureus subsp. aureus DSM 20231)		51920	33.70862	-750.98362	0
+Genome	Name	Score	Good	Taxonomy	Good Seed	Ssu_rRNA	Contigs	Hypothetical	Coarse	Fine	Completeness	Contamination	Group
+932213.3	Serratia sp. M24T3	  271.32	Y	131567::2::1224::1236::91347::1903411::613::2647522::932213	Y	Y	114	 22.51	 92.10	 90.42	 98.97	  0.51	R200 (Rahnella aquatilis CIP 78.65 = ATCC 33071)
+37372.4	Helicobacter bilis ATCC 51630	  230.05	Y	131567::2::1224::68525::29547::213849::72293::209::37372	Y	Y	542	59.5879556259905	 93.55	 93.19	 98.66	  1.03	R50 (Helicobacter trogontum ATCC 700114)
+1955272.3	Allobacillus sp. SKP4-8	  246.12	Y	131567::2::1783272::1239::91061::1385::186817::1400133::2628859::1955272	Y	Y	102	34.5428156748911	 93.37	 92.41	 88.63	  1.53	R100 (Pontibacillus marinus BH030004 = DSM 16465)
+309807.25	Salinibacter ruber DSM 13855	  266.17	Y	131567::2::1783270::68336::976::1100069::563843::146918::146919::309807	Y	Y	2	35.1261620185923	 93.67	 93.13	 99.81	  0.00	R50 (Salisaeta longa DSM 21114)
+1003185.3	Salmonella enterica subsp. enterica serovar Agona str. SA-1	  287.73	Y	131567::2::1224::1236::91347::543::590::28901::59201::58095::1003185	Y	Y	92	13.5784716516023	 95.42	 93.79	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003186.3	Salmonella enterica subsp. enterica serovar Agona str. SA-2	  287.72	Y	131567::2::1224::1236::91347::543::590::28901::59201::58095::1003186	Y	Y	62	13.6935450608373	 95.42	 93.61	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003187.3	Salmonella enterica subsp. enterica serovar Agona str. SA-3	  286.61	Y	131567::2::1224::1236::91347::543::590::28901::59201::58095::1003187	Y	Y	118	13.9178418148375	 95.36	 93.31	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003188.3	Salmonella enterica subsp. enterica serovar Agona str. SA-4	  285.91	Y	131567::2::1224::1236::91347::543::590::28901::59201::58095::1003188	Y	Y	123	14	 95.48	 93.91	 98.78	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003189.3	Salmonella enterica subsp. enterica serovar Agona str. SA-5	  288.11	Y	131567::2::1224::1236::91347::543::590::28901::59201::58095::1003189	Y	Y	58	13.5449076954989	 95.42	 93.79	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003191.3	Salmonella enterica subsp. enterica serovar Tennessee str. TXSC_TXSC08-19	  284.01	Y	131567::2::1224::1236::91347::543::590::28901::59201::143221::1003191	Y	Y	249	14.882400648824	 95.24	 93.01	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+1003192.3	Salmonella enterica subsp. enterica serovar Tennessee str. TXSC_TXSC08-21	  280.52	Y	131567::2::1224::1236::91347::543::590::28901::59201::143221::1003192	Y	Y	420	14.847250509165	 95.00	 92.47	 98.78	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)
+100480.3	Cytophagales str. B6	  218.23	Y	131567::2::1783270::68336::976::37452::100480	Y	Y	1131	46.973734297678	 88.97	 85.77	 97.10	  2.82	R100 (Pedobacter agri PB92)
+1004836.5	Gluconacetobacter sp. SXCC-1	  230.85	Y	131567::2::1224::28211::204441::433::89583::2639119::1004836	Y	Y	64	40.4323630136986	 93.61	 91.98	 98.17	  5.30	R200 (Gluconacetobacter xylinus E25)
+1004901.3	Gordonia iterans strain Co17	  241.76	Y	131567::2::1783272::201174::1760::85007::85026::2053::1004901	Y	Y	1	44.2034805890228	 94.88	 94.03	 93.60	  2.02	R100 (Williamsia sp. Leaf354)
+1004951.3	Streptococcus suis ST1	  286.13	Y	131567::2::1783272::1239::91061::186826::1300::1301::1307::1004951	Y	Y	1	19.2174343734522	 98.01	 97.47	 99.12	  0.00	R200 (Streptococcus suis BM407)
+1004952.3	Streptococcus suis D12	  280.51	Y	131567::2::1783272::1239::91061::186826::1300::1301::1307::1004952	Y	Y	1	24.1737488196412	 97.53	 96.87	 99.12	  0.00	R200 (Streptococcus suis BM407)
+571.605	Klebsiella oxytoca strain 4928STDY7071345	  282.73	Y	131567::2::1224::1236::91347::543::570::571	Y	Y	80	15.9886154361292	 94.64	 92.53	 99.78	  0.22	R200 (Kluyvera ascorbata ATCC 33433)
+1001994.6	Candidatus Nitrosoarchaeum koreensis MY1	  251.80	Y	131567::2157::1783275::651137::31932::338190::1007082::1088740::1001994	Y	Y	1	10.26	 95.96	 95.48	100.00	  0.00	R100 (Candidatus Nitrosopumilus sp. NF5)
+1408469.3	Mycoplasma simbae ATCC 49888	  251.78	Y	131567::2::1783272::544448::31969::2085::2092::2093::36744::1408469	Y	Y	12	33.70	 97.23	 97.11	 95.83	  0.00	root
+99287.12	Salmonella enterica subsp. enterica serovar Typhimurium str. LT2	  290.67	Y	131567::2::1224::1236::91347::543::590::28901::59201::90371::99287	Y	Y	2	 12.33	 95.48	 94.51	100.00	  0.00	R200 (Salmonella enterica subsp. enterica serovar Heidelberg str. 79-0480)

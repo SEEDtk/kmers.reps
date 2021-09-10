@@ -6,6 +6,7 @@ import org.theseed.proteins.UniRoleProcessor;
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.PrepareProcessor;
+import org.theseed.sequence.RnaVerifyProcessor;
 import org.theseed.utils.BaseProcessor;
 
 /**
@@ -31,6 +32,7 @@ import org.theseed.utils.BaseProcessor;
  *  missing		Produce the missing-roles report for a directory of GTOs
  *  prio		prioritize a list of genomes using a second list
  *  list		list the genomes in a representative genome database
+ *  rnaVerify	build a blacklist of genomes with bad or suspicious SSU rRNA sequences
  */
 public class App
 {
@@ -100,6 +102,9 @@ public class App
             break;
         case "list" :
             processor = new ListProcessor();
+            break;
+        case "rnaVerify" :
+            processor = new RnaVerifyProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

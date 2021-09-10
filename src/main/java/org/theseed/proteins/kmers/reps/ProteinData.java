@@ -3,14 +3,17 @@
  */
 package org.theseed.proteins.kmers.reps;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
-import org.theseed.proteins.kmers.reps.RepGenomeDb.Representation;
 
 /**
- * This class describes the seed protein for a genome.  It contains the DNA and amino acid sequences.
+ * This class describes the seed protein for a genome.  It contains the DNA and amino acid sequences,
+ * various information about the genome, and the SSU rRNA sequence.  It is sorted by score within rating.
  *
  * @author Bruce Parrello
  *
@@ -33,14 +36,38 @@ public class ProteinData implements Comparable<ProteinData> {
     private String species;
     /** quality score */
     private double score;
+    /** rating */
+    private Rating rating;
     /** domain name */
     private String domain;
     /** genetic code */
     private int geneticCode;
     /** proteinkmers object for computing representation */
     private ProteinKmers kmers;
+    /** sequence for the best SSU rRNA */
+    private String ssuSequence;
     /** representative genome information for each score level */
     private Map<Integer, RepGenomeDb.Representation> representation;
+
+    /**
+     * This enum gives the rating of a protein data object.  The ratings are ordered from
+     * best to worst.
+     */
+    public static enum Rating {
+        /** flagged as an NCBI reference genome */
+        NCBI_REF,
+        /** flagged as an NCBI representative genome */
+        NCBI_REP,
+        /** good PATRIC genome */
+        NORMAL,
+        /** short SSU */
+        SHORT_SSU,
+        /** single SSU */
+        SINGLE_SSU,
+        /** bad or questionable SSU */
+        BAD_SSU;
+
+    }
 
     /**
      * Create a new protein data object.
@@ -62,6 +89,7 @@ public class ProteinData implements Comparable<ProteinData> {
         this.geneticCode = gc;
         this.score = score;
         this.domain = domain;
+        this.rating = Rating.NORMAL;
         this.representation = new HashMap<Integer, RepGenomeDb.Representation>();
         this.kmers = null;
     }
@@ -91,7 +119,7 @@ public class ProteinData implements Comparable<ProteinData> {
         return dna;
     }
     /**
-     * @return the protein
+     * @return the protein sequence
      */
     public String getProtein() {
         return protein;
@@ -160,7 +188,15 @@ public class ProteinData implements Comparable<ProteinData> {
     public boolean checkRepresented(int sim) {
         return this.representation.containsKey(sim);
     }
-    public Representation getRepresentation(RepGenomeDb repGenSet) {
+
+    /**
+     * Find the closest representative of this genome in a repgen set.
+     *
+     * @param repGenSet			repgen set to check
+     *
+     * @return the representation information for this genome.
+     */
+    public RepGenomeDb.Representation getRepresentation(RepGenomeDb repGenSet) {
         int sim = repGenSet.getThreshold();
         RepGenomeDb.Representation retVal = this.representation.get(sim);
         // If we don't already have a representative, compute one.
@@ -197,15 +233,129 @@ public class ProteinData implements Comparable<ProteinData> {
      */
     public void setRepresentation(RepGenomeDb repDb, String repId, int score, double distance) {
         RepGenomeDb.Representation newRep = repDb.new Representation(repId, score, distance);
-        this.representation.put(repDb.getThreshold(), newRep);
+        this.setRepresentation(repDb, newRep);
+    }
+
+    /**
+     * Store the representation information for this genome at the specified similarity threshold level.
+     *
+     * @param repDb			relevant representative-genome database
+     * @param rep			representation to store
+     */
+    public void setRepresentation(RepGenomeDb repDb, RepGenomeDb.Representation rep) {
+        this.representation.put(repDb.getThreshold(), rep);
     }
 
     @Override
     public int compareTo(ProteinData other) {
-        // Note that the highest score sorts first.
-        int retVal = Double.compare(other.score, this.score);
-        if (retVal == 0)
-            retVal = this.genomeId.compareTo(other.genomeId);
+        // The best rating sorts first, then the highest score, and finally the genome ID.
+        int retVal = this.rating.compareTo(other.rating);
+        if (retVal == 0) {
+            retVal = Double.compare(other.score, this.score);
+            if (retVal == 0)
+                retVal = this.genomeId.compareTo(other.genomeId);
+        }
+        return retVal;
+    }
+
+    /**
+     * @return TRUE if this genome's SSU rRNA is questionable
+     */
+    public boolean isQuestionable() {
+        return this.rating == Rating.BAD_SSU;
+    }
+    /**
+     * @return the SSU rRNA sequence for this genome
+     */
+    public String getSsuSequence() {
+        return this.ssuSequence;
+    }
+
+    /**
+     * Specify a new genome rating.
+     * @param rating 	the new genome rating to store
+     */
+    public void setRating(Rating rating) {
+        this.rating = rating;
+    }
+
+    /**
+     * Update the SSU rRNA sequence.  We keep the longest, and we mark the genome as bad if it
+     * has fewer than two SSUs of sufficient length or the SSUs are too far apart.
+     *
+     * @param rnas		list of SSU sequences for this genome
+     *
+     * @return the final rating
+     */
+    public Rating setSsuSequence(List<String> rnas) {
+        // Start with an empty SSU sequence.
+        this.ssuSequence = "";
+        // Create a place to stash the good sequences.
+        List<DnaKmers> goodSeqs = new ArrayList<DnaKmers>(rnas.size());
+        // Count the sequences of acceptable length.
+        int longSeqs = 0;
+        // Check all the sequences.
+        for (String rna : rnas) {
+            // Insure we keep the longest.
+            if (rna.length() > this.ssuSequence.length())
+                this.ssuSequence = rna;
+            // Save the good ones.
+            if (rna.length() >= ProteinDataFactory.USEFUL_SSU_LEN) {
+                goodSeqs.add(new DnaKmers(rna));
+                if (rna.length() >= ProteinDataFactory.MIN_SSU_LEN)
+                    longSeqs++;
+            }
+        }
+        if (goodSeqs.size() < 1) {
+            // Here all the SSUs are fragments.  This counts as a missing SSU.
+            this.rating = Rating.BAD_SSU;
+        } else if (goodSeqs.size() < 2) {
+            // Here there are insufficient long SSUs to validate them.  If this is an NCBI
+            // genome and the single SSU is long, we trust it automatically.  If it is not
+            // NCBI, we mark it SINGLE for possible reclamation later.  If it is NCBI but its SSU
+            // is short, we mark it short, which means it automatically gets lower priority
+            // than genomes with a long SSU that are NCBI or independently verified.
+            if (this.rating.compareTo(Rating.NORMAL) >= 0)
+                this.rating = Rating.SINGLE_SSU;
+            else if (longSeqs < 1)
+                this.rating = Rating.SHORT_SSU;
+        } else {
+            // Compare all the good sequences.
+            boolean okFlag = true;
+            for (int i = 0; okFlag && i < goodSeqs.size(); i++) {
+                DnaKmers ssuKmers = goodSeqs.get(i);
+                for (int j = i + 1; okFlag && j < goodSeqs.size(); j++) {
+                    double dist = ssuKmers.distance(goodSeqs.get(j));
+                    okFlag = (dist <= ProteinDataFactory.MAX_SSU_DISTANCE);
+                }
+            }
+            if (! okFlag)
+                this.rating = Rating.BAD_SSU;
+            else if (longSeqs < 1)
+                this.rating = Rating.SHORT_SSU;
+        }
+        return this.rating;
+    }
+
+    /**
+     * @return the rating of this genome
+     */
+    public Rating getRating() {
+        return this.rating;
+    }
+
+    /**
+     * @return the representative genome for the specified level
+     *
+     * @param level		representation threshold
+     */
+    public String getRepGenome(int level) {
+        RepGenomeDb.Representation rep = this.representation.get(level);
+        String retVal;
+        if (rep == null)
+            retVal = "";
+        else
+            retVal = rep.getGenomeId();
         return retVal;
     }
 

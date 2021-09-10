@@ -37,7 +37,7 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
     @Override
     protected void setDefaults() {
-        this.setBatchSize(500);
+        this.setBaseDefaults();
     }
 
     @Override
@@ -72,6 +72,8 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
             writeProteinFasta();
             // Now we produce the repFinder file used to find close genomes.
             writeRepFinder();
+            // Finally, we write the good-genome list.
+            writeGoodGenomes();
             log.info("All done.");
         } catch (Exception e) {
             e.printStackTrace();

@@ -24,6 +24,7 @@ import org.theseed.utils.IntegerList;
  * -b	batch size for PATRIC queries
  *
  * --repSizes	comma-delimited list of score limits for each repGen set
+ * --loose		if specified, bad-ssu genomes will be considered good
  *
  * @author Bruce Parrello
  *
@@ -32,7 +33,6 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
 
     /** list of RepGen set thresholds */
     private IntegerList repSizes;
-
 
     // COMMAND-LINE OPTIONS
 
@@ -45,7 +45,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
 
     @Override
     protected void setDefaults() {
-        this.setBatchSize(500);
+        this.setBaseDefaults();
         this.repSizes = new IntegerList(10, 50, 100, 200);
     }
 
@@ -83,6 +83,8 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
             writeProteinFasta();
             // Now we produce the repFinder file used to find close genomes.
             writeRepFinder();
+            // Finally, we write the good-genome list.
+            writeGoodGenomes();
             log.info("All done.");
         } catch (Exception e) {
             e.printStackTrace();

@@ -6,12 +6,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.theseed.counters.GenomeEval;
 import org.theseed.counters.QualityCountMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.sequence.FastaOutputStream;
@@ -42,12 +46,18 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
 
     // COMMAND-LINE OPTIONS
 
+    /** if specified, bad-SSU genomes will be considered good */
+    @Option(name = "--minLevel", usage = "minimum rating level to keep")
+    private ProteinData.Rating minRating;
+
     /** number of genomes per batch when retrieving sequences */
     @Option(name = "-b", aliases = { "--batch", "--batchSize" }, metaVar = "200", usage = "number of genomes per batch")
     private int batchSize;
+
     /** output directory */
     @Argument(index = 0, metaVar = "outDir", usage = "output directory", required = true)
     private File outDir;
+
     /** input tab-delimited file of genomes */
     @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file", required = true)
     private File inFile;
@@ -81,17 +91,16 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         return inFile;
     }
 
-    /**
-     * Update the batch size.
-     *
-     * @param batchSize the proposed new batch size
-     */
-    protected void setBatchSize(int batchSize) {
-        this.batchSize = batchSize;
-    }
-
     public BaseGenomeProcessor() {
         super();
+    }
+
+    /**
+     * Set the base-class option defaults.
+     */
+    protected void setBaseDefaults() {
+        this.batchSize = 500;
+        this.minRating = ProteinData.Rating.SINGLE_SSU;
     }
 
     /**
@@ -156,7 +165,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     }
 
     /**
-     * Write the protein FASTA files and the stat files.
+     * Write the protein FASTA files, the four-column tables, and the stat files.
      *
      * @throws IOException
      */
@@ -167,23 +176,29 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             String fileName = String.format("rep%d", repGenSet.getThreshold());
             log.info("Writing FASTA and statistics files for {}.", fileName);
             try (FastaOutputStream fastaStream = new FastaOutputStream(new File(this.outDir, fileName + ".faa"));
-                    PrintWriter statsStream = new PrintWriter(new File(this.outDir, fileName + ".stats.tbl"))) {
-                // Write the header for the stats file.
-                statsStream.println("rep_id\trep_name\tmembers\toutliers");
+                    PrintWriter statsStream = new PrintWriter(new File(this.outDir, fileName + ".stats.tbl"));
+                    PrintWriter seqStream = new PrintWriter(new File(this.outDir, fileName + ".seqs.tbl"))) {
+                // Write the header for the stats file and the four-column table.
+                statsStream.println("rep_id\trep_name\trating\tmembers");
+                seqStream.println("genome_id\tgrade\tgenome_name\tseed_protein\tssu_rna\tseed_dna");
                 // Loop through the groups from largest to smallest.
                 for (String groupId : statMap.bestKeys()) {
                     RepGenome rep = repGenSet.get(groupId);
                     String groupName = rep.getName();
+                    ProteinData genomeData = this.genomeList.getGenome(groupId);
                     fastaStream.write(new Sequence(groupId, groupName, rep.getProtein()));
-                    statsStream.format("%s\t%s\t%d\t%d%n", groupId, groupName, statMap.good(groupId),
-                            statMap.bad(groupId));
+                    statsStream.format("%s\t%s\t%s\t%d\t%n", groupId, groupName,
+                            genomeData.getRating(), statMap.good(groupId));
+                    seqStream.format("%s\t%s\t%s\t%s\t%s%n", groupId, groupName,
+                            genomeData.getProtein(), genomeData.getSsuSequence(),
+                            genomeData.getDna());
                 }
             }
         }
     }
 
     /**
-     * Assign the genomes to their repgen sets.  Part of this is creating an output test file for
+     * Assign the genomes to their repgen sets.  Part of this is creating an output list file for
      * each set.  We also create count maps for the stat files we produce later.  For the last
      * repgen set, we save the assignments.
      *
@@ -229,6 +244,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                             // Here we need to save the group info for the repfinder output.
                             this.repFinderSets.computeIfAbsent(repGenomeId, k -> new ArrayList<ProteinData>()).add(genome);
                         }
+                        // Save the representation for the good-genome report.
+                        genome.setRepresentation(repGenSet, rep);
                     } else {
                         this.statMaps.get(i).setBad(rep.getGenomeId());
                     }
@@ -341,18 +358,16 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         int batchCount = this.batchSize;
         // Read in the input file and get the protein data we need.
         try (TabbedLineReader inStream = new TabbedLineReader(this.inFile)) {
-            // Compute the field indices.
-            int idCol = inStream.findField("Genome");
-            int nameCol = inStream.findField("Name");
-            int lineageCol = inStream.findField("Taxonomy");
-            int scoreCol = inStream.findField("Score");
-            int goodCol = inStream.findField("Good");
             // Loop through the file.
             for (TabbedLineReader.Line line : inStream) {
+                // Accumulate statistics for this genome.
+                this.genomeList.analyze(line);
                 // Only process good genomes.
-                if (line.getFlag(goodCol)) {
-                    this.genomeList.addGenome(line.get(idCol), line.get(nameCol),
-                            line.get(lineageCol), line.getDouble(scoreCol));
+                if (line.getFlag(GenomeEval.GOOD_COL)) {
+                    // Add the good genome to the list.
+                    this.genomeList.addGenome(line.get(GenomeEval.GENOME_COL),
+                            line.get(GenomeEval.NAME_COL),
+                            line.get(GenomeEval.LINEAGE_COL), line.getDouble(GenomeEval.SCORE_COL));
                     // Show periodic progress.
                     batchCount--;
                     if (batchCount == 0) {
@@ -364,7 +379,9 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         }
         log.info("{} good genomes collected.", this.genomeList.size());
         this.genomeList.finishList(this.batchSize);
-        log.info("{} good genomes remaining after seed protein scan.", this.genomeList.size());
+        // Remove the bad SSUs, if necessary.
+        this.genomeList.prune(this.minRating);
+        log.info("{} good genomes remaining after finishing.", this.genomeList.size());
         return this.genomeList;
     }
 
@@ -399,6 +416,43 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     @Override
     public void addRepGenSet(RepGenomeDb repGenomeDb) {
         this.repGenSets.add(repGenomeDb);
+    }
+
+    /**
+     * Write the final list of good genomes and the statistics file.
+     *
+     * @throws IOException
+     */
+    protected void writeGoodGenomes() throws IOException {
+        // Build the headers for the representatives.
+        int[] repLevels = this.repGenSets.stream().mapToInt(x -> x.getThreshold()).toArray();
+        String headers = Arrays.stream(repLevels).mapToObj(x -> String.format("rep%d", x))
+                .collect(Collectors.joining("\t"));
+        File goodFile = new File(this.outDir, "patric.good.tbl");
+        try (PrintWriter writer = new PrintWriter(goodFile)) {
+            // Write the header.
+            writer.println("genome_id\tname\tdomain\tscore\trating\t" + headers);
+            // We'll build the output in here.
+            TextStringBuilder buffer = new TextStringBuilder(150);
+            for (ProteinData genome : this.genomeList) {
+                // Write the static data.
+                buffer.append(genome.getGenomeId()).append('\t');
+                buffer.append(genome.getGenomeName()).append('\t');
+                buffer.append(genome.getDomain()).append('\t');
+                buffer.append("%8.4f\t", genome.getScore());
+                buffer.append(genome.getRating().toString());
+                // Loop through the repgens.  Here we append the tab at the front.
+                for (int repLevel : repLevels)
+                    buffer.append('\t').append(genome.getRepGenome(repLevel));
+                // Write the line.
+                writer.println(buffer.toString());
+                buffer.clear();
+            }
+            writer.flush();
+        }
+        // Finally, the stats file.
+        File statsFile = new File(this.outDir, "patric.stats.tbl");
+        this.genomeList.writeStats(statsFile);
     }
 
 }
