@@ -382,6 +382,9 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         // Remove the bad SSUs, if necessary.
         this.genomeList.prune(this.minRating);
         log.info("{} good genomes remaining after finishing.", this.genomeList.size());
+        // Finally, the stats file.
+        File statsFile = new File(this.outDir, "patric.stats.tbl");
+        this.genomeList.writeStats(statsFile);
         return this.genomeList;
     }
 
@@ -419,7 +422,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     }
 
     /**
-     * Write the final list of good genomes and the statistics file.
+     * Write the final list of good genomes.
      *
      * @throws IOException
      */
@@ -450,9 +453,6 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             }
             writer.flush();
         }
-        // Finally, the stats file.
-        File statsFile = new File(this.outDir, "patric.stats.tbl");
-        this.genomeList.writeStats(statsFile);
     }
 
 }

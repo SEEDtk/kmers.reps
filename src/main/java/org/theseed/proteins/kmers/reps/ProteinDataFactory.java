@@ -256,8 +256,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
             if (genomeData.getProtein() == null) {
                 removeFlag = true;
                 this.statistics.count("Missing Seed AA", 1);
-            }
-            if (genomeData.getProtein().contains("XX")) {
+            } else if (genomeData.getProtein().contains("XX")) {
                 removeFlag = true;
                 this.statistics.count("Ambiguous Seed", 1);
             }
