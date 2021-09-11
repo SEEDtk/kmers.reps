@@ -6,22 +6,18 @@ package org.theseed.proteins.kmers.reps;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import java.util.Iterator;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.Genome;
-import org.theseed.genome.GenomeDescriptor;
-import org.theseed.genome.GenomeDescriptorSet;
-import org.theseed.genome.GenomeDescriptorSet.Rating;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
+import org.theseed.sequence.GenomeDescriptor;
+import org.theseed.sequence.GenomeDescriptorSet;
+import org.theseed.sequence.GenomeDescriptorSource;
 import org.theseed.sequence.ProteinKmers;
+import org.theseed.sequence.GenomeDescriptorSet.Rating;
 import org.theseed.utils.BaseReportProcessor;
 import org.theseed.utils.ParseFailureException;
 
@@ -29,6 +25,19 @@ import org.theseed.utils.ParseFailureException;
  * This command compares a set of genomes in a genome source to a four-column table produced by the "seqTable" command-- the
  * "reference set".  For each genome from the source, the command finds the closest genome in the reference set using
  * various criteria.  A report is produced allowing comparison of the results.
+ *
+ * This program can also optionally produce an outlier report.  In the outlier report, each mismatch
+ * is shown along with its protein similarity score (seed_seed_sim) and SSU similarity score
+ * (rna_rna_sim).  We then display metrics for various cross-matches. The "rna_seed_sim" indicates
+ * how close the SSU-closest genome is to the test genome using the protein similarity score.  If
+ * this is above the RepGen threshold, then the test genome is in range of both representatives,
+ * and the mismatch is minor.  "reps_seed_sim" indicates the protein similarity between the
+ * two representatives.  If this is close to the threshold, it is another indicator the mismatch
+ * is not too bad.  Similar information is provided using SSU matches.  "seed_rna_sim" is the
+ * SSU similarity between the test genome and the seed representative.  "reps_rna_sim" is the
+ * SSU similarity between the seed representative and the SSU representative.  These latter
+ * numbers will be more useful once we find the SSU threshold that most closely matches the protein
+ * threshold.
  *
  * The positional parameters are the name of the reference set file and the name of the testing genome source.
  *
@@ -38,6 +47,7 @@ import org.theseed.utils.ParseFailureException;
  * -v	display more frequent log messages
  * -o	output report file (if not STDOUT)
  * -t	type of genome source (default DIR)
+ * -x	if specified, the testing genome source is a four-column table instead of a genome source
  *
  * --dnaK		DNA kmer size (default 15)
  * --protK		protein kmer size (default 8)
@@ -53,8 +63,10 @@ public class SeqTestProcessor extends BaseReportProcessor {
     protected static Logger log = LoggerFactory.getLogger(SeqTestProcessor.class);
     /** reference genome set */
     private GenomeDescriptorSet refGenomes;
+    /** genome descriptor resource, if any */
+    private AutoCloseable descriptorResource;
     /** testing genome source */
-    private GenomeSource testGenomes;
+    private Iterator<GenomeDescriptor> testGenomes;
     /** outlier report stream */
     private PrintWriter outlierWriter;
 
@@ -76,6 +88,10 @@ public class SeqTestProcessor extends BaseReportProcessor {
     @Option(name = "--outliers", metaVar = "outliers.report.tbl", usage = "optional outliers report output file")
     private File outlierFile;
 
+    /** if specified, the input is presumed to be a four-column table instead of a genome source */
+    @Option(name = "--4col", aliases = { "-4", "-x", "--seqs" }, usage = "source is a four-column table file")
+    private boolean fourColFlag;
+
     /** reference set file */
     @Argument(index = 0, metaVar = "refGenomes.tbl", usage = "sequence table for reference genomes")
     private File refGenomesFile;
@@ -90,6 +106,7 @@ public class SeqTestProcessor extends BaseReportProcessor {
         this.dnaK = 15;
         this.protK = ProteinKmers.kmerSize();
         this.outlierFile = null;
+        this.fourColFlag = false;
     }
 
     @Override
@@ -104,8 +121,18 @@ public class SeqTestProcessor extends BaseReportProcessor {
         DnaKmers.setKmerSize(this.dnaK);
         log.info("DNA kmer size is {}.  Protein kmer size is {}.", this.dnaK, this.protK);
         // Set up the genome source.
-        this.testGenomes = this.sourceType.create(this.testGenomesDir);
-        log.info("{} genomes in testing set read from {}.", this.testGenomes.size(), this.testGenomesDir);
+        if (this.fourColFlag) {
+            // Here we have a four-column table.
+            log.info("Reading from four-column table at {}.", this.testGenomesDir);
+            GenomeDescriptor.FileIter descIter = new GenomeDescriptor.FileIter(this.testGenomesDir);
+            this.descriptorResource = descIter;
+            this.testGenomes = descIter;
+        } else {
+            // Here we have a standard genome source.
+            log.info("Data will be extracted from genome source {}.", this.testGenomesDir);
+            GenomeDescriptorSource source = new GenomeDescriptorSource(this.testGenomesDir, sourceType);
+            this.testGenomes = source.iterator();
+        }
         // Insure the reference-genome file exists.
         if (! this.refGenomesFile.canRead())
             throw new IOException("Reference-genome file " + this.refGenomesFile + " is not found or unreadable.");
@@ -114,7 +141,7 @@ public class SeqTestProcessor extends BaseReportProcessor {
             this.outlierWriter = new PrintWriter(this.outlierFile);
             log.info("Outlier report will be written to {}.", this.outlierFile);
             // Write the report header.
-            this.outlierWriter.println("genome_id\tname\tseed_ref_id\tseed_ref_name\tseed_seed_sim\tseed_rna_sim\trna_ref_id\trna_ref_name\trna_seed_sim\trna_rna_sim\treps_seed_sim\treps_rna_sim");
+            this.outlierWriter.println("genome_id\tname\tseed_ref_id\tseed_ref_name\tseed_seed_sim\tseed_rna_sim\trna_ref_id\trna_ref_name\trna_rna_sim\trna_seed_sim\treps_seed_sim\treps_rna_sim");
         } else {
             this.outlierWriter = null;
             log.info("No outlier report will be written.");
@@ -128,51 +155,46 @@ public class SeqTestProcessor extends BaseReportProcessor {
             log.info("Reading reference genomes from {}.", this.refGenomesFile);
             this.refGenomes = new GenomeDescriptorSet(this.refGenomesFile);
             // Start the report.  For each finder type, we have a reference ID and a rating.
-            writer.println("genome_id\tname\t" + Stream.of(GenomeDescriptorSet.FinderType.values()).map(x -> (x + "_ref_id\t" + x + "_rating"))
-                    .collect(Collectors.joining("\t")));
+            writer.println("genome_id\tname\tseed_rep_id\tseed_rep_sim\trna_rep_id\trna_rep_sim");
+            // Here is where we will store our results.
+            GenomeDescriptorSet.Rating seedResult;
+            GenomeDescriptorSet.Rating rnaResult;
             // Now we loop through the testing genomes.
             int count = 0;
             int goodSims = 0;
-            int goodDist = 0;
-            int goodSeed = 0;
-            for (Genome testGenome : this.testGenomes) {
+            long start = System.currentTimeMillis();
+            while (this.testGenomes.hasNext()) {
+                GenomeDescriptor testDescriptor = this.testGenomes.next();
                 count++;
-                log.info("Processing genome {} of {}: {}.", count, this.testGenomes.size(), testGenome);
-                // Get this genome's identifying sequences.
-                GenomeDescriptor testDescriptor = new GenomeDescriptor(testGenome);
+                log.debug("Processing genome {}: {}.", count, testDescriptor);
                 // Find the closest in each mode.
-                List<GenomeDescriptorSet.Rating> results = new ArrayList<>();
-                for (GenomeDescriptorSet.FinderType type : GenomeDescriptorSet.FinderType.values()) {
-                    GenomeDescriptorSet.Rating result = this.refGenomes.findClosest(testDescriptor, type);
-                    results.add(result);
-                }
-                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.SIM_TYPES))
+                seedResult = this.refGenomes.findClosest(testDescriptor,
+                        GenomeDescriptorSet.FinderType.SEED_SIMILARITY);
+                rnaResult =  this.refGenomes.findClosest(testDescriptor,
+                        GenomeDescriptorSet.FinderType.RNA_SIMILARITY);
+                if (seedResult.isSameGenome(rnaResult))
                     goodSims++;
                 else {
-                    log.warn("Sims mismatch for {}.", testGenome);
+                    log.debug("Sims mismatch for {}.", testDescriptor);
                     if (this.outlierWriter != null)
-                        this.produceOutlierReport(testDescriptor,
-                                results.get(GenomeDescriptorSet.FinderType.SEED_SIMILARITY.ordinal()),
-                                results.get(GenomeDescriptorSet.FinderType.RNA_SIMILARITY.ordinal()));
+                        this.produceOutlierReport(testDescriptor, seedResult, rnaResult);
                 }
-                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.DIST_TYPES))
-                    goodDist++;
-                else
-                    log.warn("Distance mismatch for {}.", testGenome);
-                if (GenomeDescriptorSet.Rating.test(results, GenomeDescriptorSet.SEED_TYPES))
-                    goodSeed++;
-                else
-                    log.warn("Seed mismatch for {}.", testGenome);
                 // Output the results.  Each genome is an output line, with the results in sequence.
-                writer.println(testGenome.getId() + "\t" + testGenome.getName() + "\t" +
-                        results.stream().map(x -> x.output()).collect(Collectors.joining("\t")));
+                writer.println(testDescriptor.getId() + "\t" + testDescriptor.getName() + "\t" +
+                        seedResult.output() + "\t" + rnaResult.output());
+                if (log.isInfoEnabled() && count % 100 == 0) {
+                    double pct = goodSims * 100.0 / count;
+                    double rate = count * 1000.0 / (System.currentTimeMillis() - start);
+                    log.info(String.format("%d genomes processed.  %4.2f%% good, %4.2f genomes/second.",
+                            count, pct, rate));
+                }
             }
             log.info("{} of {} genomes got the same similarity results.", goodSims, count);
-            log.info("{} of {} genomes got the same distance results.", goodDist, count);
-            log.info("{} of {} genomes got the same seed-protein results.", goodSeed, count);
         } finally {
             if (this.outlierWriter != null)
                 this.outlierWriter.close();
+            if (this.descriptorResource != null)
+                this.descriptorResource.close();
         }
     }
 

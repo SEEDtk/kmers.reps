@@ -7,16 +7,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Iterator;
+
 import org.apache.commons.math3.stat.correlation.KendallsCorrelation;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.GenomeDescriptor;
-import org.theseed.genome.GenomeDescriptorSet;
 import org.theseed.reports.ErrorSummaryReport;
 import org.theseed.sequence.DnaKmers;
+import org.theseed.sequence.GenomeDescriptor;
+import org.theseed.sequence.GenomeDescriptorSet;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.utils.BaseReportProcessor;
 import org.theseed.utils.ParseFailureException;
@@ -123,7 +125,9 @@ public class SeqCompProcessor extends BaseReportProcessor {
             log.info("Processing genome {} of {}: {},", count, gCount, genome1);
             this.summaryReporter.registerGenome(genome1.getId(), genome1.getName());
             // Loop through all subsequent genomes.
-            for (GenomeDescriptor genome2 :this.refGenomes.tailSet(genome1, false)) {
+            Iterator<GenomeDescriptor> iter = this.refGenomes.tailIter(genome1.getId());
+            while (iter.hasNext()) {
+                GenomeDescriptor genome2 = iter.next();
                 protDists[pairCount] = genome1.getSeedDistance(genome2);
                 ssuDists[pairCount] = genome1.getRnaDistance(genome2);
                 this.summaryReporter.recordDistances(genome1.getId(), genome2.getId(), protDists[pairCount],

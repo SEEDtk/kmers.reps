@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.proteins.Function;
+import org.theseed.sequence.GenomeDescriptor;
 
 /**
  * @author Bruce Parrello
@@ -35,7 +36,7 @@ public class TestRolePatterns {
         int ssuCount = 0;
         for (Feature feat : genome.getFeatures()) {
             String function = Function.commentFree(feat.getPegFunction());
-            Matcher m = SeqTableProcessor.SEED_PROTEIN.matcher(function);
+            Matcher m = GenomeDescriptor.SEED_PROTEIN.matcher(function);
             if (m.matches()) {
                 log.info("PHES in {}: {}", feat.getId(), function);
                 pheCount++;

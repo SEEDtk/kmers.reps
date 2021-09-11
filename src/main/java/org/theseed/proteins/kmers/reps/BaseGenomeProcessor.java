@@ -31,6 +31,10 @@ import org.theseed.utils.BaseProcessor;
  */
 public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepGenContainer {
 
+    /**
+     *
+     */
+    private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
     // FIELDS
 
     /** manager for key data about each genome and its seed protein */
@@ -165,7 +169,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     }
 
     /**
-     * Write the protein FASTA files, the four-column tables, and the stat files.
+     * Write the repgen protein FASTA files, the four-column tables, and the stat files.
      *
      * @throws IOException
      */
@@ -180,21 +184,37 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                     PrintWriter seqStream = new PrintWriter(new File(this.outDir, fileName + ".seqs.tbl"))) {
                 // Write the header for the stats file and the four-column table.
                 statsStream.println("rep_id\trep_name\trating\tmembers");
-                seqStream.println("genome_id\tgrade\tgenome_name\tseed_protein\tssu_rna\tseed_dna");
+                seqStream.println(FOUR_COLUMN_HEADER);
                 // Loop through the groups from largest to smallest.
                 for (String groupId : statMap.bestKeys()) {
                     RepGenome rep = repGenSet.get(groupId);
                     String groupName = rep.getName();
                     ProteinData genomeData = this.genomeList.getGenome(groupId);
                     fastaStream.write(new Sequence(groupId, groupName, rep.getProtein()));
-                    statsStream.format("%s\t%s\t%s\t%d\t%n", groupId, groupName,
+                    statsStream.format("%s\t%s\t%s\t%d%n", groupId, groupName,
                             genomeData.getRating(), statMap.good(groupId));
-                    seqStream.format("%s\t%s\t%s\t%s\t%s%n", groupId, groupName,
-                            genomeData.getProtein(), genomeData.getSsuSequence(),
-                            genomeData.getDna());
+                    this.writeFourCol(seqStream, genomeData);
                 }
             }
         }
+        // Write the master four-column table.
+        try (PrintWriter fourColStream = new PrintWriter(new File(this.outDir, "all.seqs.tbl"))) {
+            fourColStream.println(FOUR_COLUMN_HEADER);
+            for (ProteinData genomeData : this.genomeList)
+                this.writeFourCol(fourColStream, genomeData);
+        }
+    }
+
+    /**
+     * Write a record to a four-column table.
+     *
+     * @param seqStream		output stream
+     * @param genomeData	genome descriptor for the genome to write
+     */
+    private void writeFourCol(PrintWriter seqStream, ProteinData genomeData) {
+        seqStream.format("%s\t%s\t%s\t%s\t%s%n", genomeData.getGenomeId(),
+                genomeData.getGenomeName(), genomeData.getProtein(),
+                genomeData.getSsuSequence(), genomeData.getDna());
     }
 
     /**
@@ -308,8 +328,9 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      */
     protected void createFastaFiles() throws IOException {
         try (FastaOutputStream dnaFasta = new FastaOutputStream(new File(this.outDir, "PhenTrnaSyntAlph.fa"));
-                FastaOutputStream protFasta = new FastaOutputStream(new File(this.outDir, "allProts.fa"))) {
-            log.info("Writing seed protein FASTA files.");
+                FastaOutputStream protFasta = new FastaOutputStream(new File(this.outDir, "allProts.fa"));
+                FastaOutputStream ssuFasta = new FastaOutputStream(new File(this.outDir, "allSsu.fa"))) {
+            log.info("Writing seed protein and SSU FASTA files.");
             for (ProteinData genomeData : this.genomeList) {
                 String fid = genomeData.getFid();
                 String gid = genomeData.getGenomeId();
@@ -317,10 +338,12 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 // The DNA file expects the comment to be the ID, a tab, and the name.
                 Sequence gSequence = new Sequence(fid, gid + "\t" + name, genomeData.getDna());
                 dnaFasta.write(gSequence);
-                // The protein file wants just a name.
+                // The protein file and SSU file just want a name.
                 gSequence.setComment(name);
                 gSequence.setSequence(genomeData.getProtein());
                 protFasta.write(gSequence);
+                gSequence.setSequence(genomeData.getSsuSequence());
+                ssuFasta.write(gSequence);
             }
         }
     }
@@ -434,7 +457,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         File goodFile = new File(this.outDir, "patric.good.tbl");
         try (PrintWriter writer = new PrintWriter(goodFile)) {
             // Write the header.
-            writer.println("genome_id\tname\tdomain\tscore\trating\t" + headers);
+            writer.println("genome_id\tname\tdomain\tgenus\tspecies\tscore\trating\t" + headers);
             // We'll build the output in here.
             TextStringBuilder buffer = new TextStringBuilder(150);
             for (ProteinData genome : this.genomeList) {
@@ -442,6 +465,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 buffer.append(genome.getGenomeId()).append('\t');
                 buffer.append(genome.getGenomeName()).append('\t');
                 buffer.append(genome.getDomain()).append('\t');
+                buffer.append(genome.getGenus()).append('\t');
+                buffer.append(genome.getSpecies()).append('\t');
                 buffer.append("%8.4f\t", genome.getScore());
                 buffer.append(genome.getRating().toString());
                 // Loop through the repgens.  Here we append the tab at the front.

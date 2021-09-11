@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
+import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.utils.BaseReportProcessor;
 import org.theseed.utils.ParseFailureException;
@@ -110,7 +111,7 @@ public class GtoClassProcessor extends BaseReportProcessor {
             gCount++;
             log.info("Processing genome {} of {}: {}.", gCount, this.genomes.size(), genome);
             // Find this genome's seed protein.
-            String protId = SeqTableProcessor.findSeed(genome);
+            String protId = GenomeDescriptor.findSeed(genome);
             if (protId == null) {
                 // Here there is no seed protein, so we skip the genome.
                 errorCount += repIds.length;

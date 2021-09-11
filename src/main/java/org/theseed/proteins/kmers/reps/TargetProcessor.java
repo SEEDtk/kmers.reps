@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
+import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.GenomeKmers;
 import org.theseed.sequence.SequenceKmers;
 import org.theseed.utils.BaseProcessor;
@@ -172,7 +173,7 @@ public class TargetProcessor extends BaseProcessor {
      */
     public DnaKmers getSeedKmers(Genome genome) {
         this.targets.add(genome.getId());
-        String fid = SeqTableProcessor.findSeed(genome);
+        String fid = GenomeDescriptor.findSeed(genome);
         if (fid == null)
             throw new IllegalArgumentException("Genone " + genome.toString() + " has no valid seed protein.");
         DnaKmers retVal = new DnaKmers(genome.getDna(fid));

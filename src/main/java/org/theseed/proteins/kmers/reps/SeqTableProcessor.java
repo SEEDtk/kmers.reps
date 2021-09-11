@@ -6,17 +6,14 @@ package org.theseed.proteins.kmers.reps;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.regex.Pattern;
-
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
-import org.theseed.proteins.Function;
+import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.utils.ParseFailureException;
 import org.theseed.utils.RestartableBaseProcessor;
 
@@ -46,8 +43,6 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     protected static Logger log = LoggerFactory.getLogger(SeqTableProcessor.class);
     /** input genome source */
     private GenomeSource genomes;
-    /** match pattern for seed protein */
-    public static final Pattern SEED_PROTEIN = Pattern.compile("Phenylalanyl-tRNA\\s+synthetase\\s+alpha\\s+chain(?:\\s+\\(E[^)]+\\))?", Pattern.CASE_INSENSITIVE);
     /** list of sequence names */
     private static final String[] funSeqNames = new String[] { "seed_protein", "ssu_rna" };
 
@@ -118,7 +113,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
         Arrays.fill(retVal, "");
         // Loop through the pegs.
         log.info("Searching {}.", genome);
-        String bestId = findSeed(genome);
+        String bestId = GenomeDescriptor.findSeed(genome);
         // Get the seed sequences.
         if (bestId != null) {
             retVal[0] = genome.getFeature(bestId).getProteinTranslation();
@@ -127,30 +122,6 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
         retVal[1] = genome.getSsuRRna();
         // Return both sequences.
         return retVal;
-    }
-
-    /**
-     * Find the seed protein in a genome.
-     *
-     * @param genome	genome to search
-     *
-     * @return the ID of the seed protein, or NULL if none was found
-     */
-    public static String findSeed(Genome genome) {
-        String bestId = null;
-        int bestProt = 0;
-        for (Feature feat : genome.getPegs()) {
-            String function = Function.commentFree(feat.getPegFunction());
-            // For a peg, we check for the seed protein.
-            if (SEED_PROTEIN.matcher(function).matches()) {
-                int proposed = feat.getProteinTranslation().length();
-                if (proposed > bestProt) {
-                    bestProt = proposed;
-                    bestId = feat.getId();
-                }
-            }
-        }
-        return bestId;
     }
 
 }
