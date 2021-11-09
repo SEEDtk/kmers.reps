@@ -18,8 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.p3api.Criterion;
 import org.theseed.utils.BaseReportProcessor;
 import org.theseed.utils.ParseFailureException;
@@ -62,7 +62,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
     /** current batch of genome IDs to process */
     private Set<String> genomeIds;
     /** connection to PATRIC */
-    private Connection p3;
+    private P3Connection p3;
     /** number of batches processed */
     private int batchCount;
     /** number of genomes output */
@@ -131,7 +131,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         this.genomeIds = new HashSet<String>(this.batchSize);
         // Connect  to PATRIC.
         log.info("Connecting to PATRIC.");
-        this.p3 = new Connection();
+        this.p3 = new P3Connection();
     }
 
     @Override
@@ -184,14 +184,14 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         // Sort the RNAs, saving the sequence MD5s.
         Set<String> rnaSeqIds = new HashSet<String>(rnaRecords.size());
         for (JsonObject rnaRecord : rnaRecords) {
-            String function = Connection.getString(rnaRecord, "product");
+            String function = P3Connection.getString(rnaRecord, "product");
             if (Genome.SSU_R_RNA.matcher(function).find()) {
                 // Save the MD5 so we can query the sequence.
-                String seqId = Connection.getString(rnaRecord, "na_sequence_md5");
+                String seqId = P3Connection.getString(rnaRecord, "na_sequence_md5");
                 rnaSeqIds.add(seqId);
                 // Save the genome name.
-                String genomeId = Connection.getString(rnaRecord, "genome_id");
-                String genomeName = Connection.getString(rnaRecord, "genome_name");
+                String genomeId = P3Connection.getString(rnaRecord, "genome_id");
+                String genomeName = P3Connection.getString(rnaRecord, "genome_name");
                 nameMap.put(genomeId, genomeName);
                 // Connect the MD5 to the genome.
                 List<String> rnaSeqs = rnaMap.computeIfAbsent(genomeId, x -> new ArrayList<String>(10));
@@ -216,7 +216,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
                         log.warn("Could not find DNA for genome {} sequence {}.", genomeId, seqId);
                         this.missCount++;
                     } else {
-                        String seq = Connection.getString(seqRecords.get(seqId), "sequence");
+                        String seq = P3Connection.getString(seqRecords.get(seqId), "sequence");
                         if (seq.length() < this.minLen) {
                             log.warn("DNA for genome {} sequence {} has improper length.", genomeId, seqId);
                             missCount++;

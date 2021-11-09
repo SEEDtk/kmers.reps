@@ -22,9 +22,9 @@ import java.util.Iterator;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Connection;
+import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.Criterion;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.proteins.RoleMap;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.FastaInputStream;
@@ -55,7 +55,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /* map of taxon IDs associated with species to genetic codes */
     private HashMap<String, Integer> species;
     /** connection to PATRIC */
-    private Connection p3;
+    private P3Connection p3;
     /** master list of ProteinData objects */
     private SortedSet<ProteinData> master;
     /** map of ProteinData objects by genome ID */
@@ -80,21 +80,21 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      */
     public ProteinDataFactory() {
         // Connect to PATRIC.
-        this.p3 = new Connection();
+        this.p3 = new P3Connection();
         // Get all the species.
         log.info("Downloading taxonomic data.");
         List<JsonObject> taxonList = p3.query(Table.TAXONOMY,
                 "taxon_id,genetic_code", "eq(taxon_rank,species)");
         this.species = new HashMap<String, Integer>(taxonList.size());
         for (JsonObject taxonData : taxonList) {
-            String speciesId = Connection.getString(taxonData, "taxon_id");
-            int gc = Connection.getInt(taxonData, "genetic_code");
+            String speciesId = P3Connection.getString(taxonData, "taxon_id");
+            int gc = P3Connection.getInt(taxonData, "genetic_code");
             this.species.put(speciesId, gc);
         }
         log.info("{} species tabulated.", this.species.size());
         // Get all the genera.
         taxonList = p3.query(Table.TAXONOMY, "taxon_id", "eq(taxon_rank,genus)");
-        this.genera = taxonList.stream().map(x -> Connection.getString(x, "taxon_id")).collect(Collectors.toSet());
+        this.genera = taxonList.stream().map(x -> P3Connection.getString(x, "taxon_id")).collect(Collectors.toSet());
         log.info("{} genera tabulated.", this.genera.size());
         // Get the NCBI reference and representative genomes.
         List<JsonObject> ncbiGenomes = p3.query(Table.GENOME, "genome_id,reference_genome",
@@ -102,9 +102,9 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         log.info("{} NCBI special genomes found.", ncbiGenomes.size());
         this.ncbiRefMap = new HashMap<String, ProteinData.Rating>(ncbiGenomes.size());
         for (JsonObject genome : ncbiGenomes) {
-            String genomeId = Connection.getString(genome, "genome_id");
+            String genomeId = P3Connection.getString(genome, "genome_id");
             if (genomeId != null && ! genomeId.isEmpty()) {
-                String type = Connection.getString(genome, "reference_genome");
+                String type = P3Connection.getString(genome, "reference_genome");
                 if (type != null) {
                     if (type.contentEquals("Reference"))
                         this.ncbiRefMap.put(genomeId, ProteinData.Rating.NCBI_REF);
@@ -210,19 +210,19 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         for (JsonObject feature : features) {
             // Check this feature for a valid function.  It usually IS valid.  Rarely, we get a substring match of something that
             // is similar, but not correct.
-            String[] roleNames = Feature.rolesOfFunction(Connection.getString(feature, "product"));
+            String[] roleNames = Feature.rolesOfFunction(P3Connection.getString(feature, "product"));
             boolean foundRole = Arrays.stream(roleNames).anyMatch(x -> seedMap.containsName(x));
             if (foundRole) {
                 // Get the protein data for the feature's genome.
-                String genomeId = Connection.getString(feature, "genome_id");
+                String genomeId = P3Connection.getString(feature, "genome_id");
                 ProteinData genomeData = this.idMap.get(genomeId);
                 // Only proceed if we found it.  If we didn't find it, then it is not one of our genomes.
                 if (genomeData != null) {
                     // Verify that we have a valid feature ID and both MD5s.  Note that there is no trace message for a missing
                     // feature ID, as features with a missing ID have a special meaning.
-                    String fid = Connection.getString(feature, "patric_id");
-                    String dnaMd5 = Connection.getString(feature, "na_sequence_md5");
-                    String protMd5 = Connection.getString(feature, "aa_sequence_md5");
+                    String fid = P3Connection.getString(feature, "patric_id");
+                    String dnaMd5 = P3Connection.getString(feature, "na_sequence_md5");
+                    String protMd5 = P3Connection.getString(feature, "aa_sequence_md5");
                     if (dnaMd5 == null || dnaMd5.isEmpty()) {
                         log.debug("Missing DNA sequence for seed protein of {}.", genomeId);
                     } else if (protMd5 == null || protMd5.isEmpty()) {
@@ -282,11 +282,11 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         Map<String, List<JsonObject>> genomeMap = new HashMap<String, List<JsonObject>>(this.master.size());
         int found = 0;
         for (JsonObject feature : features) {
-            String product = Connection.getString(feature, "product");
+            String product = P3Connection.getString(feature, "product");
             if (Genome.SSU_R_RNA.matcher(product).find()) {
                 // Here we have a real 16S feature.
-                seqMap.put(Connection.getString(feature, "na_sequence_md5"), null);
-                String genomeId = Connection.getString(feature, "genome_id");
+                seqMap.put(P3Connection.getString(feature, "na_sequence_md5"), null);
+                String genomeId = P3Connection.getString(feature, "genome_id");
                 List<JsonObject> feats = genomeMap.computeIfAbsent(genomeId, x -> new ArrayList<JsonObject>(5));
                 feats.add(feature);
                 found++;
@@ -298,8 +298,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         // We now fill the map with the actual sequences.
         log.info("Reading {} SSU nucleotide sequences from PATRIC.", seqMap.size());
         p3.getRecords(Table.SEQUENCE, "md5", seqMap.keySet(), "md5,sequence").stream()
-                .forEach(x -> seqMap.put(Connection.getString(x, "md5"),
-                        Connection.getString(x, "sequence")));
+                .forEach(x -> seqMap.put(P3Connection.getString(x, "md5"),
+                        P3Connection.getString(x, "sequence")));
         // We have all the SSU rRNA sequences, which is quite an accomplishment.  Run through the
         // genomes, collecting them and updating the SSUs.  This involves changing the key to a
         // sorted set, so we clear the master and rebuild it.
@@ -322,7 +322,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 deleteCount++;
             } else {
                 // Get all the sequences for this genome.
-                List<String> rnas = jsons.stream().map(x -> seqMap.get(Connection.getString(x, "na_sequence_md5")))
+                List<String> rnas = jsons.stream().map(x -> seqMap.get(P3Connection.getString(x, "na_sequence_md5")))
                         .filter(x -> x != null).collect(Collectors.toList());
                 if (rnas.isEmpty()) {
                     // Here the SSUs had no valid sequences.  Reject the genome.
@@ -409,7 +409,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         int protSet = 0;
         for (Map.Entry<String, JsonObject> sequence : sequences.entrySet()) {
             Collection<ProteinData> genomeData = dnaMap.get(sequence.getKey());
-            String dna = Connection.getString(sequence.getValue(), "sequence");
+            String dna = P3Connection.getString(sequence.getValue(), "sequence");
             for (ProteinData genomeDatum : genomeData) {
                 genomeDatum.setDna(dna);
                 dnaSet++;
@@ -419,7 +419,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         sequences = p3.getRecords(Table.SEQUENCE, protMap.keySet(), "sequence");
         for (Map.Entry<String, JsonObject> sequence : sequences.entrySet()) {
             Collection<ProteinData> genomeData = protMap.get(sequence.getKey());
-            String prot = Connection.getString(sequence.getValue(), "sequence");
+            String prot = P3Connection.getString(sequence.getValue(), "sequence");
             for (ProteinData genomeDatum : genomeData) {
                 genomeDatum.setProtein(prot);
                 protSet++;

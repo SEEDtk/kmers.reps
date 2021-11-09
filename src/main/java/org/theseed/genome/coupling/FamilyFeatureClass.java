@@ -16,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader.Line;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
 
@@ -35,7 +35,7 @@ public class FamilyFeatureClass extends FeatureClass {
     /** logging facility */
     protected Logger log = LoggerFactory.getLogger(FamilyFeatureClass.class);
     /** connection to PATRIC */
-    private Connection p3;
+    private P3Connection p3;
     /** map of family IDs to names */
     private Map<String, String> nameMap;
 
@@ -43,7 +43,7 @@ public class FamilyFeatureClass extends FeatureClass {
      * Construct the family feature class.
      */
     public FamilyFeatureClass() {
-        this.p3 = new Connection();
+        this.p3 = new P3Connection();
         this.nameMap = new HashMap<String, String>(5000);
     }
 
@@ -77,7 +77,7 @@ public class FamilyFeatureClass extends FeatureClass {
         if (batch.size() > 0) {
             Map<String, JsonObject> familyData = this.p3.getRecords(Table.FAMILY, batch, "family_product");
             for (Map.Entry<String, JsonObject> familyDatum : familyData.entrySet())
-                this.nameMap.put(familyDatum.getKey(), Connection.getString(familyDatum.getValue(), "family_product"));
+                this.nameMap.put(familyDatum.getKey(), P3Connection.getString(familyDatum.getValue(), "family_product"));
         }
     }
 
