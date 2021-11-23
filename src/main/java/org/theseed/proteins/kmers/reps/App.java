@@ -33,6 +33,7 @@ import org.theseed.utils.BaseProcessor;
  *  prio		prioritize a list of genomes using a second list
  *  list		list the genomes in a representative genome database
  *  rnaVerify	build a blacklist of genomes with bad or suspicious SSU rRNA sequences
+ *  seedTable	build a 4-column table for a specified seed protein
  */
 public class App
 {
@@ -105,6 +106,9 @@ public class App
             break;
         case "rnaVerify" :
             processor = new RnaVerifyProcessor();
+            break;
+        case "seedTable" :
+            processor = new SeedTableProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
