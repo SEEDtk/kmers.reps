@@ -24,6 +24,7 @@ import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
+import org.theseed.io.TabbedLineReader;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
@@ -46,6 +47,8 @@ import org.theseed.utils.ParseFailureException;
  * -m	minimum percent of genomes that must contain the role for it to be included in the output; default 80
  *
  * --source		specify the type of input (PATRIC, DIR, or MASTER); default DIR
+ * --filter		name of a tab-delimited file with headers containing genome IDs in the first column; only the
+ * 				listed genomes will be processed
  *
  * @author Bruce Parrello
  */
@@ -66,6 +69,8 @@ public class UniRoleProcessor extends BaseProcessor {
     private Map<String, SummaryStatistics> roleStats;
     /** map of role IDs to protein families */
     private Map<String, Set<String>> familyMap;
+    /** set of IDs for genomes to process */
+    private Set<String> genomeSet;
     /** output threshold */
     private int minCount;
     /** estimated number of roles for map creation */
@@ -85,6 +90,10 @@ public class UniRoleProcessor extends BaseProcessor {
     @Option(name = "--min", aliases = { "-m" }, usage = "minimum percent of genomes that must contain a role")
     private double minPercent;
 
+    /** optional filter file */
+    @Option(name = "--filter", usage = "if specified, a file with genome IDs in the first column to restrict processing")
+    private File filterFile;
+
     /** role definition file */
     @Argument(index = 0, metaVar = "roles.in.subsystems", usage = "role definition file", required = true)
     private File roleFile;
@@ -99,6 +108,7 @@ public class UniRoleProcessor extends BaseProcessor {
         this.inType = GenomeSource.Type.DIR;
         this.outFile = null;
         this.minPercent = 80.0;
+        this.filterFile = null;
     }
 
     @Override
@@ -107,7 +117,7 @@ public class UniRoleProcessor extends BaseProcessor {
         if (! this.roleFile.canRead())
             throw new FileNotFoundException("Role definition file " + this.roleFile + " not found or unreadable.");
         this.roleMap = RoleMap.load(this.roleFile);
-        log.info("{} role definitions loaded from {}.", this.roleFile);
+        log.info("{} role definitions loaded from {}.", this.roleMap.size(), this.roleFile);
         // Set up the output.
         if (this.outFile == null) {
             log.info("Report will be written to standard output.");
@@ -121,11 +131,17 @@ public class UniRoleProcessor extends BaseProcessor {
             throw new FileNotFoundException("Genome source " + this.inDir + " not found.");
         this.genomes = this.inType.create(this.inDir);
         log.info("{} genomes found in {}.", this.genomes.size(), this.inDir);
+        // Check the filter file.
+        if (this.filterFile == null) {
+            log.info("All genomes in the source will be processed.");
+            this.genomeSet = this.genomes.getIDs();
+        } else {
+            log.info("Only genomes listed in file {} will be processoed.", this.filterFile);
+            this.genomeSet = TabbedLineReader.readSet(this.filterFile, "1");
+        }
         // Compute the output threshold.
         if (this.minPercent > 100.0)
             throw new ParseFailureException("Minimum percent must be <= 100");
-        this.minCount = (int) (this.minPercent * this.genomes.size() + 99) / 100;
-        log.info("Output threshold is {}% ({} occurrences).", this.minPercent, this.minCount);
         return true;
     }
 
@@ -138,37 +154,46 @@ public class UniRoleProcessor extends BaseProcessor {
             this.familyMap = new HashMap<String, Set<String>>(ESTIMATED_ROLES);
             // Loop through the genomes.
             int count = 0;
-            for (Genome genome : genomes) {
+            int processed = 0;
+            for (String genomeId : this.genomeSet) {
+                Genome genome = this.genomes.getGenome(genomeId);
                 count++;
-                log.info("Processing genome {} of {}: {}.", count, genomes.size(), genome);
-                // Count the role occurrences.
-                CountMap<String> gRoleCounts = new CountMap<String>();
-                CountMap<String> gRoleLengths = new CountMap<String>();
-                for (Feature feat : genome.getPegs()) {
-                    for (Role role : feat.getUsefulRoles(this.roleMap)) {
-                        String roleId = role.getId();
-                        gRoleCounts.count(roleId);
-                        gRoleLengths.setCount(roleId, feat.getProteinLength());
-                        this.updateFamilies(roleId, feat);
+                if (genome == null)
+                    log.warn("Genome {} is missing from the input source.", genomeId);
+                else {
+                    log.info("Processing genome {} of {}: {}.", count, genomeSet.size(), genome);
+                    // Count the role occurrences.
+                    CountMap<String> gRoleCounts = new CountMap<String>();
+                    CountMap<String> gRoleLengths = new CountMap<String>();
+                    for (Feature feat : genome.getPegs()) {
+                        for (Role role : feat.getUsefulRoles(this.roleMap)) {
+                            String roleId = role.getId();
+                            gRoleCounts.count(roleId);
+                            gRoleLengths.setCount(roleId, feat.getProteinLength());
+                            this.updateFamilies(roleId, feat);
+                        }
                     }
-                }
-                // Now output the roles with only one feature.  For each role we must also add its length
-                // to the statistics for that role.
-                int rCount = 0;
-                for (CountMap<String>.Count counter : gRoleCounts.counts()) {
-                    if (counter.getCount() == 1) {
-                        String roleId = counter.getKey();
-                        this.roleCounts.count(roleId);
-                        SummaryStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new SummaryStatistics());
-                        stats.addValue(gRoleLengths.getCount(roleId));
-                        rCount++;
+                    // Now output the roles with only one feature.  For each role we must also add its length
+                    // to the statistics for that role.
+                    int rCount = 0;
+                    for (CountMap<String>.Count counter : gRoleCounts.counts()) {
+                        if (counter.getCount() == 1) {
+                            String roleId = counter.getKey();
+                            this.roleCounts.count(roleId);
+                            SummaryStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new SummaryStatistics());
+                            stats.addValue(gRoleLengths.getCount(roleId));
+                            rCount++;
+                        }
                     }
+                    log.info("{} singleton roles found for {}.", rCount, genome);
+                    processed++;
                 }
-                log.info("{} singleton roles found for {}.", rCount, genome);
             }
             if (this.roleCounts.size() == 0)
                 log.error("No singleton roles found.");
             else {
+                this.minCount = (int) (this.minPercent * processed + 99) / 100;
+                log.info("Output threshold is {}% ({} occurrences).", this.minPercent, this.minCount);
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
                     writer.println("role\tcount\tname\tmean_len\tsdev_len\tfamilies");
@@ -179,7 +204,7 @@ public class UniRoleProcessor extends BaseProcessor {
                             String roleId = counter.getKey();
                             // Get the protein families.
                             String families = StringUtils.join(this.familyMap.get(roleId), ", ");
-                            // We need to compute the mean and standard deviation.
+                            // We need to compute the mean and standard deviation for the role length.
                             SummaryStatistics stats = this.roleStats.get(roleId);
                             writer.format("%s\t%d\t%s\t%8.2f\t%8.2f\t%s%n", roleId, rCount, this.roleMap.getName(roleId),
                                     stats.getMean(), stats.getStandardDeviation(), families);
