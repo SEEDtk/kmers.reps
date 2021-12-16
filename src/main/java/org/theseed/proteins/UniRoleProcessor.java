@@ -181,7 +181,8 @@ public class UniRoleProcessor extends BaseProcessor {
                             String roleId = counter.getKey();
                             this.roleCounts.count(roleId);
                             SummaryStatistics stats = this.roleStats.computeIfAbsent(roleId, x -> new SummaryStatistics());
-                            stats.addValue(gRoleLengths.getCount(roleId));
+                            int protLen = gRoleLengths.getCount(roleId);
+                            stats.addValue(protLen);
                             rCount++;
                         }
                     }
