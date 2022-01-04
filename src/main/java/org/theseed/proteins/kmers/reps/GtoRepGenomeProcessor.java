@@ -18,14 +18,11 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.genome.iterator.GenomeTargetType;
 import org.theseed.genome.iterator.IGenomeTarget;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.proteins.Role;
-import org.theseed.proteins.RoleMap;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
@@ -63,8 +60,6 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     protected static Logger log = LoggerFactory.getLogger(GtoRepGenomeProcessor.class);
     /** representative-genome database */
     private RepGenomeDb repDb;
-    /** role map for seed protein */
-    private RoleMap seedMap;
     /** input genome source */
     private GenomeSource source;
     /** genome ID filter list */
@@ -76,52 +71,11 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     /** list of genome IDs to defer */
     private Set<String> blacklist;
     /** deferred-genome list */
-    private List<Deferral> deferrals;
+    private List<RepGenome> deferrals;
     /** outlier count */
     private int outCount;
     /** minimum acceptable rRNA length */
     private static final int MIN_RNA_LEN = 1400;
-
-
-    /**
-     * This is a dinky structure for storing a deferral.
-     */
-    protected class Deferral {
-
-        /** genome being deferred */
-        private String genomeId;
-        /** ID of the seed protein */
-        private String seedFid;
-        /** sequence of the seed protein */
-        private String seedFound;
-
-        /**
-         * Construct a deferral for a specified genome.
-         *
-         * @param genome		genome of interest
-         * @param seedFid		ID of its seed protein
-         * @param seedFound		sequence of its seed protein
-         */
-        protected Deferral(Genome genome, String seedFid, String seedFound) {
-            this.genomeId = genome.getId();
-            this.seedFid = seedFid;
-            this.seedFound = seedFound;
-        }
-
-        /**
-         * Process the deferral.
-         *
-         * @param writer	output writer for the result
-         *
-         * @throws IOException
-         */
-        protected void process(PrintWriter writer) throws IOException {
-            Genome genome = GtoRepGenomeProcessor.this.source.getGenome(this.genomeId);
-            log.info("Processing deferred genome {}.", genome);
-            GtoRepGenomeProcessor.this.processGenome(writer, genome, this.seedFound, this.seedFid);
-        }
-
-    }
 
     // COMMAND-LINE OPTIONS
 
@@ -243,11 +197,8 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
         try (PrintWriter writer = new PrintWriter(this.outStream)) {
             // Start the output report.
             writer.println("genome_id\tgenome_name\trep_id\trep_name\tsimilarity\tdistance\toutlier");
-            // Create a role map from the seed protein.
-            this.seedMap = new RoleMap();
-            this.seedMap.findOrInsert(this.repDb.getProtName());
             // Set up the deferral list.
-            this.deferrals = new ArrayList<Deferral>(2000);
+            this.deferrals = new ArrayList<RepGenome>(2000);
             // Now read through the genome directory.
             log.info("Scanning genome directory {}.", this.gtoDir);
             int skipCount = 0;
@@ -260,29 +211,16 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
                 // We only process if it's found.
                 if (genome != null) {
                     log.info("Processing genome {} of {}: {}.", gCount, this.idList.size(), genome);
-                    // Search for the seed protein.  We keep the longest.
-                    String seedFound = "";
-                    String seedFid = "";
-                    for (Feature feat : genome.getPegs()) {
-                        String protein = feat.getProteinTranslation();
-                        // If this protein is longer, parse the functional assignment.
-                        if (protein.length() > seedFound.length()) {
-                            List<Role> seeds = feat.getUsefulRoles(this.seedMap);
-                            if (seeds.size() > 0) {
-                                seedFound = protein;
-                                seedFid = feat.getId();
-                            }
-                        }
-                    }
+                    RepGenome rep = this.repDb.getSeedProtein(genome);
                     // Only proceed if we have a seed protein.  Here we also check for the SSU rRNA.
                     boolean skip = false;
-                    if (seedFound.isEmpty()) {
+                    if (rep == null) {
                         log.warn("{} does not have a seed protein.", genome);
                         skip = true;
                         skipCount++;
                     } else if (this.blacklist.contains(genome.getId())) {
                         log.info("{} deferred due to blacklist.", genome);
-                        this.defer(genome, seedFid, seedFound);
+                        this.defer(rep);
                         skip = true;
                     } else if (this.rnaFlag) {
                         String ssuRRNA = genome.getSsuRRna();
@@ -292,20 +230,20 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
                             skipCount++;
                         } else if (ssuRRNA.length() < MIN_RNA_LEN) {
                             log.warn("{} deferred due to short RNA.", genome);
-                            this.defer(genome, seedFid, seedFound);
+                            this.defer(rep);
                             skip = true;
                         }
                     }
                     if (! skip) {
                         // Look for the closest representative.
-                        processGenome(writer, genome, seedFound, seedFid);
+                        processGenome(writer, rep);
                     }
                 }
             }
             // Now process the deferrals.
             log.info("Processing {} deferred genomes.", this.deferrals.size());
-            for (Deferral deferral : this.deferrals) {
-                deferral.process(writer);
+            for (RepGenome deferral : this.deferrals) {
+                processGenome(writer, deferral);
             }
             log.info("{} outliers found, {} skipped due to missing seed protein.",
                     this.outCount, skipCount);
@@ -326,14 +264,12 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
      * Process a genome to find its representative.
      *
      * @param writer		print writer for the output line
-     * @param genome		genome to process
-     * @param seedFound		seed protein string
-     * @param seedFid		seed protein feature ID
+     * @param rep			representation object for genome to process
      *
      * @throws IOException
      */
-    protected void processGenome(PrintWriter writer, Genome genome, String seedFound, String seedFid) throws IOException {
-        RepGenomeDb.Representation result = this.repDb.findClosest(seedFound);
+    protected void processGenome(PrintWriter writer, RepGenome rep) throws IOException {
+        RepGenomeDb.Representation result = this.repDb.findClosest(rep);
         String repId;
         String repName;
         String outlierFlag = "";
@@ -360,22 +296,21 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             // Here we have an outlier.
             if (this.updateFile != null) {
                 // Here we are updating the database and we need to add this outlier.
-                repName = genome.getName();
-                RepGenome rep = new RepGenome(seedFid, repName, seedFound);
                 this.repDb.addRep(rep);
-                repId = genome.getId();
+                repId = rep.getGenomeId();
                 sim = 9999;
                 dist = 0.0;
-                log.info("{} added to representative genome database.", genome);
+                log.info("{} ({}) added to representative genome database.", rep.getGenomeId(), rep.getName());
             }
             if (this.saveDir != null) {
                 // Here we are saving the outliers.
+                Genome genome = this.source.getGenome(rep.getGenomeId());
                 this.target.add(genome);
                 log.info("{} saved to {}.", genome, this.saveDir);
             }
         }
         // Write the output line.
-        writer.format("%s\t%s\t%s\t%s\t%d\t%8.4f\t%s%n", genome.getId(), genome.getName(), repId, repName,
+        writer.format("%s\t%s\t%s\t%s\t%d\t%8.4f\t%s%n", rep.getGenomeId(), rep.getName(), repId, repName,
                 sim, dist, outlierFlag);
     }
 
@@ -386,9 +321,8 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
      * @param seedFid		seed protein feature ID
      * @param seedFound		seed protein sequence
      */
-    private void defer(Genome genome, String seedFid, String seedFound) {
-        Deferral deferral = new Deferral(genome, seedFid, seedFound);
-        this.deferrals.add(deferral);
+    private void defer(RepGenome rep) {
+        this.deferrals.add(rep);
     }
 
 }

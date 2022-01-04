@@ -12,7 +12,9 @@ import org.theseed.utils.BaseProcessor;
 /**
  * This program processes protein kmers.  The commands are as follows.
  *
+ *  build		Create a representative-genome database for a pre-selected set of representatives
  *  gtoReps		find the representative genome of each GTO in a directory
+ *  ssuReps		find the representative genome of each GTO in a directory using an SSU table
  * 	repdb		Create a representative-genome database from a FASTA file of protein sequences.
  *	group		Analyze proteins and group them together.
  *  classify	Compare proteins to multiple protein lists
@@ -46,6 +48,9 @@ public class App
         switch (command) {
         case "gtoReps" :
             processor = new GtoRepGenomeProcessor();
+            break;
+        case "ssuReps" :
+            processor = new SsuRepGenomeProcessor();
             break;
         case "distances" :
             processor = new DistanceMatrixProcessor();
@@ -109,6 +114,9 @@ public class App
             break;
         case "seedTable" :
             processor = new SeedTableProcessor();
+            break;
+        case "build" :
+            processor = new BuildRepDbProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
