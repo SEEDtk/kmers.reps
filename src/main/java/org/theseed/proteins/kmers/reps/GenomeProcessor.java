@@ -37,7 +37,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     // COMMAND-LINE OPTIONS
 
     /** list of RepGen set scores */
-    @Option(name = "--repSizes", aliases = { "--repScores", "--repSims" }, metaVar = "50,100,200,250",
+    @Option(name = "--repSizes", aliases = { "--repScores", "--repSims" }, metaVar = "10,50,100,200",
             usage = "comma-delimited list of minimum scores for each RepGen set to create")
     private void setRepSizes(String repSizeString) {
         this.repSizes = new IntegerList(repSizeString);
@@ -58,7 +58,7 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     @Override
     public void runCommand() {
         try {
-            // Read all the genomes from the input file.
+            // Read all the genomes from the input file and build protein data objects.
             initializeProteinData();
             // We need to create the FASTA files for the seed protein list and the
             // binning BLAST database.  We do that here.
