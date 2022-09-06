@@ -4,9 +4,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.theseed.genomes</groupId>
-  <artifactId>proteins</artifactId>
-  <version>0.0.1</version>
+  <groupId>org.theseed</groupId>
+  <artifactId>kmers.reps</artifactId>
+  <version>1.0.0</version>
 
   <name>proteins</name>
   <description>Reference genome utilities</description>
@@ -75,7 +75,7 @@
     <dependency>
         <groupId>org.theseed</groupId>
         <artifactId>p3api</artifactId>
-        <version>0.0.1</version>
+        <version>1.0.0</version>
     </dependency>
   </dependencies>
 
