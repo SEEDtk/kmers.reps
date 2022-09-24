@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.theseed.genome.Genome;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
 
@@ -296,14 +297,17 @@ public class ProteinData implements Comparable<ProteinData> {
         int longSeqs = 0;
         // Check all the sequences.
         for (String rna : rnas) {
-            // Insure we keep the longest.
-            if (rna.length() > this.ssuSequence.length())
-                this.ssuSequence = rna;
-            // Save the good ones.
-            if (rna.length() >= ProteinDataFactory.USEFUL_SSU_LEN) {
-                goodSeqs.add(new DnaKmers(rna));
-                if (rna.length() >= ProteinDataFactory.MIN_SSU_LEN)
-                    longSeqs++;
+            // Only proceeed if the sequence has no long ambiguity run.
+            if (Genome.isValidSsuRRna(rna)) {
+                // Insure we keep the longest.
+                if (rna.length() > this.ssuSequence.length())
+                    this.ssuSequence = rna;
+                // Save the good ones.
+                if (rna.length() >= ProteinDataFactory.USEFUL_SSU_LEN) {
+                    goodSeqs.add(new DnaKmers(rna));
+                    if (rna.length() >= ProteinDataFactory.MIN_SSU_LEN)
+                        longSeqs++;
+                }
             }
         }
         if (goodSeqs.size() < 1) {
