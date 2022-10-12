@@ -31,11 +31,9 @@ import org.theseed.utils.BaseProcessor;
  */
 public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepGenContainer {
 
-    /**
-     *
-     */
-    private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
     // FIELDS
+    /** header line for four-column table containing SSUs */
+    private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
 
     /** manager for key data about each genome and its seed protein */
     private ProteinDataFactory genomeList;
@@ -367,7 +365,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             throw new FileNotFoundException(this.getInFile() + " is not found or unreadable.");
     }
     /**
-     * Read the input file and initialize the protein data genome list.
+     * Read the input file and initialize the protein data genome list.  This also writes an output file
+     * containing the genomes rejected for bad lineages.
      *
      * @return the protein data genome list
      *
@@ -380,7 +379,10 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         // We use this to decide when to output progress messages.
         int batchCount = this.batchSize;
         // Read in the input file and get the protein data we need.
-        try (TabbedLineReader inStream = new TabbedLineReader(this.inFile)) {
+        try (TabbedLineReader inStream = new TabbedLineReader(this.inFile);
+                PrintWriter saveStream = new PrintWriter(new File(this.outDir, "missing.taxons.tbl"))) {
+            // Start the file where we save the genomes rejected for bad taxonomy data.
+            saveStream.println("genome_id\tgenome_name\tscore\tlineage");
             // Loop through the file.
             for (TabbedLineReader.Line line : inStream) {
                 // Accumulate statistics for this genome.
@@ -388,9 +390,13 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 // Only process good genomes.
                 if (line.getFlag(GenomeEval.GOOD_COL)) {
                     // Add the good genome to the list.
-                    this.genomeList.addGenome(line.get(GenomeEval.GENOME_COL),
-                            line.get(GenomeEval.NAME_COL),
-                            line.get(GenomeEval.LINEAGE_COL), line.getDouble(GenomeEval.SCORE_COL));
+                    final String genomeId = line.get(GenomeEval.GENOME_COL);
+                    final String genomeName = line.get(GenomeEval.NAME_COL);
+                    final String lineageString = line.get(GenomeEval.LINEAGE_COL);
+                    final double score = line.getDouble(GenomeEval.SCORE_COL);
+                    boolean ok = this.genomeList.addGenome(genomeId, genomeName, lineageString, score);
+                    if (! ok)
+                        saveStream.format("%s\t%s\t%6.2f\t%s%n", genomeId, genomeName, score, lineageString);
                     // Show periodic progress.
                     batchCount--;
                     if (batchCount == 0) {
