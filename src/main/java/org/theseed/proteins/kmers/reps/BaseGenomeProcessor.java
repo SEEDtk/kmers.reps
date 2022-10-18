@@ -10,14 +10,19 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.theseed.counters.GenomeEval;
 import org.theseed.counters.QualityCountMap;
+import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Genome;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseProcessor;
@@ -61,7 +66,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     private File outDir;
 
     /** input tab-delimited file of genomes */
-    @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file", required = true)
+    @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file (xxx.eval.tbl)", required = true)
     private File inFile;
 
 
@@ -483,6 +488,49 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 buffer.clear();
             }
             writer.flush();
+        }
+    }
+
+    /**
+     * Save the repgen GTOs to directories.
+     *
+     * @throws IOException
+     */
+    public void saveGTOs() throws IOException {
+        // Create an output directory for each repgen set.  We will connect each representative genome to
+        // all the directories in which it belongs.
+        var repHash = new TreeMap<String, List<File>>();
+        int outCount = 0;
+        for (RepGenomeDb repdb : this.repGenSets) {
+            File repDir = new File(this.outDir, "GTO" + Integer.toString(repdb.getThreshold()));
+            if (! repDir.isDirectory()) {
+                log.info("Creating GTO output directory {}.", repDir);
+                FileUtils.forceMkdir(repDir);
+            } else {
+                log.info("Clearing GTO output directory {}.", repDir);
+                FileUtils.cleanDirectory(repDir);
+            }
+            // Loop through this repgen set, connecting the genome IDs to this directory.
+            for (var rep : repdb) {
+                String genomeId = rep.getGenomeId();
+                List<File> dirList = repHash.computeIfAbsent(genomeId, x -> new ArrayList<File>(this.repGenSets.size()));
+                dirList.add(repDir);
+                outCount++;
+            }
+        }
+        log.info("{} distinct genomes will be downloaded to {} GTO files.", repHash.size(), outCount);
+        // Connect to PATRIC.
+        P3Connection p3 = new P3Connection();
+        // Loop through all the genomes doing the downloads.
+        int gCount = 0;
+        for (var repEntry : repHash.entrySet()) {
+            String genomeId = repEntry.getKey();
+            gCount++;
+            log.info("Downloading {} of {}: {}.", gCount, repHash.size(), genomeId);
+            Genome genome = P3Genome.load(p3, genomeId, P3Genome.Details.FULL);
+            String gName = genomeId + ".gto";
+            for (File outDir : repEntry.getValue())
+                genome.save(new File(outDir, gName));
         }
     }
 

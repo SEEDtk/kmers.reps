@@ -12,7 +12,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -25,6 +24,7 @@ import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.Criterion;
 import org.theseed.p3api.P3Connection.Table;
+import org.theseed.p3api.P3TaxData;
 import org.theseed.proteins.RoleMap;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.FastaInputStream;
@@ -50,10 +50,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
 
     /** logging facility */
     private static Logger log = LoggerFactory.getLogger(ProteinDataFactory.class);
-    /** set of taxon IDs associated with genera */
-    private Set<String> genera;
-    /* map of taxon IDs associated with species to genetic codes */
-    private HashMap<String, Integer> species;
+    /** taxonomy map */
+    private P3TaxData taxMap;
     /** connection to PATRIC */
     private P3Connection p3;
     /** master list of ProteinData objects */
@@ -81,21 +79,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     public ProteinDataFactory() {
         // Connect to PATRIC.
         this.p3 = new P3Connection();
-        // Get all the species.
-        log.info("Downloading taxonomic data.");
-        List<JsonObject> taxonList = p3.query(Table.TAXONOMY,
-                "taxon_id,genetic_code", "eq(taxon_rank,species)");
-        this.species = new HashMap<String, Integer>(taxonList.size());
-        for (JsonObject taxonData : taxonList) {
-            String speciesId = P3Connection.getString(taxonData, "taxon_id");
-            int gc = P3Connection.getInt(taxonData, "genetic_code");
-            this.species.put(speciesId, gc);
-        }
-        log.info("{} species tabulated.", this.species.size());
-        // Get all the genera.
-        taxonList = p3.query(Table.TAXONOMY, "taxon_id", "eq(taxon_rank,genus)");
-        this.genera = taxonList.stream().map(x -> P3Connection.getString(x, "taxon_id")).collect(Collectors.toSet());
-        log.info("{} genera tabulated.", this.genera.size());
+        // Get all the taxonomy stuff.
+        this.taxMap = new P3TaxData(this.p3);
         // Get the NCBI reference and representative genomes.
         List<JsonObject> ncbiGenomes = p3.query(Table.GENOME, "genome_id,reference_genome",
                 Criterion.IN("reference_genome", "Representative", "Reference"));
@@ -129,7 +114,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      * 							double colons)
      * @param score				quality score
      *
-     * @return TRUE if successful, FALSE if the genus or species could not be determined
+     * @return TRUE if successful, FALSE if the species could not be determined
      */
     public boolean addGenome(String genomeId, String genomeName, String lineageString, double score) {
         // Parse out the lineage.
@@ -139,20 +124,20 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         int gc = 11;
         String[] lineage = StringUtils.splitByWholeSeparator(lineageString, "::");
         for (String taxId : lineage) {
-            if (this.genera.contains(taxId))
+            if (this.taxMap.isGenus(taxId))
                 genus = taxId;
             else if (taxId.contentEquals("2157"))
                 domain = "Archaea";
             else {
-                Integer gCode = this.species.get(taxId);
-                if (gCode != null) {
+                int gCode = this.taxMap.checkSpecies(taxId);
+                if (gCode != 0) {
                     gc = gCode;
                     species = taxId;
                 }
             }
         }
-        boolean retVal = (genus != null && species != null);
-        // If we found the genus and species, create the protein data object.
+        boolean retVal = (species != null);
+        // If we found the species, create the protein data object.
         if (retVal) {
             ProteinData newGenome = new ProteinData(genomeId, genomeName, domain, genus, species,
                     gc, score);
@@ -162,7 +147,9 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
             this.master.add(newGenome);
             this.idMap.put(genomeId, newGenome);
         } else {
-            log.debug("Missing genus or species for {}.", genomeId);
+            // Otherwise, note that the species is missing.
+            log.debug("Missing species for {}.", genomeId);
+            this.statistics.count("MissingSpecies", 1);
         }
         return retVal;
     }
@@ -190,8 +177,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      * @throws UnsupportedEncodingException
      */
     public void finishList(int batchSize) throws UnsupportedEncodingException {
-        this.genera = null;
-        this.species = null;
+        this.taxMap = null;
         // We ask for all the features relating to the seed protein function.  We use a special
         // role map to isolate it.
         RoleMap seedMap = new RoleMap();
@@ -332,6 +318,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 } else {
                     // We have sequences.  Merge them into the protein data.  This may change the rating.
                     ProteinData.Rating rating = genomeData.setSsuSequence(rnas);
+                    String genus = genomeData.getGenus();
                     switch (rating) {
                     case BAD_SSU :
                         badCount++;
@@ -342,14 +329,15 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                         this.master.add(genomeData);
                         break;
                     case SINGLE_SSU :
-                        // Here we want to queue the genome for a second pass.
-                        retryQueue.add(genomeData);
+                        // Here we want to queue the genome for a second pass if it has a genus.
+                        if (genus != null)
+                            retryQueue.add(genomeData);
                         break;
                     default :
                         // Here the genome is good.  If it is the first for this genus, save it
                         // for the retry queue.
-                        genusMap.putIfAbsent(genomeData.getGenus(),
-                                new DnaKmers(genomeData.getSsuSequence()));
+                        if (genus != null)
+                            genusMap.putIfAbsent(genus, new DnaKmers(genomeData.getSsuSequence()));
                         this.master.add(genomeData);
                     }
                 }
