@@ -43,7 +43,7 @@ public class ProtTest {
             for (TabbedLineReader.Line line : tabReader) {
                 factory.addGenome(line.get(idCol), line.get(nameCol), line.get(lineageCol), line.getDouble(scoreCol));
             }
-            // First pass through.  We expect 100480.3 to have dropped out because of
+            // First pass through.  We expect 590.12785 to have dropped out because of
             // an insufficient taxonomy.
             Iterator<ProteinData> iter = factory.iterator();
             assertThat(iter.next().getGenomeId(), equalTo("99287.12"));
@@ -89,7 +89,6 @@ public class ProtTest {
             // Verify that we have complete information.
             for (ProteinData genomeData : factory) {
                 assertNotNull(genomeData.getGenomeName());
-                assertNotNull(genomeData.getGenus());
                 assertNotNull(genomeData.getSpecies());
                 assertNotNull(genomeData.getDna());
                 assertNotNull(genomeData.getProtein());
@@ -167,7 +166,7 @@ public class ProtTest {
             assertThat(genomeData.getGenus(), equalTo("2093"));
             assertThat(genomeData.getSpecies(), equalTo("36744"));
             // Verify that the bad guys are bad.
-            assertThat(factory.getGenome("1955272.3").getRating(), equalTo(ProteinData.Rating.BAD_SSU));
+            assertThat(factory.getGenome("1955272.3").getRating(), equalTo(ProteinData.Rating.SINGLE_SSU));
             assertThat(factory.getGenome("37372.4").getRating(), equalTo(ProteinData.Rating.BAD_SSU));
         }
 
