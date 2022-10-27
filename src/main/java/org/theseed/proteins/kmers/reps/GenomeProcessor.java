@@ -24,6 +24,8 @@ import org.theseed.utils.IntegerList;
  * -b	batch size for PATRIC queries
  *
  * --repSizes	comma-delimited list of score limits for each repGen set
+ * --minLevel	minimum SSU rating level to keep (default SINGLE_SSU)
+ * --noGtos		if specified, the GTO directories will be suppressed, greatly improving performance
  *
  * @author Bruce Parrello
  *
@@ -42,10 +44,15 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
         this.repSizes = new IntegerList(repSizeString);
     }
 
+    /** if specified, no GTOs will be output */
+    @Option(name = "--noGtos", aliases = { "--quick", "--noGTOs" }, usage = "if specified, no GTOs will be output")
+    private boolean noGTOs;
+
     @Override
     protected void setDefaults() {
         this.setBaseDefaults();
         this.repSizes = new IntegerList(10, 50, 100, 200);
+        this.noGTOs = false;
     }
 
     @Override
@@ -80,12 +87,15 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
             writeListFiles();
             // Now we write the protein FASTA files and the stats files.
             writeProteinFasta();
+            // Next, the reference-genome finder for evaluation.
+            writeRefGenomeFasta();
             // Now we produce the repFinder file used to find close genomes.
             writeRepFinder();
             // Write the good-genome list.
             writeGoodGenomes();
             // Finally, save the repgen GTOs.
-            saveGTOs();
+            if (! this.noGTOs)
+                saveGTOs();
             log.info("All done.");
         } catch (Exception e) {
             e.printStackTrace();

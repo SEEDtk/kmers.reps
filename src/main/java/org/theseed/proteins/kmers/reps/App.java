@@ -36,6 +36,7 @@ import org.theseed.utils.BaseProcessor;
  *  list		list the genomes in a representative genome database
  *  rnaVerify	build a blacklist of genomes with bad or suspicious SSU rRNA sequences
  *  seedTable	build a 4-column table for a specified seed protein
+ *  buildRefDb	build a reference-genome database for evaluation
  */
 public class App
 {
@@ -117,6 +118,9 @@ public class App
             break;
         case "build" :
             processor = new BuildRepDbProcessor();
+            break;
+        case "buildRefDb" :
+            processor = new BuildRefDbProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");

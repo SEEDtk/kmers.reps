@@ -17,6 +17,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.theseed.counters.CountMap;
 import org.theseed.counters.GenomeEval;
 import org.theseed.counters.QualityCountMap;
 import org.theseed.genome.Genome;
@@ -53,7 +54,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
 
     // COMMAND-LINE OPTIONS
 
-    /** if specified, bad-SSU genomes will be considered good */
+    /** specifies whether bad-SSU genomes will be considered good */
     @Option(name = "--minLevel", usage = "minimum rating level to keep")
     private ProteinData.Rating minRating;
 
@@ -167,6 +168,47 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                         this.printRepFinderLine(repFinderStream, genome, groupId);
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Write the representative FASTA used by the PATRIC reference-genome computer.  This consists
+     * of the seed proteins for the two highest-quality genomes in each repgen set at the highest
+     * level.
+     *
+     * @throws IOException
+     */
+    protected void writeRefGenomeFasta() throws IOException {
+        log.info("Writing FASTA file for PATRIC reference-genome computer.");
+        // Get the highest-level repgen set.
+        int repIdx = this.repGenSets.size() - 1;
+        RepGenomeDb repGenSet = this.repGenSets.get(repIdx);
+        // Create a count map for the repgen sets.  We output the first two in each.
+        CountMap<String> repCounts = new CountMap<String>();
+        // Open the output file.
+        try (FastaOutputStream fastaStream = new FastaOutputStream(new File(this.outDir, "refGenomes.fa"))) {
+            int seqsOut = 0;
+            int genomesChecked = 0;
+            int totalGenomes = this.genomeList.size();
+            // Loop through the protein data objects.  These are presented in quality order.
+            log.info("Scanning protein database with {} genomes.", totalGenomes);
+            for (ProteinData protein : this.genomeList) {
+                // Get the representative.
+                var representative = protein.getRepresentation(repGenSet);
+                String repId = representative.getGenomeId();
+                if (repCounts.count(repId) <= 2) {
+                    // Here we have the first or second represented genome for this group.  Write it
+                    // out.
+                    Sequence seq = new Sequence(protein.getGenomeId(), protein.getGenomeName(),
+                            protein.getProtein());
+                    fastaStream.write(seq);
+                    seqsOut++;
+                }
+                genomesChecked++;
+                if (log.isInfoEnabled() && genomesChecked % 1000 == 0)
+                    log.info("{} of {} genomes checked, {} output from {} groups.", genomesChecked,
+                            totalGenomes, seqsOut, repCounts.size());
             }
         }
     }
