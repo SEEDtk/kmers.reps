@@ -20,6 +20,7 @@ import java.util.Iterator;
 
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
+import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.Criterion;
@@ -172,11 +173,13 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      * Note that for the seed protein, we will only find one, because a good genome has only one.
      * For the SSU rRNAs, we may find many, so we need a different strategy.
      *
-     * @param batchSize		number of genomes to process in each batch
+     * @param source		source containing all the PATRIC genomes of interest at the detail level
+     * 						of STRUCTURE_ONLY or better
      *
      * @throws UnsupportedEncodingException
+     * @throws IOException
      */
-    public void finishList(int batchSize) throws UnsupportedEncodingException {
+    public void finishList(GenomeSource source) throws UnsupportedEncodingException, IOException {
         this.taxMap = null;
         // We ask for all the features relating to the seed protein function.  We use a special
         // role map to isolate it.

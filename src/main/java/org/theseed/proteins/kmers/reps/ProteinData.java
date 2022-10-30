@@ -29,7 +29,7 @@ public class ProteinData implements Comparable<ProteinData> {
     private String genomeName;
     /** DNA sequence */
     private String dna;
-    /** amino acid sequence */
+    /** seed protein amino acid sequence */
     private String protein;
     /** taxonomic genus */
     private String genus;
