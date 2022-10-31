@@ -6,12 +6,12 @@ package org.theseed.proteins.kmers.reps;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.theseed.utils.ICommand;
 import org.theseed.utils.IntegerList;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command processes the results from a quality run.  It expects as input the sorted results
@@ -19,8 +19,7 @@ import org.theseed.utils.ParseFailureException;
  * the master seed protein FASTA file, the master binning BLAST database, and the representative-genome
  * databases at level 10, 50, 100, and 200.
  *
- * The positional parameters are the name of the PATRIC master genome directory, the name of the output directory,
- * and the name of the input file.
+ * The positional parameters are the name of the output directory and the name of the input file.
  *
  * The following files are put into the output directory.
  *
@@ -55,9 +54,8 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     private boolean noGTOs;
 
     /** input tab-delimited file of genomes */
-    @Argument(index = 2, metaVar = "inFile.tbl", usage = "input file (xxx.eval.tbl)", required = true)
+    @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file (xxx.eval.tbl)", required = true)
     private File inFile;
-
 
     @Override
     protected void setDefaults() {
@@ -67,10 +65,10 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected boolean validateParms() throws IOException {
         this.checkParms();
         if (! this.inFile.canRead())
-            throw new FileNotFoundException(this.inFile + " is not found or unreadable.");
+            throw new FileNotFoundException("Input file " + this.inFile + " is not found or unreadable.");
         return true;
     }
 
@@ -114,6 +112,11 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
             e.printStackTrace();
         }
 
+    }
+
+    @Override
+    protected void finishGenomeList(ProteinDataFactory genomeList) throws UnsupportedEncodingException {
+        genomeList.finishList(this.getBatchSize());
     }
 
 

@@ -21,14 +21,12 @@ import org.theseed.counters.CountMap;
 import org.theseed.counters.GenomeEval;
 import org.theseed.counters.QualityCountMap;
 import org.theseed.genome.Genome;
-import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Genome;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This is the base class for both GenomeProcessor and UpdateProcessor.  It performs the common tasks
@@ -53,8 +51,6 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     private RepGenomeDb lastRepGen;
     /** groups for last repgen set */
     private Map<String, List<ProteinData>> repFinderSets;
-    /** master genome source */
-    private GenomeSource p3Genomes;
 
     // COMMAND-LINE OPTIONS
 
@@ -66,13 +62,9 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     @Option(name = "-b", aliases = { "--batch", "--batchSize" }, metaVar = "200", usage = "number of genomes per batch")
     private int batchSize;
 
-    /** master genome directory */
-    @Argument(index = 0, metaVar = "genomeDir", usage = "master genome directory", required = true)
-    private File genomeDir;
     /** output directory */
-    @Argument(index = 1, metaVar = "outDir", usage = "output directory", required = true)
+    @Argument(index = 0, metaVar = "outDir", usage = "output directory", required = true)
     private File outDir;
-
 
     /**
      * @return the list of representative-genome databases
@@ -393,15 +385,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * Validate the output directory and input file parameters.
      *
      * @throws IOException
-     * @throws ParseFailureException
      */
-    protected void checkParms() throws IOException, ParseFailureException {
-        // Insure we have a genome master directory and set it up.
-        if (! this.genomeDir.isDirectory())
-            throw new FileNotFoundException("PATRIC genome master directory " + this.genomeDir +
-                    " is not found or invalid.");
-        log.info("Loading PATRIC master genome directory from {}.", this.genomeDir);
-        this.p3Genomes = GenomeSource.Type.MASTER.create(this.genomeDir);
+    protected void checkParms() throws IOException {
         File outDir = this.getOutDir();
         if (! outDir.exists()) {
             // Insure we have an output directory.
@@ -416,7 +401,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * Read the input file and initialize the protein data genome list.  This also writes an output file
      * containing the genomes rejected for bad lineages.
      *
-     * @param infile	input file containing the evaluation results
+     * @param inFile	input file containing the evaluation data
      *
      * @return the protein data genome list
      *
@@ -457,7 +442,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             }
         }
         log.info("{} good genomes collected.", this.genomeList.size());
-        this.genomeList.finishList(this.p3Genomes);
+        this.finishGenomeList(this.genomeList);
         // Remove the bad SSUs, if necessary.
         this.genomeList.prune(this.minRating);
         log.info("{} good genomes remaining after finishing.", this.genomeList.size());
@@ -466,6 +451,15 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         this.genomeList.writeStats(statsFile);
         return this.genomeList;
     }
+
+    /**
+     * Finish the genome list.  This involves analyzing the SSUs and filling in the protein sequences.
+     *
+     * @throws UnsupportedEncodingException
+     * @throws IOException
+     */
+    protected abstract void finishGenomeList(ProteinDataFactory gList)
+            throws UnsupportedEncodingException, IOException;
 
     /**
      * Write a single line of the repFinder.db file.

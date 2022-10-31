@@ -14,12 +14,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
-import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * @author Bruce Parrello
@@ -31,15 +29,11 @@ public class ProtTest {
      * Test the protein data factory.
      *
      * @throws IOException
-     * @throws ParseFailureException
      */
     @Test
-    public void testProteinFactory() throws IOException, ParseFailureException {
+    public void testProteinFactory() throws IOException {
         // Set up the protein data factory.
         ProteinDataFactory factory = new ProteinDataFactory();
-        // Get the master directory.
-        File p3Master = new File("data", "P3Master");
-        GenomeSource source = GenomeSource.Type.MASTER.create(p3Master);
         // Load in the genomes. One of them should fail on genus/species.
         try (TabbedLineReader tabReader = new TabbedLineReader(new File("data", "quality.tbl"))) {
             int idCol = tabReader.findField("Genome");
@@ -75,7 +69,7 @@ public class ProtTest {
             assertThat(factory.size(), equalTo(19));
             // Now we finalize.  This will also reorder 37372.4 and 1955272.3 due to
             // bad SSU rRNA.  We use a small batch size to test the batching.
-            factory.finishList(source);
+            factory.finishList(8);
             iter = factory.iterator();
             ProteinData.Rating oldRating = ProteinData.Rating.NCBI_REF;
             double oldScore = Double.POSITIVE_INFINITY;
