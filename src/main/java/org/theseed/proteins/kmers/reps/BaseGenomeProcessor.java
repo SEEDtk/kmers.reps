@@ -11,9 +11,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
@@ -38,9 +42,6 @@ import org.theseed.utils.BaseProcessor;
 public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepGenContainer {
 
     // FIELDS
-    /** header line for four-column table containing SSUs */
-    private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
-
     /** manager for key data about each genome and its seed protein */
     private ProteinDataFactory genomeList;
     /** list of repgen sets */
@@ -51,6 +52,18 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     private RepGenomeDb lastRepGen;
     /** groups for last repgen set */
     private Map<String, List<ProteinData>> repFinderSets;
+    /** map of representative genomes to the directories where they belong */
+    private Map<String, List<File>> repHash;
+    /** header line for four-column table containing SSUs */
+    private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
+    /** file name pattern for GTOs */
+    private static final Pattern GTO_FILE_PATTERN = Pattern.compile("\\d+\\.\\d+\\.gto");
+    /** file name pattern for repgen GTO directories */
+    private static final Pattern GTO_DIR_PATTERN = Pattern.compile("GTO\\d+");
+    /** file name filter for GTO files */
+    private static final IOFileFilter GTO_FILE_FILTER = new RegexFileFilter(GTO_FILE_PATTERN);
+    /** file name filter for GTO directories */
+    private static final IOFileFilter GTO_DIR_FILTER =  new RegexFileFilter(GTO_DIR_PATTERN);
 
     // COMMAND-LINE OPTIONS
 
@@ -89,6 +102,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
 
     public BaseGenomeProcessor() {
         super();
+        this.repHash = new TreeMap<String, List<File>>();
     }
 
     /**
@@ -531,17 +545,13 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     }
 
     /**
-     * Save the repgen GTOs to directories.
+     * Build new GTO directories for the repgen sets.
      *
      * @throws IOException
      */
-    public void saveGTOs() throws IOException {
-        // Create an output directory for each repgen set.  We will connect each representative genome to
-        // all the directories in which it belongs.
-        var repHash = new TreeMap<String, List<File>>();
-        int outCount = 0;
+    public void setupGTOs() throws IOException {
         for (RepGenomeDb repdb : this.repGenSets) {
-            File repDir = new File(this.outDir, "GTO" + Integer.toString(repdb.getThreshold()));
+            File repDir = computeRepGtoDir(repdb);
             if (! repDir.isDirectory()) {
                 log.info("Creating GTO output directory {}.", repDir);
                 FileUtils.forceMkdir(repDir);
@@ -549,15 +559,107 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 log.info("Clearing GTO output directory {}.", repDir);
                 FileUtils.cleanDirectory(repDir);
             }
+        }
+    }
+
+    /**
+     * @return the name of the GTO output directory for a repgen set
+     *
+     * @param repdb		repgen set database
+     */
+    private File computeRepGtoDir(RepGenomeDb repdb) {
+        return new File(this.outDir, "GTO" + Integer.toString(repdb.getThreshold()));
+    }
+
+    /**
+     * Compute where all of the representative genomes go in the output directories.
+     */
+    public void placeGTOs() throws IOException {
+        int outCount = 0;
+        for (RepGenomeDb repdb : this.repGenSets) {
             // Loop through this repgen set, connecting the genome IDs to this directory.
             for (var rep : repdb) {
+                File repDir = this.computeRepGtoDir(repdb);
                 String genomeId = rep.getGenomeId();
-                List<File> dirList = repHash.computeIfAbsent(genomeId, x -> new ArrayList<File>(this.repGenSets.size()));
-                dirList.add(repDir);
+                this.queueGtoDownload(repDir, genomeId);
                 outCount++;
             }
         }
         log.info("{} distinct genomes will be downloaded to {} GTO files.", repHash.size(), outCount);
+
+    }
+
+    /**
+     * Copy GTOs from old repgen GTO directories to new ones.
+     *
+     * @param inDir		input directory containing the old GTOs
+     *
+     * @throws IOException
+     */
+    public void copyGTOs(File inDir) throws IOException {
+        // We count the number of genomes copied and the number of additional copies required.
+        int outCount = 0;
+        int copyCount = 0;
+        // This map will tell us where to find each genome that is already downloaded.
+        var oldMap = new HashMap<String, File>();
+        // Get the GTO file names.
+        var gtoFiles = FileUtils.listFiles(inDir, GTO_FILE_FILTER, GTO_DIR_FILTER);
+        log.info("{} existing representative GTO files found in {}.", gtoFiles.size(), inDir);
+        // Now we must loop through all the GTOs and put them in the map.
+        for (File gtoFile : gtoFiles) {
+            // The genome ID is the prefix of the file name.  The file filter pattern insures
+            // that all we need to do is chop off the ".gto" at the end.
+            String genomeId = StringUtils.removeEnd(gtoFile.getName(), ".gto");
+            if (! oldMap.containsKey(genomeId)) {
+                // Here the genome is a new one, so we save its location.
+                oldMap.put(genomeId, gtoFile);
+            }
+        }
+        log.info("{} unique representative genomes found.", oldMap.size());
+        // Now we process the repgen sets.  For each, we copy the genomes that already exist,
+        // and queue the others for downloading.
+        for (RepGenomeDb repdb : this.repGenSets) {
+            // Loop through this repgen set.
+            for (var rep : repdb) {
+                File repDir = this.computeRepGtoDir(repdb);
+                String genomeId = rep.getGenomeId();
+                if (oldMap.containsKey(genomeId)) {
+                    // Here we have to copy.
+                    File inFile = oldMap.get(genomeId);
+                    File outFile = new File(repDir, genomeId + ".gto");
+                    log.info("Copying {} ({}) from {} to {}.", genomeId, rep.getName(), inFile, outFile);
+                    FileUtils.copyFile(inFile, outFile);
+                    copyCount++;
+                } else {
+                    // Here we have to queue for download.
+                    this.queueGtoDownload(repDir, genomeId);
+                    outCount++;
+                }
+            }
+        }
+        log.info("{} genomes copied, {} queued for download to {} files.", copyCount, this.repHash.size(), outCount);
+    }
+
+    /**
+     * Specify that a genome needs to be downloaded to the specified directory.  This insures there
+     * is a repHash entry for the genome and adds the directory to its directory list.
+     *
+     * @param repDir	target output directory
+     * @param genomeId	genome to download
+     */
+    private void queueGtoDownload(File repDir, String genomeId) {
+        List<File> dirList = this.repHash.computeIfAbsent(genomeId,
+                x -> new ArrayList<File>(this.repGenSets.size()));
+        dirList.add(repDir);
+    }
+
+
+    /**
+     * Save the new repgen GTOs to directories.
+     *
+     * @throws IOException
+     */
+    public void saveNewGTOs() throws IOException {
         // Connect to PATRIC.
         P3Connection p3 = new P3Connection();
         // Loop through all the genomes doing the downloads.

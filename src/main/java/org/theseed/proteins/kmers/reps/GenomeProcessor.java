@@ -105,8 +105,14 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
             // Write the good-genome list.
             writeGoodGenomes();
             // Finally, save the repgen GTOs.
-            if (! this.noGTOs)
-                saveGTOs();
+            if (! this.noGTOs) {
+                log.info("Creating repgen output directories.");
+                setupGTOs();
+                log.info("Placing repgen genomes.");
+                placeGTOs();
+                log.info("Downloading genomes.");
+                saveNewGTOs();
+            }
             log.info("All done.");
         } catch (Exception e) {
             e.printStackTrace();

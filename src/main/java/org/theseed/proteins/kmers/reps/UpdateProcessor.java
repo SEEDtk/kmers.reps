@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import org.kohsuke.args4j.Argument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.utils.ICommand;
 
 /**
@@ -18,11 +20,9 @@ import org.theseed.utils.ICommand;
  *
  * The positional parameters are the name of the output directory and the name of the original input directory.
  * The output directory must contain the updated "patric.eval.tbl" file containing the latest evaluation data.
- * The input directory must contain the repXX.list.tbl files listing the representatives of each genome,
- * the PhenTrnaSyntAlph.fa file containing the seed protein DNA, the allProts.fa file containing the seed
- * protein sequences, and the allSsu.fa file containing the SSU DNA sequences.  This information is used
- * to preload the ProteinData records and initialize the RepGenomeDb objects.  The new genomes are then
- * read in and the updated files written to the output directory.
+ * The input directory must contain the repXX.ser files for the current representative genome databases.
+ * The new genomes are processed to flesh out the repgen sets and then the updated files written to the
+ * output directory.
  *
  * The following command-line options are supported.
  *
@@ -34,6 +34,11 @@ import org.theseed.utils.ICommand;
  */
 public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
+    // FIELDS
+    /** logging facility */
+    protected static Logger log = LoggerFactory.getLogger(UpdateProcessor.class);
+    /** input file for protein data factory */
+    private File inFile;
     // COMMAND-LINE OPTIONS
 
     /** old evaluation directory */
@@ -50,13 +55,46 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
         this.checkParms();
         if (! this.inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
+        // Verify that the output directory contains the input file.
+        this.inFile = new File(this.getOutDir(), "patric.eval.tbl");
+        if (! this.inFile.canRead())
+            throw new FileNotFoundException("Evaluation result file " + this.inFile + " is not found or unreadable.");
+        // Verify that the input directory
         return true;
     }
 
     @Override
     public void runCommand() {
         try {
-            // TODO update old P3Eval into new one
+            // Read all the genomes from the input file and build protein data objects.
+            initializeProteinData(inFile);
+            // We need to create the FASTA files for the seed protein list and the
+            // binning BLAST database.  We do that here.
+            createFastaFiles();
+            // Create a list of RepGenomeDb objects, one for each score limit.
+            log.info("Reloading repgen sets.");
+            ProteinDataFactory.restoreData(this, this.inDir);
+            // Sort the genomes into repgen sets.
+            collateGenomes();
+            // Save all the repgen sets.
+            saveRepGenSets();
+            // Write out the protein Fasta file for the first set.  This is used to find
+            // seed proteins during binning.
+            writeSeedProt();
+            // Assign genomes to repgen sets.
+            log.info("Assigning genomes to repgen sets.");
+            writeListFiles();
+            // Now we write the protein FASTA files and the stats files.
+            writeProteinFasta();
+            // Next, the reference-genome finder for evaluation.
+            writeRefGenomeFasta();
+            // Now we produce the repFinder file used to find close genomes.
+            writeRepFinder();
+            // Write the good-genome list.
+            writeGoodGenomes();
+            // Finally, save the repgen GTOs.
+            // TODO check for GTO directoriesif (! this.noGTOs)
+            log.info("All done.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -64,8 +102,7 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
     @Override
     protected void finishGenomeList(ProteinDataFactory gList) throws UnsupportedEncodingException, IOException {
-        // TODO code for finishGenomeList
-
+        gList.finishList(this.getBatchSize());
     }
 
 }
