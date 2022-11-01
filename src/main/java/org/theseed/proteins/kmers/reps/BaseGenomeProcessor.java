@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,6 +66,15 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     /** file name filter for GTO directories */
     private static final IOFileFilter GTO_DIR_FILTER =  new RegexFileFilter(GTO_DIR_PATTERN);
 
+    public enum GtoScheme {
+        /** download GTOs */
+        YES,
+        /** do not download GTOs */
+        NO,
+        /** only download GTOs */
+        ONLY;
+    }
+
     // COMMAND-LINE OPTIONS
 
     /** specifies whether bad-SSU genomes will be considered good */
@@ -74,6 +84,10 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     /** number of genomes per batch when retrieving sequences */
     @Option(name = "-b", aliases = { "--batch", "--batchSize" }, metaVar = "200", usage = "number of genomes per batch")
     private int batchSize;
+
+    /** processing mode, GTOs only, everything, no GTOs */
+    @Option(name = "--gtos", usage = "processing mode relating to GTO download")
+    private GtoScheme gtoMode;
 
     /** output directory */
     @Argument(index = 0, metaVar = "outDir", usage = "output directory", required = true)
@@ -111,32 +125,38 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     protected void setBaseDefaults() {
         this.batchSize = 500;
         this.minRating = ProteinData.Rating.SINGLE_SSU;
+        this.gtoMode = GtoScheme.YES;
     }
 
     /**
-     * Separate the genomes into RepGen sets.
+     * Separate the genomes into RepGen sets.  A set of genomes that do not need to be checked
+     * can be specified to improve performance in updates.
+     *
+     * @param skipSet	IDs of genomes that do not need to be checked
      */
-    protected void collateGenomes() {
+    protected void collateGenomes(Set<String> skipSet) {
         log.info("Sorting genomes into repgen sets.");
         int genomeCount = 0;
         long start = System.currentTimeMillis();
         int batchCount = this.batchSize;
         for (ProteinData genomeData : this.genomeList) {
-            RepGenome rep = new RepGenome(genomeData.getFid(), genomeData.getGenomeName(),
-                    genomeData.getProtein());
-            for (RepGenomeDb repGen : this.repGenSets) {
-                int sim = repGen.getThreshold();
-                if (! genomeData.checkRepresented(sim) && ! repGen.checkSimilarity(rep, sim)) {
-                    repGen.addRep(rep);
-                }
-            }
-            batchCount--;
             genomeCount++;
-            if (batchCount == 0) {
-                double rate = genomeCount * 1000.0 / ((double) (System.currentTimeMillis() - start));
-                log.info("{} genomes out of {} processed. {} genomes/second.",
-                        genomeCount, this.genomeList.size(), rate);
-                batchCount = this.batchSize;
+            if (! skipSet.contains(genomeData.getGenomeId())) {
+                RepGenome rep = new RepGenome(genomeData.getFid(), genomeData.getGenomeName(),
+                        genomeData.getProtein());
+                for (RepGenomeDb repGen : this.repGenSets) {
+                    int sim = repGen.getThreshold();
+                    if (! genomeData.checkRepresented(sim) && ! repGen.checkSimilarity(rep, sim)) {
+                        repGen.addRep(rep);
+                    }
+                }
+                batchCount--;
+                if (batchCount == 0) {
+                    double rate = genomeCount * 1000.0 / ((double) (System.currentTimeMillis() - start));
+                    log.info("{} genomes out of {} processed. {} genomes/second.",
+                            genomeCount, this.genomeList.size(), rate);
+                    batchCount = this.batchSize;
+                }
             }
         }
     }
@@ -280,8 +300,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         try {
             // First, create the output files and count maps and write the header lines.
             for (RepGenomeDb repGen : this.repGenSets) {
-                File listFileName = new File(this.outDir,
-                        String.format("rep%d.list.tbl", repGen.getThreshold()));
+                File listFileName = new File(this.outDir, repGen.getListFileName());
                 PrintWriter listFile = new PrintWriter(listFileName);
                 listFile.println("genome_id\tgenome_name\tdomain\tgenus\tspecies\trep_id\tscore\tdistance");
                 listFiles.add(listFile);
@@ -673,6 +692,36 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             for (File outDir : repEntry.getValue())
                 genome.save(new File(outDir, gName));
         }
+    }
+
+    /**
+     * @return the number of genomes in this run
+     */
+    public int genomeCount() {
+        return this.genomeList.size();
+    }
+
+    /**
+     * @return TRUE if the specified genome is present in this run
+     *
+     * @param genomeId 	ID of the genome in question
+     */
+    public boolean isPresent(String genomeId) {
+        return this.genomeList.contains(genomeId);
+    }
+
+    /**
+     * @return TRUE if GTOs should be downloaded
+     */
+    public boolean isGTOsRequested() {
+        return (this.gtoMode == GtoScheme.YES || this.gtoMode == GtoScheme.ONLY);
+    }
+
+    /**
+     * @return TRUE if the repgen sets should be rebuilt
+     */
+    public boolean isFullRegenRequired() {
+        return (this.gtoMode == GtoScheme.YES || this.gtoMode == GtoScheme.NO);
     }
 
 }

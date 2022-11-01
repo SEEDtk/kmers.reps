@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
@@ -30,7 +31,6 @@ import org.theseed.utils.IntegerList;
  *
  * --repSizes	comma-delimited list of score limits for each repGen set
  * --minLevel	minimum SSU rating level to keep (default SINGLE_SSU)
- * --noGtos		if specified, the GTO directories will be suppressed, greatly improving performance
  *
  * @author Bruce Parrello
  *
@@ -49,10 +49,6 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
         this.repSizes = new IntegerList(repSizeString);
     }
 
-    /** if specified, no GTOs will be output */
-    @Option(name = "--noGtos", aliases = { "--quick", "--noGTOs" }, usage = "if specified, no GTOs will be output")
-    private boolean noGTOs;
-
     /** input tab-delimited file of genomes */
     @Argument(index = 1, metaVar = "inFile.tbl", usage = "input file (xxx.eval.tbl)", required = true)
     private File inFile;
@@ -61,7 +57,6 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     protected void setDefaults() {
         this.setBaseDefaults();
         this.repSizes = new IntegerList(10, 50, 100, 200);
-        this.noGTOs = false;
     }
 
     @Override
@@ -75,38 +70,45 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
     @Override
     public void runCommand() {
         try {
-            // Read all the genomes from the input file and build protein data objects.
-            initializeProteinData(this.inFile);
-            // We need to create the FASTA files for the seed protein list and the
-            // binning BLAST database.  We do that here.
-            createFastaFiles();
-            // Create a list of RepGenomeDb objects, one for each score limit.
-            log.info("Creating repgen sets.");
-            this.initRepGenSets(this.repSizes.size());
-            for (int repSize : this.repSizes) {
-                this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
+            if (! this.isFullRegenRequired()) {
+                // Here we need to reload the repgen sets from the output directory so we can download
+                // the GTOs.
+                log.info("Reloading new repgen sets.");
+                ProteinDataFactory.restoreData(this, this.getOutDir());
+            } else {
+                // Read all the genomes from the input file and build protein data objects.
+                initializeProteinData(this.inFile);
+                // We need to create the FASTA files for the seed protein list and the
+                // binning BLAST database.  We do that here.
+                createFastaFiles();
+                // Create a list of RepGenomeDb objects, one for each score limit.
+                log.info("Creating repgen sets.");
+                this.initRepGenSets(this.repSizes.size());
+                for (int repSize : this.repSizes) {
+                    this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
+                }
+                // Sort the genomes into repgen sets.
+                collateGenomes(Collections.emptySet());
+                // Save all the repgen sets.
+                saveRepGenSets();
+                // Write out the protein Fasta file for the first set.  This is used to find
+                // seed proteins.
+                writeSeedProt();
+                // Assign genomes to repgen sets.
+                log.info("Assigning genomes to repgen sets.");
+                writeListFiles();
+                // Now we write the protein FASTA files and the stats files.
+                writeProteinFasta();
+                // Next, the reference-genome finder for evaluation.
+                writeRefGenomeFasta();
+                // Now we produce the repFinder file used to find close genomes.
+                writeRepFinder();
+                // Write the good-genome list.
+                writeGoodGenomes();
             }
-            // Sort the genomes into repgen sets.
-            collateGenomes();
-            // Save all the repgen sets.
-            saveRepGenSets();
-            // Write out the protein Fasta file for the first set.  This is used to find
-            // seed proteins.
-            writeSeedProt();
-            // Assign genomes to repgen sets.
-            log.info("Assigning genomes to repgen sets.");
-            writeListFiles();
-            // Now we write the protein FASTA files and the stats files.
-            writeProteinFasta();
-            // Next, the reference-genome finder for evaluation.
-            writeRefGenomeFasta();
-            // Now we produce the repFinder file used to find close genomes.
-            writeRepFinder();
-            // Write the good-genome list.
-            writeGoodGenomes();
             // Finally, save the repgen GTOs.
-            if (! this.noGTOs) {
-                log.info("Creating repgen output directories.");
+            if (isGTOsRequested()) {
+                log.info("Creating repgen GTO directories.");
                 setupGTOs();
                 log.info("Placing repgen genomes.");
                 placeGTOs();

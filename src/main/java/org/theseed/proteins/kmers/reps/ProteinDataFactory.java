@@ -497,4 +497,13 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         this.statistics.write(outFile);
     }
 
+    /**
+     * @ewrtuen TRUE if the specified genome is in this factory
+     *
+     * @param genomeId		ID of the genome to check
+     */
+    public boolean contains(String genomeId) {
+        return this.idMap.containsKey(genomeId);
+    }
+
 }
