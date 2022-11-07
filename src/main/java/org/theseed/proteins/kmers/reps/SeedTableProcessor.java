@@ -7,8 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -17,7 +15,6 @@ import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.proteins.Role;
 import org.theseed.proteins.RoleMap;
 import org.theseed.utils.BaseReportProcessor;
 import org.theseed.utils.ParseFailureException;
@@ -116,8 +113,7 @@ public class SeedTableProcessor extends BaseReportProcessor {
             String bestProtein = "";
             String bestDna = "";
             for (Feature feat : genome.getPegs()) {
-                List<Role> featRoles = feat.getUsefulRoles(this.roleMap);
-                if (featRoles.size() > 0) {
+                if (feat.isInteresting(this.roleMap)) {
                     // Here we have found a feature.
                     String thisProtein = feat.getProteinTranslation();
                     if (thisProtein.length() > bestProtein.length()) {
