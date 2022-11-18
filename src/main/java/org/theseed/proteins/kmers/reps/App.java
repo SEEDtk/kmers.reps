@@ -37,7 +37,7 @@ import org.theseed.utils.BaseProcessor;
  *  rnaVerify		build a blacklist of genomes with bad or suspicious SSU rRNA sequences
  *  seedTable		build a 4-column table for a specified seed protein
  *  buildRefDb		build a reference-genome database for evaluation
- *  updateMaster	update a master PATRIC database:  remove obsolete genomes and add the new ones *
+ *  updateMaster	update a master PATRIC database:  remove obsolete genomes and add the new ones
  */
 public class App
 {

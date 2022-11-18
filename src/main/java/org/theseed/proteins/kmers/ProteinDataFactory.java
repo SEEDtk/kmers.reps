@@ -1,10 +1,11 @@
 /**
  *
  */
-package org.theseed.proteins.kmers.reps;
+package org.theseed.proteins.kmers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import org.theseed.p3api.Criterion;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.p3api.P3TaxData;
 import org.theseed.proteins.RoleMap;
+import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.counters.GenomeEval;
 
@@ -60,6 +62,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     protected Map<String, ProteinData.Rating> ncbiRefMap;
     /** genome statistics */
     private GenomeEval statistics;
+    /** list of supported repgen levels */
+    private int[] repLevels;
     /** minimum SSU rRNA length */
     public static final int MIN_SSU_LEN = 1400;
     /** minimum SSU rRNA length for validation */
@@ -101,6 +105,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         this.idMap = new HashMap<String, ProteinData>(200000);
         // Create the statistics object.
         this.statistics = new GenomeEval();
+        // Denote we have no repgen levels yet.
+        this.repLevels = new int[0];
     }
 
     /**
@@ -498,12 +504,44 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     }
 
     /**
-     * @ewrtuen TRUE if the specified genome is in this factory
+     * @return TRUE if the specified genome is in this factory
      *
      * @param genomeId		ID of the genome to check
      */
     public boolean contains(String genomeId) {
         return this.idMap.containsKey(genomeId);
+    }
+
+    /**
+     * @return the array of supported repgen levels
+     */
+    public int[] getRepLevels() {
+        return this.repLevels;
+    }
+
+    /**
+     * Store the repgen set levels.
+     *
+     * @param levels	array of repgen levels to store
+     */
+    public void setRepLevels(int[] levels) {
+        this.repLevels = Arrays.copyOf(levels, levels.length);
+    }
+
+    /**
+     * Write a report on the genomes in the protein data to the specified file.  This is our
+     * best list of genome quality data, since it includes the SSU analysis.
+     *
+     * @param file	output file for the report
+     *
+     * @throws IOException
+     */
+    public void writeReport(File file) throws IOException {
+        try (PrintWriter writer = new PrintWriter(file)) {
+            writer.println(ProteinData.getHeader(this));
+            for (var protein : this.master)
+                protein.getLine(this);
+        }
     }
 
 }

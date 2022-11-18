@@ -29,6 +29,9 @@ import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Genome;
+import org.theseed.proteins.kmers.IRepGenContainer;
+import org.theseed.proteins.kmers.ProteinData;
+import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseProcessor;
@@ -722,6 +725,24 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      */
     public boolean isFullRegenRequired() {
         return (this.gtoMode == GtoScheme.YES || this.gtoMode == GtoScheme.NO);
+    }
+
+    /**
+     * Save the list of repgen set levels in the protein data factory.
+     */
+    public void saveRepLevels() {
+        int[] levels = this.repGenSets.stream().mapToInt(x -> x.getThreshold()).toArray();
+        this.genomeList.setRepLevels(levels);
+    }
+
+    /**
+     * Write out the genome report from the protein data factory.
+     *
+     * @throws IOException
+     */
+    public void writeGenomeReport() throws IOException {
+        File gReportFile = new File(this.outDir, "patric.genome.tbl");
+        this.genomeList.writeReport(gReportFile);
     }
 
 }

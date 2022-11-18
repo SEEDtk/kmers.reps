@@ -1,4 +1,6 @@
-package org.theseed.proteins.kmers.reps;
+package org.theseed.proteins.kmers;
+
+import org.theseed.proteins.kmers.reps.RepGenomeDb;
 
 /**
  * This interface is used for objects that store a list of representative-genome databases.

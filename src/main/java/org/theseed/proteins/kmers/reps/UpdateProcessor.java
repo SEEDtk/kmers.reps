@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.counters.CountMap;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.utils.ICommand;
 
 /**
@@ -102,12 +103,16 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
                     }
                 }
                 log.info("{} representatives had to be deleted.", deleteCount);
+                // Save the repgen set levels in the protein data factory.
+                saveRepLevels();
                 // Determine which genomes have valid placements in all the repgen sets.
                 Set<String> skipSet = this.computeSkipSet(repGenSets);
                 // Sort the genomes into repgen sets.
                 collateGenomes(skipSet);
                 // Save all the repgen sets.
                 saveRepGenSets();
+                // Write the protein data report.
+                writeGenomeReport();
                 // Write out the protein Fasta file for the first set.  This is used to find
                 // seed proteins during binning.
                 writeSeedProt();
@@ -140,7 +145,7 @@ public class UpdateProcessor extends BaseGenomeProcessor implements ICommand {
 
     /**
      * This method runs through the repgen set "list.repXX.tbl" files in the input directory,
-     * to determine which are alreadyplaced.  A genome is placed if its representative has not
+     * to determine which are already placed.  A genome is placed if its representative has not
      * been deleted.
      *
      * @param repGenSets	list of repgen sets of interest

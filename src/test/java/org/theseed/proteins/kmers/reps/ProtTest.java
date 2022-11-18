@@ -15,6 +15,8 @@ import java.util.List;
 
 import org.junit.Test;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.proteins.kmers.ProteinData;
+import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;

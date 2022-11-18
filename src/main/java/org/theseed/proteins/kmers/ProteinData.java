@@ -1,14 +1,18 @@
 /**
  *
  */
-package org.theseed.proteins.kmers.reps;
+package org.theseed.proteins.kmers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.text.TextStringBuilder;
 import org.theseed.genome.Genome;
+import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.ProteinKmers;
 
@@ -361,6 +365,32 @@ public class ProteinData implements Comparable<ProteinData> {
         else
             retVal = rep.getGenomeId();
         return retVal;
+    }
+
+    /**
+     * @return the header for a ProteinData report
+     *
+     * @param parent	parent protein data factory being written
+     */
+    public static String getHeader(ProteinDataFactory parent) {
+        String retVal = "genome_id\tgenome_name\tscore\trating\tgc\tdomain\tgenus\tspecies\t"
+                + Arrays.stream(parent.getRepLevels()).mapToObj(i -> Integer.toString(i)).collect(Collectors.joining("\t"));
+        return retVal;
+    }
+
+    /**
+     * @return a report data line for this protein
+     *
+     * @param parent	parent protein data factory being written
+     */
+    public String getLine(ProteinDataFactory parent) {
+        TextStringBuilder retVal = new TextStringBuilder(100);
+        // Store the fixed fields.
+        retVal.append("%s\t%s\t%6.2f\t%s\t%s\t%s\t%s", this.genomeId, this.genomeName, this.score, this.rating.toString(),
+                this.domain, this.genus, this.species);
+        // Add the representative genomes.
+        Arrays.stream(parent.getRepLevels()).mapToObj(i -> this.getRepGenome(i)).forEach(x -> retVal.append('\t').append(x));
+        return retVal.toString();
     }
 
 }

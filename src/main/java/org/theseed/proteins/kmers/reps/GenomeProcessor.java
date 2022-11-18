@@ -11,6 +11,7 @@ import java.util.Collections;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.utils.ICommand;
 import org.theseed.utils.IntegerList;
 
@@ -87,10 +88,13 @@ public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
                 for (int repSize : this.repSizes) {
                     this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
                 }
+                saveRepLevels();
                 // Sort the genomes into repgen sets.
                 collateGenomes(Collections.emptySet());
                 // Save all the repgen sets.
                 saveRepGenSets();
+                // Write the protein data report.
+                writeGenomeReport();
                 // Write out the protein Fasta file for the first set.  This is used to find
                 // seed proteins.
                 writeSeedProt();
