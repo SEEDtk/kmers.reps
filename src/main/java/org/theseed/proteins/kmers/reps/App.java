@@ -38,6 +38,7 @@ import org.theseed.utils.BaseProcessor;
  *  seedTable		build a 4-column table for a specified seed protein
  *  buildRefDb		build a reference-genome database for evaluation
  *  updateMaster	update a master PATRIC database:  remove obsolete genomes and add the new ones
+ *  taxReport		determine how much information a genus or species identification tells us about repgen membership
  */
 public class App
 {
@@ -125,6 +126,9 @@ public class App
             break;
         case "updateMaster" :
             processor = new UpdateMasterProcessor();
+            break;
+        case "taxReport" :
+            processor = new TaxReportProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
