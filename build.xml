@@ -4,7 +4,7 @@
     <!--ANT 1.7 is required                                        -->
     <!--define folder properties-->
     <property name="dir.buildfile" value="."/>
-    <property name="dir.workspace" value="${dir.buildfile}/../.."/>
+    <property name="dir.workspace" value="${dir.buildfile}/../../.."/>
     <property name="dir.jarfile" value="${dir.workspace}/git/kernel/jars"/>
     <property environment="env" />
     <target name="create_run_jar">
@@ -15,7 +15,7 @@
             </manifest>
             <fileset dir="${dir.buildfile}/target/classes"/>
             <fileset dir="${dir.workspace}/git/brc.parent/shared/target/classes"/>
-            <fileset dir="${dir.workspace}/git/sequence/target/classes"/>
+            <fileset dir="${dir.workspace}/git/brc.parent/sequence/target/classes"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/org/apache/commons/commons-lang3/3.9/commons-lang3-3.9.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/github/eprst/murmur3/0.3/murmur3-0.3.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${env.HOME}/.m2/repository/com/github/cliftonlabs/json-simple/3.1.0/json-simple-3.1.0.jar"/>

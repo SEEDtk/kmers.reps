@@ -39,6 +39,7 @@ import org.theseed.utils.BaseProcessor;
  *  buildRefDb		build a reference-genome database for evaluation
  *  updateMaster	update a master PATRIC database:  remove obsolete genomes and add the new ones
  *  taxReport		determine how much information a genus or species identification tells us about repgen membership
+ *  repTax			write the taxonomy report for a genome source
  */
 public class App
 {
@@ -129,6 +130,9 @@ public class App
             break;
         case "taxReport" :
             processor = new TaxReportProcessor();
+            break;
+        case "repTax" :
+            processor = new RepTaxProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
