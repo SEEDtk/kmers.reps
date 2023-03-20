@@ -40,6 +40,7 @@ import org.theseed.utils.BaseProcessor;
  *  updateMaster	update a master PATRIC database:  remove obsolete genomes and add the new ones
  *  taxReport		determine how much information a genus or species identification tells us about repgen membership
  *  repTax			write the taxonomy report for a genome source
+ *  neighbors		list the N closest neighboring representative genomes to all genomes in a source
  */
 public class App
 {
@@ -133,6 +134,9 @@ public class App
             break;
         case "repTax" :
             processor = new RepTaxProcessor();
+            break;
+        case "neighbors" :
+            processor = new NeighborProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
