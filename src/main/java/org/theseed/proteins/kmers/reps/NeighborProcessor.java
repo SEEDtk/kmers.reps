@@ -82,6 +82,23 @@ public class NeighborProcessor extends BaseReportProcessor {
     @Argument(index = 1, metaVar = "inDir", usage = "name of the input genome source directory or file", required = true)
     private File inDir;
 
+    /**
+     * Utility object for data needed from the genome.
+     */
+    private class GenomeData {
+
+        /** repgenome object for the seed protein */
+        private RepGenome seedProtein;
+        /** genome size */
+        private int dnaSize;
+
+        protected GenomeData(Genome genome) {
+            this.seedProtein = NeighborProcessor.this.repDb.getSeedProtein(genome);
+            this.dnaSize = genome.getLength();
+        }
+
+    }
+
     @Override
     protected void setReporterDefaults() {
         this.sourceType = GenomeSource.Type.DIR;
@@ -115,7 +132,7 @@ public class NeighborProcessor extends BaseReportProcessor {
     @Override
     protected void runReporter(PrintWriter writer) throws Exception {
         // Output the report header.
-        writer.println("genome_id\tgenome_name\trep_id\trep_name\tsim\tdistance");
+        writer.println("genome_id\tgenome_name\tsize\trep_id\trep_name\tsim\tdistance\tclosest\tsignal");
         // Get the list of incoming genome IDs.
         var genomeIDs = this.genomes.getIDs();
         log.info("{} genomes found in source.", genomeIDs.size());
@@ -136,8 +153,9 @@ public class NeighborProcessor extends BaseReportProcessor {
      * @param genomeID	ID of input genome to process
      */
     private void processGenome(PrintWriter writer, String genomeID) {
-        // Get the incoming genome's representation object.
-        RepGenome seedProtein = this.getRepGenome(genomeID);
+        // Get the incoming genome's representation object and its size.
+        GenomeData gData = this.getGenomeData(genomeID);
+        RepGenome seedProtein = gData.seedProtein;
         if (seedProtein == null)
             log.error("No seed protein found for input genome {}.", genomeID);
         else {
@@ -150,7 +168,7 @@ public class NeighborProcessor extends BaseReportProcessor {
                 RepGenomeDb.Representation result = this.repDb.new Representation(rep, seedProtein);
                 // Only keep it if the similarity is greater than the minimum
                 final int sim = result.getSimilarity();
-                if (sim > this.minSim) {
+                if (sim >= this.minSim) {
                     // Add it to the found-results list.
                     int idx = 0;
                     final int n = found.size();
@@ -180,10 +198,7 @@ public class NeighborProcessor extends BaseReportProcessor {
             }
             if (found.size() <= 0)
                 log.warn("No close genomes found for {}.", genomeID);
-            else {
-                // Here we have results to show.
-                this.writeResults(writer, seedProtein, found);
-            }
+            this.writeResults(writer, gData, found);
         }
     }
 
@@ -191,29 +206,38 @@ public class NeighborProcessor extends BaseReportProcessor {
      * Write the close genomes for the specified input genome to the output report.
      *
      * @param writer		output report writer
-     * @param seedProtein	input genome representative object
+     * @param gData			input genome descriptor
      * @param found			representative genome object
      */
-    private synchronized void writeResults(PrintWriter writer, RepGenome seedProtein, List<RepGenomeDb.Representation> found) {
-        for (RepGenomeDb.Representation rep : found) {
-            int sim = rep.getSimilarity();
-            double dist = rep.getDistance();
-            String repId = rep.getGenomeId();
-            writer.println(seedProtein.getGenomeId() + "\t" + seedProtein.getName() + "\t" + repId + "\t" +
-                    this.repDb.get(repId).getName() + "\t" + Integer.toString(sim) + "\t" + Double.toString(dist));
-            writer.flush();
+    private synchronized void writeResults(PrintWriter writer, GenomeData gData, List<RepGenomeDb.Representation> found) {
+        var seedProtein = gData.seedProtein;
+        String prefix = seedProtein.getGenomeId() + "\t" + seedProtein.getName() + "\t" + Integer.toString(gData.dnaSize);
+        if (found.size() <= 0)
+            writer.println(prefix + "\t\t\t\t\t\t");
+        else {
+            String closeFlag = "Y";
+            for (RepGenomeDb.Representation rep : found) {
+                int sim = rep.getSimilarity();
+                double dist = rep.getDistance();
+                String repId = rep.getGenomeId();
+                double signal = gData.dnaSize * (1.0 - dist);
+                writer.println(prefix + "\t" + repId + "\t" + this.repDb.get(repId).getName() + "\t" +
+                Integer.toString(sim) + "\t" + Double.toString(dist) + "\t" + closeFlag + "\t" + Double.toString(signal));
+                closeFlag = " ";
+            }
         }
+        writer.flush();
     }
 
     /**
-     * @return a representative-genome object for the specified input genome.
+     * @return the data we need from the specified input genome
      *
      * @param genomeID	ID of the desired input genome
      */
-    private RepGenome getRepGenome(String genomeID) {
+    private GenomeData getGenomeData(String genomeID) {
         Genome genome = this.genomes.getGenome(genomeID);
         log.info("Processing genome {}.", genome);
-        RepGenome retVal = this.repDb.getSeedProtein(genome);
+        GenomeData retVal = this.new GenomeData(genome);
         return retVal;
     }
 
