@@ -18,6 +18,8 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
@@ -26,8 +28,6 @@ import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.GenomeKmers;
 import org.theseed.sequence.Sequence;
 import org.theseed.sequence.SequenceKmers;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command is designed to find a DNA target for a small set of genomes within the larger set.  The goal is to

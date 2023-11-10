@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ICommand;
 import org.theseed.counters.CountMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.ProteinDataFactory;
-import org.theseed.utils.ICommand;
 
 /**
  * This script is used when an incremental update is being made to the genome database.  It takes as input

@@ -3,7 +3,7 @@
  */
 package org.theseed.genome.coupling;
 
-import org.theseed.utils.ParseFailureException;
+import org.theseed.basic.ParseFailureException;
 
 /**
  * This is the base class for an object that filters potentially-coupled class pairs based on group characteristics.

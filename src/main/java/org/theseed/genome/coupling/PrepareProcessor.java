@@ -21,13 +21,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Coupling;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command creates specially-augmented GTOs that can be used to drive the molecular machine processor.  Each

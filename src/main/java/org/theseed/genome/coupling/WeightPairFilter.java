@@ -3,9 +3,9 @@
  */
 package org.theseed.genome.coupling;
 
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.genome.coupling.FeatureClass.PairData;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This pair filter only accepts pairings whose genome group has a weighted size at or above a certain limit.

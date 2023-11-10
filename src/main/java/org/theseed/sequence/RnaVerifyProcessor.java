@@ -16,13 +16,13 @@ import java.util.Set;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.Genome;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
+import org.theseed.roles.RoleUtilities;
 import org.theseed.p3api.Criterion;
 import org.theseed.utils.BaseReportProcessor;
-import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -185,7 +185,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         Set<String> rnaSeqIds = new HashSet<String>(rnaRecords.size());
         for (JsonObject rnaRecord : rnaRecords) {
             String function = P3Connection.getString(rnaRecord, "product");
-            if (Genome.SSU_R_RNA.matcher(function).find()) {
+            if (RoleUtilities.SSU_R_RNA.matcher(function).find()) {
                 // Save the MD5 so we can query the sequence.
                 String seqId = P3Connection.getString(rnaRecord, "na_sequence_md5");
                 rnaSeqIds.add(seqId);

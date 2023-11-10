@@ -3,9 +3,9 @@
  */
 package org.theseed.genome.coupling;
 
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.coupling.FeatureClass.Pair;
 import org.theseed.genome.coupling.FeatureClass.PairData;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * @author Bruce Parrello

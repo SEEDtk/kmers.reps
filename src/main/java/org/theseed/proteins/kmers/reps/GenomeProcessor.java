@@ -11,8 +11,8 @@ import java.util.Collections;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.theseed.basic.ICommand;
 import org.theseed.proteins.kmers.ProteinDataFactory;
-import org.theseed.utils.ICommand;
 import org.theseed.utils.IntegerList;
 
 /**

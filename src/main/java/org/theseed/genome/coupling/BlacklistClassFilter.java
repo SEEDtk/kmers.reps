@@ -10,9 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.coupling.FeatureClass.Result;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This filter removes classes found in a tab-delimited blacklist file.  The file is read in during the constructor

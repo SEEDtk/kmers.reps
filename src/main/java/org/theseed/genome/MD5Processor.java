@@ -11,9 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.kohsuke.args4j.Option;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3MD5Hex;
-import org.theseed.utils.BaseProcessor;
 
 /**
  * This command reads a tab-delimited file containing genome IDs and adds the DNA MD5 checksum at

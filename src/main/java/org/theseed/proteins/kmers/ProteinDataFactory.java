@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import java.util.Iterator;
 
 import org.theseed.genome.Feature;
-import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.Criterion;
@@ -28,6 +27,7 @@ import org.theseed.p3api.P3Connection.Table;
 import org.theseed.p3api.P3TaxData;
 import org.theseed.proteins.RoleMap;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
+import org.theseed.roles.RoleUtilities;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.counters.GenomeEval;
 
@@ -273,7 +273,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         int found = 0;
         for (JsonObject feature : features) {
             String product = P3Connection.getString(feature, "product");
-            if (Genome.SSU_R_RNA.matcher(product).find()) {
+            if (RoleUtilities.SSU_R_RNA.matcher(product).find()) {
                 // Here we have a real 16S feature.
                 seqMap.put(P3Connection.getString(feature, "na_sequence_md5"), null);
                 String genomeId = P3Connection.getString(feature, "genome_id");

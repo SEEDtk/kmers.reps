@@ -14,10 +14,10 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.reports.CouplingReporter;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command computes functional couplings using genomes in a specific genome directory.  It allows specification of

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
-import org.theseed.proteins.Function;
+import org.theseed.roles.RoleUtilities;
 import org.theseed.sequence.GenomeDescriptor;
 
 /**
@@ -35,13 +35,13 @@ public class TestRolePatterns {
         int pheCount = 0;
         int ssuCount = 0;
         for (Feature feat : genome.getFeatures()) {
-            String function = Function.commentFree(feat.getPegFunction());
+            String function = RoleUtilities.commentFree(feat.getPegFunction());
             Matcher m = GenomeDescriptor.SEED_PROTEIN.matcher(function);
             if (m.matches()) {
                 log.info("PHES in {}: {}", feat.getId(), function);
                 pheCount++;
             } else {
-                m = Genome.SSU_R_RNA.matcher(function);
+                m = RoleUtilities.SSU_R_RNA.matcher(function);
                 if (m.matches()) {
                     log.info("SSU in {}: {}", feat.getId(), function);
                     ssuCount++;

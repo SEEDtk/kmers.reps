@@ -11,6 +11,7 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.GenomeDescriptor;
@@ -19,7 +20,6 @@ import org.theseed.sequence.GenomeDescriptorSource;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.GenomeDescriptorSet.Rating;
 import org.theseed.utils.BaseReportProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command compares a set of genomes in a genome source to a four-column table produced by the "seqTable" command-- the

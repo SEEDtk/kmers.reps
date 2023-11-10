@@ -9,13 +9,13 @@ import java.io.IOException;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.KmerCollectionGroup;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.BaseProcessor;
 import org.slf4j.LoggerFactory;
 
 /**

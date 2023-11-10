@@ -11,10 +11,10 @@ import java.util.Map;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.counters.CountMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.utils.BasePipeProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command processes the good-genome list to determine what a particular taxonomic ID tells us about membership in a repgen set.

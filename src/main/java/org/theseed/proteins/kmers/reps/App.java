@@ -3,11 +3,11 @@ package org.theseed.proteins.kmers.reps;
 import java.util.Arrays;
 
 import org.theseed.proteins.UniRoleProcessor;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.PrepareProcessor;
 import org.theseed.sequence.RnaVerifyProcessor;
-import org.theseed.utils.BaseProcessor;
 
 /**
  * This program processes protein kmers.  The commands are as follows.

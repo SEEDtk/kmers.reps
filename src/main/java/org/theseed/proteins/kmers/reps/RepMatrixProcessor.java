@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Option;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.BaseProcessor;
 
 /**
  * This command reads a FASTA file and sorts them by distance.  It then produces a list
