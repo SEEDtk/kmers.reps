@@ -13,12 +13,12 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.theseed.basic.BaseProcessor;
-import org.theseed.counters.QualityCountMap;
 import org.theseed.genome.Feature;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.Sequence;
 import org.theseed.sequence.SequenceKmers;
+import org.theseed.stats.QualityCountMap;
 import org.slf4j.LoggerFactory;
 
 /**

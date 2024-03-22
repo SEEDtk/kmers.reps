@@ -29,7 +29,7 @@ import org.theseed.proteins.RoleMap;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.roles.RoleUtilities;
 import org.theseed.sequence.DnaKmers;
-import org.theseed.counters.GenomeEval;
+import org.theseed.stats.GenomeEval;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 

@@ -5,10 +5,10 @@ package org.theseed.genome.coupling;
 
 import java.util.Collection;
 
-import org.theseed.counters.Shuffler;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader.Line;
+import org.theseed.stats.Shuffler;
 
 /**
  * This is a special classification method used to test the efficacy of various parameters.  It

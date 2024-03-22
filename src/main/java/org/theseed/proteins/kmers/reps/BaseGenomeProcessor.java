@@ -24,8 +24,6 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.counters.CountMap;
-import org.theseed.counters.GenomeEval;
-import org.theseed.counters.QualityCountMap;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
@@ -35,6 +33,8 @@ import org.theseed.proteins.kmers.ProteinData;
 import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.sequence.FastaOutputStream;
 import org.theseed.sequence.Sequence;
+import org.theseed.stats.GenomeEval;
+import org.theseed.stats.QualityCountMap;
 
 /**
  * This is the base class for both GenomeProcessor and UpdateProcessor.  It performs the common tasks
