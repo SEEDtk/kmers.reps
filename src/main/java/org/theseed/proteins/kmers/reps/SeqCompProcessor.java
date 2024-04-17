@@ -15,13 +15,13 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseReportProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.reports.ErrorSummaryReport;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.GenomeDescriptorSet;
 import org.theseed.sequence.ProteinKmers;
-import org.theseed.utils.BaseReportProcessor;
 
 /**
  * This script is used to determine the correspondence between PheS distance and SSU-rRNA distance.  It takes an

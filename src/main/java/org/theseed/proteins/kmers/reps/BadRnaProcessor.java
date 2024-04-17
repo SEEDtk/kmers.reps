@@ -14,13 +14,13 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseReportProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.CloseSets;
 import org.theseed.reports.NeighborReporter;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.ProteinKmers;
-import org.theseed.utils.BaseReportProcessor;
 
 /**
  * This command attempts to identify bad SSU rRNA sequences. The basic technique is to find the closest genomes in a

@@ -16,13 +16,13 @@ import java.util.Set;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseReportProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.roles.RoleUtilities;
 import org.theseed.p3api.Criterion;
-import org.theseed.utils.BaseReportProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
