@@ -44,6 +44,39 @@ import org.theseed.sequence.RnaVerifyProcessor;
  */
 public class App
 {
+    /** static array containing command names and comments */
+    protected static final String[] COMMANDS = new String[] {
+             "build", "Create a representative-genome database for a pre-selected set of representatives",
+             "gtoReps", "find the representative genome of each GTO in a directory",
+             "ssuReps", "find the representative genome of each GTO in a directory using an SSU table",
+             "repdb", "Create a representative-genome database from a FASTA file of protein sequences.",
+             "group", "Analyze proteins and group them together.",
+             "classify", "Compare proteins to multiple protein lists",
+             "genomes", "Process genome evaluation results",
+             "update", "Process incremental genome evaluation results",
+             "md5", "Compute genome MD5s",
+             "coupling", "Compute functional coupling for a set of genomes",
+             "prepare", "Prepare a GTO directory for use in the coupling website",
+             "distances", "Create a distance matrix for representative genomes",
+             "seqTable", "Create a table of identifying sequences for each representative genome",
+             "seqComp", "Create a table comparing PheS distance to SSU-rRNA distance",
+             "seqTest", "Compare the closest PheS genome to the closest SSU-rRNA genome",
+             "ssuCheck", "Find bad SSU rRNA sequences by blasting against SILVA",
+             "target", "Find a kmer target in a set of genomes",
+             "univ", "create a report on the singly-occurring roles in a group of genomes",
+             "gtoClass", "Find representatives for GTOs in multiple RepGen databases",
+             "missing", "Produce the missing-roles report for a directory of GTOs",
+             "prio", "prioritize a list of genomes using a second list",
+             "list", "list the genomes in a representative genome database",
+             "rnaVerify", "build a blacklist of genomes with bad or suspicious SSU rRNA sequences",
+             "seedTable", "build a 4-column table for a specified seed protein",
+             "buildRefDb", "build a reference-genome database for evaluation",
+             "updateMaster", "update a master PATRIC database:  remove obsolete genomes and add the new ones",
+             "taxReport", "determine how much information a genus or species identification tells us about repgen membership",
+             "repTax", "write the taxonomy report for a genome source",
+             "neighbors", "list the N closest neighboring representative genomes to all genomes in a source",
+    };
+
     public static void main( String[] args )
     {
         // Get the control parameter.
@@ -138,12 +171,20 @@ public class App
         case "neighbors" :
             processor = new NeighborProcessor();
             break;
+        case "-h" :
+        case "--help" :
+            processor = null;
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }
-        boolean ok = processor.parseCommand(newArgs);
-        if (ok) {
-            processor.run();
+        if (processor == null)
+            BaseProcessor.showCommands(COMMANDS);
+        else {
+            boolean ok = processor.parseCommand(newArgs);
+            if (ok) {
+                processor.run();
+            }
         }
     }
 }
