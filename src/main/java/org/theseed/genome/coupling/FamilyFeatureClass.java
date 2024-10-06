@@ -41,8 +41,10 @@ public class FamilyFeatureClass extends FeatureClass {
 
     /**
      * Construct the family feature class.
+     *
+     * @param processor		controlling command processor
      */
-    public FamilyFeatureClass() {
+    public FamilyFeatureClass(IParms processor) {
         this.p3 = new P3Connection();
         this.nameMap = new HashMap<String, String>(5000);
     }

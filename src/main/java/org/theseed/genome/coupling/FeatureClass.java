@@ -3,6 +3,7 @@
  */
 package org.theseed.genome.coupling;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,6 +28,62 @@ import org.theseed.locations.Location;
  *
  */
 public abstract class FeatureClass {
+
+    /**
+     * This enumerates the valid classification types.
+     */
+    public static enum Type {
+        /** classify by functional role */
+        ROLES {
+            @Override
+            public FeatureClass create(IParms processor) {
+                return new RoleFeatureClass(processor);
+            }
+        },
+        /** classify by global protein family */
+        PGFAMS {
+            @Override
+            public FeatureClass create(IParms processor) {
+                return new FamilyFeatureClass(processor);
+            }
+        },
+        /** classify randomly (used for testing) */
+        RANDOM {
+            @Override
+            public FeatureClass create(IParms processor) {
+                return new RandomFeatureClass(processor);
+            }
+        },
+        /** classify according to a table of proteins loaded from a file */
+        FILE_FAMILY {
+            @Override
+            public FeatureClass create(IParms processor) {
+                return new FileFeatureClass(processor);
+            }
+        };
+
+
+        /**
+         * Create a feature classifier.
+         *
+         * @param processor		controlling command processor containing parameters
+         *
+         * @return the feature classifier of this type
+         */
+        public abstract FeatureClass create(IParms processor);
+    }
+
+    /**
+     * Interface for clients that support feature classification
+     */
+    public interface IParms {
+
+        /**
+         * @return the name of the file containing the protein family definitions
+         */
+        public File getFamFile();
+
+    }
 
     /**
      * @return a (possibly empty) list of classifications for a feature
@@ -387,29 +444,4 @@ public abstract class FeatureClass {
 
     }
 
-    /**
-     * This enumerates the valid classification types.
-     */
-    public static enum Type {
-        ROLES, PGFAMS, RANDOM;
-
-        /**
-         * Create the classifier for this classification type.
-         */
-        public FeatureClass create() {
-            FeatureClass retVal = null;
-            switch (this) {
-            case ROLES :
-                retVal = new RoleFeatureClass();
-                break;
-            case PGFAMS :
-                retVal = new FamilyFeatureClass();
-                break;
-            case RANDOM :
-                retVal = new RandomFeatureClass();
-                break;
-            }
-            return retVal;
-        }
-    }
 }

@@ -22,9 +22,18 @@ import org.theseed.sequence.SequenceKmers;
 /**
  * Produce a coupling report with scores based on group size and group distances.
  *
- * The distance is computed using genome similarity.  We locate the genome's PheS sequence and build a Kmer hash from it.  The similarity count is computed for
- * each pair of genomes in a group.  The group's similarity distance score is SUMOF(1 / (sim + 1)) over all the pairs.  The real distance score is SUMOF(jaccard-distance)
- * over all the pairs. To manage this, we have a hash from genome pairs to distances.
+ * The distance is computed using genome similarity.  We locate the genome's PheS sequence and build a Kmer hash from it.
+ * The similarity count is computed for each pair of genomes in a group.  The group's similarity distance score is
+ * SUMOF(1 / (sim + 1)) over all the pairs.  The real distance score is SUMOF(jaccard-distance) over all the pairs.
+ * To manage this, we have a hash from genome pairs to distances. Again, these are genome pairs, which is easy to
+ * confuse with coupled pairs. When a pair of coupled proteins occur in two genomes, the latter is the genome pair.
+ * The distance between the genomes determines how important the coupling is.
+ *
+ * The score report tells us how different the genomes containing the coupled pairs are. A lot of genomes that are close
+ * will tend to have a similar score to a small number of genomes that are far apart. Since the distances are added,
+ * a higher distance means a stronger coupling. The true measure is the weight, which is computed when identifying the
+ * pairs, but the distances give you a feel for the diversity of the genomes involved. Finally, we include information
+ * on what percent of each class's proteins participate in the pairing and how big each class is.
  *
  * @author Bruce Parrello
  *
@@ -51,13 +60,18 @@ public class ScoreCouplingReporter extends CouplingReporter {
         /**
          * Construct a score object.
          *
-         * @param sim	similarity distance
-         * @param real	real distance
+         * @param first		kmers for first sequence
+         * @param second	kmers for second sequence
          */
         protected Scores(SequenceKmers first, SequenceKmers second) {
             int sim = first.similarity(second);
-            this.simDist = 1.0 / (double) (sim + 1);
-            this.realDist = 1.0 - (sim / (double) (first.size() + second.size() - sim));
+            if (sim == SequenceKmers.INFINITY) {
+                this.simDist = 0.0;
+                this.realDist = 0.0;
+            } else {
+                this.simDist = 1.0 / (double) (sim + 1);
+                this.realDist = 1.0 - (sim / (double) (first.size() + second.size() - sim));
+            }
         }
 
         /**
@@ -81,6 +95,7 @@ public class ScoreCouplingReporter extends CouplingReporter {
         /**
          * Finish the scores.
          *
+         * @param parent	parent report object
          * @param pair		pair being scored
          * @param size		size of the group
          */
@@ -96,15 +111,15 @@ public class ScoreCouplingReporter extends CouplingReporter {
          * @return an output string for this score object.
          */
         public String toString() {
-            return String.format("%8.4f\t%8.4f\t%8.2f\t%8.2f\t%d\t%d", this.simDist, this.realDist,
-                    this.percent1, this.percent2, this.size1, this.size2);
+            return (this.simDist + "\t" +  this.realDist + "\t" + this.percent1 + "\t" + this.percent2
+                    + "\t" + this.size1 + "\t" + this.size2);
         }
 
         /**
          * @return a header string for scores
          */
         public static String header() {
-            return "sim_distance\tphes_distance\tpercent1\tpercent2\tfamily1\tfamily2";
+            return "sim_distance\treal_distance\tpercent1\tpercent2\tfamily1\tfamily2";
         }
 
     }

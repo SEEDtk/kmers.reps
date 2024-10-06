@@ -29,8 +29,10 @@ public class RandomFeatureClass extends FeatureClass {
 
     /**
      * Construct this object.
+     *
+     * @param processor	controlling command processor
      */
-    public RandomFeatureClass() {
+    public RandomFeatureClass(IParms processor) {
         this.genomeId = "";
         this.families = new Shuffler<String>(1000);
         this.pos = 0;

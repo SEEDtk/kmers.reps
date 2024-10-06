@@ -10,7 +10,7 @@ import org.theseed.genome.coupling.BaseCouplingProcessor;
 import org.theseed.genome.coupling.FeatureClass;
 
 /**
- * This is the simplest possible sort of coupling report.  For each output pair, we simply list the genomes found.
+ * This is the simplest possible sort of coupling report.  For each output class pair, we simply list the genomes found.
  *
  * @author Bruce Parrello
  */

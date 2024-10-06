@@ -24,8 +24,10 @@ public class RoleFeatureClass extends FeatureClass {
 
     /**
      * Construct a feature role classifier.
+     *
+     * @param processor		controlling command processor
      */
-    public RoleFeatureClass() {
+    public RoleFeatureClass(IParms processor) {
         // We build an empty role map and add non-hypotheticals as we go.
         this.roles = new RoleMap();
     }

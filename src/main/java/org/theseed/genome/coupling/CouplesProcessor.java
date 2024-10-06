@@ -16,15 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
-import org.theseed.genome.GenomeDirectory;
+import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.reports.CouplingReporter;
 
 /**
- * This command computes functional couplings using genomes in a specific genome directory.  It allows specification of
+ * This command computes functional couplings using genomes from a specific genome source.  It allows specification of
  * the method for computing the basis of the coupling and the type of reporting.  The default is to couple by
  * protein families and output a list of the genomes where the coupling is found.
  *
- * The positional parameter is the name of the directory containing the input genomes.
+ * The positional parameter is the name of the file or directory containing the input genome source.
  *
  * The command-line options are as follows.
  *
@@ -47,6 +47,7 @@ import org.theseed.reports.CouplingReporter;
  * 				IDs to be included in the output (group filter WHITELIST only)
  * --names		FASTA file containing family names (classification type PROTFAM only)
  * --seed		if specified, genomes without a valid seed protein will be skipped
+ * --source		type of genome source (default DIR)
  *
  * @author Bruce Parrello
  *
@@ -62,6 +63,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     private ClassFilter classFilter;
     /** pair-filtering algorithm */
     private PairFilter pairFilter;
+    /** input genome source */
+    private GenomeSource genomes;
     /** functional assignment for the seed protein */
     private static final String SEED_PROTEIN_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain (EC 6.1.1.20)";
 
@@ -109,6 +112,10 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     @Option(name = "--seed", usage = "if specified, genomes without a seed protein will be ignored")
     private boolean seedFiltering;
 
+    /** type of input genome source */
+    @Option(name = "--source", usage = "type of genome source")
+    private GenomeSource.Type sourceType;
+
     /** input directory */
     @Argument(index = 0, metaVar = "genomeDir", usage = "input genome directory", required = true)
     private File genomeDir;
@@ -127,6 +134,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         this.pairFilterType = PairFilter.Type.WEIGHT;
         this.nameFastaFile = null;
         this.seedFiltering = false;
+        this.sourceType = GenomeSource.Type.DIR;
         this.setDefaultConfiguration();
     }
 
@@ -134,8 +142,6 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     protected boolean validateParms() throws IOException, ParseFailureException {
         if (this.minWeight < 1)
             throw new ParseFailureException("Invalid minimum group size.  Must be at least 1.");
-        if (! this.genomeDir.isDirectory())
-            throw new FileNotFoundException("Specified genome directory" + this.genomeDir + " is not found or invalid.");
         this.validateConfiguration();
         // Create the pair map.
         this.pairMap = new HashMap<FeatureClass.Pair, FeatureClass.PairData>(100000);
@@ -144,6 +150,12 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         log.info("Class filtering type is {}.", this.classFilter);
         this.pairFilter = this.pairFilterType.create(this);
         log.info("Pair filtering type is {}.", this.pairFilter);
+        // Set up the genome source.
+        if (! this.genomeDir.exists())
+            throw new FileNotFoundException("Genome source " + this.genomeDir + " is not found.");
+        log.info("Connecting to genome source of type {} in {}.", this.sourceType, this.genomeDir);
+        this.genomes = this.sourceType.create(this.genomeDir);
+        log.info("{} genomes found in {}.", this.genomes.size(), this.genomeDir);
         return true;
     }
 
@@ -160,14 +172,10 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             // Check for a name file.
             if (classifier instanceof FamilyFeatureClass && this.nameFastaFile != null)
                 ((FamilyFeatureClass) classifier).cacheNames(this.nameFastaFile);
-            // Open the genome directory.
-            log.info("Scanning genome directory {}.", this.genomeDir);
-            GenomeDirectory genomes = new GenomeDirectory(this.genomeDir);
-            int total = genomes.size();
-            log.info("{} genomes found.", total);
             // Loop through the genomes, filling the pair map.
             int count = 0;
             int blacklisted = 0;
+            int total = genomes.size();
             for (Genome genome : genomes) {
                 if (this.seedFiltering && genome.getByFunction(SEED_PROTEIN_FUNCTION) == null)
                     log.info("{} skipped-- no seed protein.", genome);

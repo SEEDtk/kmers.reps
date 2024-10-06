@@ -21,7 +21,7 @@ import org.theseed.io.TabbedLineReader;
  * @author Bruce Parrello
  *
  */
-public class CouplingTest extends TestCase {
+public class CouplingTest extends TestCase implements FeatureClass.IParms {
 
     /**
      * Test feature class results.
@@ -31,9 +31,9 @@ public class CouplingTest extends TestCase {
     public void testFeatureClasses() throws IOException {
         Genome gto = new Genome(new File("data", "202462.4.gto"));
         Feature feat = gto.getFeature("fig|202462.4.peg.207");
-        FeatureClass roleFC = FeatureClass.Type.ROLES.create();
-        FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
-        FeatureClass randFC = FeatureClass.Type.RANDOM.create();
+        FeatureClass roleFC = FeatureClass.Type.ROLES.create(this);
+        FeatureClass famFC = FeatureClass.Type.PGFAMS.create(this);
+        FeatureClass randFC = FeatureClass.Type.RANDOM.create(this);
         FeatureClass.Result res1 = roleFC.getClasses(feat);
         assertThat(res1.getFid(), equalTo(feat.getId()));
         int count = 0;
@@ -113,7 +113,7 @@ public class CouplingTest extends TestCase {
      */
     public void testFeatureClassReads() throws IOException {
         // For families, we rely on the fact that each output file begins with the string representation of a pair.
-        FeatureClass fClass = FeatureClass.Type.PGFAMS.create();
+        FeatureClass fClass = FeatureClass.Type.PGFAMS.create(this);
         File inFile = new File("data", "coupling10.tbl");
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
             for (TabbedLineReader.Line line : inStream) {
@@ -125,7 +125,7 @@ public class CouplingTest extends TestCase {
         }
         // For roles, the variability of the role IDs may cause the pair to swap.  We have to verify that the pair
         // has matching names.
-        fClass = FeatureClass.Type.ROLES.create();
+        fClass = FeatureClass.Type.ROLES.create(this);
         inFile = new File("data", "coupling10.roles.tbl");
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
             for (TabbedLineReader.Line line : inStream) {
@@ -141,7 +141,7 @@ public class CouplingTest extends TestCase {
      * test pairs
      */
     public void testPairs() {
-        FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
+        FeatureClass famFC = FeatureClass.Type.PGFAMS.create(this);
         FeatureClass.Pair pair1 = famFC.new Pair("x1", "y1");
         FeatureClass.Pair pair2 = famFC.new Pair("y1", "x1");
         FeatureClass.Pair pair3 = famFC.new Pair("x1", "y2");
@@ -156,7 +156,7 @@ public class CouplingTest extends TestCase {
      * @throws IOException
      */
     public void testGenomeResult() throws IOException {
-        FeatureClass famFC = FeatureClass.Type.PGFAMS.create();
+        FeatureClass famFC = FeatureClass.Type.PGFAMS.create(this);
         Genome gto = new Genome(new File("data", "202462.4.gto"));
         // Get the results and insure we got enough.
         List<FeatureClass.Result> results = famFC.getResults(gto);
@@ -212,6 +212,11 @@ public class CouplingTest extends TestCase {
         assertThat(neighbors.size(), equalTo(0));
 
 
+    }
+
+    @Override
+    public File getFamFile() {
+        return null;
     }
 
 }

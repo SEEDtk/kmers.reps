@@ -34,8 +34,6 @@ public class VerifyCouplingReporter extends CouplingReporter {
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(VerifyCouplingReporter.class);
-    /** format for percentages */
-    private static final String PCT_FORMAT = "%8.2f";
     /** set of classifier pairs of interest */
     private Set<FeatureClass.Pair> goodPairs;
     /** number of genomes containing each pair of good classes */
@@ -106,7 +104,7 @@ public class VerifyCouplingReporter extends CouplingReporter {
         String oString = "";
         if (this.goodPairs.contains(pair)) {
             // Here the pair is being verified, so we show its percentage.
-            percent = String.format(PCT_FORMAT, genomeData.size() * 100.0 / occurs);
+            percent = Double.toString(genomeData.size() * 100.0 / occurs);
             // Remove it from the good-pair list so it doesn't appear in the summary.
             this.goodPairs.remove(pair);
             oString = String.format("%d", occurs);
@@ -117,7 +115,7 @@ public class VerifyCouplingReporter extends CouplingReporter {
 
     @Override
     protected void summarize() {
-        String percent = String.format(PCT_FORMAT, 0.0);
+        String percent = "0.0";
         // At the end, we spool off the pairs that weren't found but occur at least once.
         for (FeatureClass.Pair pair : this.goodPairs) {
             int occurs = this.countMap.getCount(pair);
