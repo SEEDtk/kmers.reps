@@ -206,7 +206,7 @@ public class ScoreCouplingReporter extends CouplingReporter {
         // Finish off the scores.
         result.finish(this, pair, genomeData.size());
         // Write the output line.
-        this.print("%s\t%d\t%8.4f\t%s", pair.toString(), genomeData.size(), genomeData.weight(), result.toString());
+        this.print("%s\t%d\t%f\t%s", pair.toString(), genomeData.size(), genomeData.weight(), result.toString());
     }
 
     @Override
