@@ -401,6 +401,10 @@ public abstract class FeatureClass {
         private Set<String> genomes;
         /** weight of the pair */
         private double weight;
+        /** subsystem match score */
+        private int subMatch;
+        /** subsystem mismatch score */
+        private int subFail;
 
         /**
          * Create a pair datum.
@@ -408,17 +412,41 @@ public abstract class FeatureClass {
         public PairData() {
             this.genomes = new HashSet<String>(10);
             this.weight = 0.0;
+            this.subFail = 0;
+            this.subMatch = 0;
         }
 
         /**
          * Record a genome.
          *
-         * @param genomeId		ID of the genome
+         * @param genome		genome to record
          * @param increment		weight of the genome
+         * @param fid1			first feature ID
+         * @param fid2			paired feature ID
          */
-        public void addGenome(String genomeId, double increment) {
-            if (this.genomes.add(genomeId))
+        public void addGenome(Genome genome, double increment, String fid1, String fid2) {
+            // Record the weight of this genome if it's new.
+            if (this.genomes.add(genome.getId()))
                 this.weight += increment;
+            // Now check the subsystem situation. Are both features in the same subsystem?
+            Feature feat1 = genome.getFeature(fid1);
+            Feature feat2 = genome.getFeature(fid2);
+            if (feat1 == null)
+                throw new IllegalStateException("Missing feature " + fid1 + " in " + genome.toString() + ".");
+            if (feat2 == null)
+                throw new IllegalStateException("Missing feature " + fid2 + " in " + genome.toString() + ".");
+            Set<String> subs1 = feat1.getSubsystems();
+            Set<String> subs2 = feat2.getSubsystems();
+            if (! subs1.isEmpty() || ! subs2.isEmpty()) {
+                // Here we have at least one subsystem involved. If neither feature is in a
+                // subsystem we don't care. But if at least one is, then the match status
+                // matters.
+                if (subs1.stream().anyMatch(x -> subs2.contains(x)) )
+                    subMatch++;
+                else
+                    subFail++;
+            }
+
         }
 
         /**
@@ -441,6 +469,21 @@ public abstract class FeatureClass {
         public Collection<String> getGenomes() {
             return this.genomes;
         }
+
+        /**
+         * @return the number of subssytem matches
+         */
+        public int getSubMatch() {
+            return this.subMatch;
+        }
+
+        /**
+         * @return the number of subsystem mis-matches
+         */
+        public int getSubFail() {
+            return this.subFail;
+        }
+
 
     }
 

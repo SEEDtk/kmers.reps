@@ -200,7 +200,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
                                         FeatureClass.Pair pair = classifier.new Pair(classI, classJ);
                                         double weight = resI.getWeight(classI) * resJ.getWeight(classJ);
                                         FeatureClass.PairData pairList = this.pairMap.computeIfAbsent(pair, k -> new FeatureClass.PairData());
-                                        pairList.addGenome(genome.getId(), weight);
+                                        pairList.addGenome(genome, weight, resI.getFid(), resJ.getFid());
                                         pairCount++;
                                     }
                                 }

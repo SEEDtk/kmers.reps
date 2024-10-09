@@ -206,12 +206,13 @@ public class ScoreCouplingReporter extends CouplingReporter {
         // Finish off the scores.
         result.finish(this, pair, genomeData.size());
         // Write the output line.
-        this.print("%s\t%d\t%f\t%s", pair.toString(), genomeData.size(), genomeData.weight(), result.toString());
+        this.print("%s\t%d\t%f\t%d\t%d\t%s", pair.toString(), genomeData.size(), genomeData.weight(),
+                genomeData.getSubMatch(), genomeData.getSubFail(), result.toString());
     }
 
     @Override
     protected String getScoreHeadings() {
-        return ("size\tweight\t" + Scores.header());
+        return ("size\tweight\tsub_match\tsub_fail\t" + Scores.header());
     }
 
 }
