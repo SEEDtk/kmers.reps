@@ -22,7 +22,7 @@ import org.theseed.basic.ParseFailureException;
  *  -n	algorithm for determining the feature neighborhood (default CLOSE)
  *  -d	maximum acceptable distance for features to be considered neighbors (default 5000)
  *
- *  --famFile	name of a file containing protein family definitions (for FILE_FAMILY classifier)
+ *  --famFile	name of a file containing protein family definitions (for FILE_FAMILY or LOCAL_TEST classifier)
  *
  * @author Bruce Parrello
  *

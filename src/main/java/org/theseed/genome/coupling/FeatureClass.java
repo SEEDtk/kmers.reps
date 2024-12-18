@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
@@ -28,6 +30,11 @@ import org.theseed.locations.Location;
  *
  */
 public abstract class FeatureClass {
+
+    // FIELDS
+    /** logging facility */
+    protected static Logger log = LoggerFactory.getLogger(FeatureClass.class);
+
 
     /**
      * This enumerates the valid classification types.
@@ -52,6 +59,13 @@ public abstract class FeatureClass {
             @Override
             public FeatureClass create(IParms processor) {
                 return new RandomFeatureClass(processor);
+            }
+        },
+        /** local families with names loaded from a file */
+        LOCAL_TEST {
+            @Override
+            public FeatureClass create(IParms processor) {
+                return new TestLocalFamilyFeatureClass(processor);
             }
         },
         /** classify according to a table of proteins loaded from a file */

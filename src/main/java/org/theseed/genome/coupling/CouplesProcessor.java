@@ -45,7 +45,8 @@ import org.theseed.reports.CouplingReporter;
  * 				occurring classes are filtered out (class filter LIMITED only)
  * --include	if specified, the name of a tab-delimited file (with headers) whose first column contains class
  * 				IDs to be included in the output (group filter WHITELIST only)
- * --names		FASTA file containing family names (classification type PROTFAM only)
+ * --names		file containing family names (classification type FILE_FAMILY) or mapping family IDS to names
+ * 				(classification type LOCAL_TEST)
  * --seed		if specified, genomes without a valid seed protein will be skipped
  * --source		type of genome source (default DIR)
  *
@@ -104,8 +105,8 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     @Option(name = "--include", metaVar = "classIdFile.tbl", usage = "if specified, a file containing required class IDs (pair filter type WHITELIST)")
     private File whiteGroupFile;
 
-    /** FASTA file containing family names (PROTFAM only) */
-    @Option(name = "--names", metaVar = "families.fa", usage = "if specified, a FASTA file containing family IDs and names (class type PROTFAM only)")
+    /** file containing family names and optionally protein signatures */
+    @Option(name = "--names", metaVar = "fam.tbl", usage = "if specified, a file containing family IDs and names")
     private File nameFastaFile;
 
     /** TRUE to filter out genomes without a seed protein */
