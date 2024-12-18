@@ -24,7 +24,8 @@ import org.theseed.sequence.Sequence;
 import com.github.cliftonlabs.json_simple.JsonObject;
 
 /**
- * This is a classification system based on protein families.  For protein families, the name is loaded from PATRIC.
+ * This is a classification system based on protein families.  For protein families, the name is loaded from PATRIC, or
+ * optionally cached from a file.
  *
  * @author Bruce Parrello
  *
