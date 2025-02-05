@@ -262,7 +262,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         log.info("Retrieving SSU rRNA features.");
         features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
                 "genome_id,patric_id,product,na_sequence_md5",
-                Criterion.IN("feature_type", "rrna", "misc_RNA"),
+                Criterion.IN("feature_type", "rrna", "rRNA", "misc_RNA"),
                 Criterion.EQ("annotation", "PATRIC"));
         log.info("{} total rRNAs found.", features.size());
         // Form the features into a map based on genome ID.  Also, we create a map that will

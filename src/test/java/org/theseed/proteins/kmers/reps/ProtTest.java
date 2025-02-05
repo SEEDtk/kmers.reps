@@ -48,30 +48,19 @@ public class ProtTest {
             // First pass through.  We expect 590.12785 to have dropped out because of
             // an insufficient taxonomy.
             Iterator<ProteinData> iter = factory.iterator();
-            assertThat(iter.next().getGenomeId(), equalTo("99287.12"));
-            assertThat(iter.next().getGenomeId(), equalTo("309807.25"));
-            assertThat(iter.next().getGenomeId(), equalTo("932213.3"));
+            assertThat(iter.next().getGenomeId(), equalTo("511145.12"));
+            assertThat(iter.next().getGenomeId(), equalTo("93061.5"));
             assertThat(iter.next().getGenomeId(), equalTo("1001994.6"));
             assertThat(iter.next().getGenomeId(), equalTo("1408469.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003189.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003185.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003186.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003187.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1004951.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003188.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003191.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("571.605"));
-            assertThat(iter.next().getGenomeId(), equalTo("1003192.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1004952.3"));
             assertThat(iter.next().getGenomeId(), equalTo("1955272.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1004901.3"));
-            assertThat(iter.next().getGenomeId(), equalTo("1004836.5"));
+            assertThat(iter.next().getGenomeId(), equalTo("99287.12"));
+            assertThat(iter.next().getGenomeId(), equalTo("571.605"));
             assertThat(iter.next().getGenomeId(), equalTo("37372.4"));
             assertFalse(iter.hasNext());
-            assertThat(factory.size(), equalTo(19));
+            assertThat(factory.size(), equalTo(8));
             // Now we finalize.  This will also reorder 37372.4 and 1955272.3 due to
             // bad SSU rRNA.  We use a small batch size to test the batching.
-            factory.finishList(8);
+            factory.finishList(3);
             iter = factory.iterator();
             ProteinData.Rating oldRating = ProteinData.Rating.NCBI_REF;
             double oldScore = Double.POSITIVE_INFINITY;
@@ -87,7 +76,7 @@ public class ProtTest {
                 oldRating = rating;
                 oldScore = score;
             }
-            assertThat(factory.size(), equalTo(19));
+            assertThat(factory.size(), equalTo(8));
             // Verify that we have complete information.
             for (ProteinData genomeData : factory) {
                 assertNotNull(genomeData.getGenomeName());
@@ -168,7 +157,7 @@ public class ProtTest {
             assertThat(genomeData.getGenus(), equalTo("2093"));
             assertThat(genomeData.getSpecies(), equalTo("36744"));
             // Verify that the bad guys are bad.
-            assertThat(factory.getGenome("1955272.3").getRating(), equalTo(ProteinData.Rating.SINGLE_SSU));
+            assertThat(factory.getGenome("1955272.3").getRating(), equalTo(ProteinData.Rating.SHORT_SSU));
             assertThat(factory.getGenome("37372.4").getRating(), equalTo(ProteinData.Rating.BAD_SSU));
         }
 
