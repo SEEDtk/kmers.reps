@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader.Line;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.sequence.FastaInputStream;
@@ -80,7 +81,7 @@ public class FamilyFeatureClass extends FeatureClass {
         if (batch.size() > 0) {
             Map<String, JsonObject> familyData = this.p3.getRecords(Table.FAMILY, batch, "family_product");
             for (Map.Entry<String, JsonObject> familyDatum : familyData.entrySet())
-                this.nameMap.put(familyDatum.getKey(), P3Connection.getString(familyDatum.getValue(), "family_product"));
+                this.nameMap.put(familyDatum.getKey(), KeyBuffer.getString(familyDatum.getValue(), "family_product"));
         }
     }
 

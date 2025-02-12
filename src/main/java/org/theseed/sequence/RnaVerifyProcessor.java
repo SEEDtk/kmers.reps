@@ -23,6 +23,7 @@ import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.roles.RoleUtilities;
 import org.theseed.p3api.Criterion;
+import org.theseed.p3api.KeyBuffer;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -184,14 +185,14 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         // Sort the RNAs, saving the sequence MD5s.
         Set<String> rnaSeqIds = new HashSet<String>(rnaRecords.size());
         for (JsonObject rnaRecord : rnaRecords) {
-            String function = P3Connection.getString(rnaRecord, "product");
+            String function = KeyBuffer.getString(rnaRecord, "product");
             if (RoleUtilities.SSU_R_RNA.matcher(function).find()) {
                 // Save the MD5 so we can query the sequence.
-                String seqId = P3Connection.getString(rnaRecord, "na_sequence_md5");
+                String seqId = KeyBuffer.getString(rnaRecord, "na_sequence_md5");
                 rnaSeqIds.add(seqId);
                 // Save the genome name.
-                String genomeId = P3Connection.getString(rnaRecord, "genome_id");
-                String genomeName = P3Connection.getString(rnaRecord, "genome_name");
+                String genomeId = KeyBuffer.getString(rnaRecord, "genome_id");
+                String genomeName = KeyBuffer.getString(rnaRecord, "genome_name");
                 nameMap.put(genomeId, genomeName);
                 // Connect the MD5 to the genome.
                 List<String> rnaSeqs = rnaMap.computeIfAbsent(genomeId, x -> new ArrayList<String>(10));
@@ -216,7 +217,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
                         log.warn("Could not find DNA for genome {} sequence {}.", genomeId, seqId);
                         this.missCount++;
                     } else {
-                        String seq = P3Connection.getString(seqRecords.get(seqId), "sequence");
+                        String seq = KeyBuffer.getString(seqRecords.get(seqId), "sequence");
                         if (seq.length() < this.minLen) {
                             log.warn("DNA for genome {} sequence {} has improper length.", genomeId, seqId);
                             missCount++;

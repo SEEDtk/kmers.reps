@@ -20,6 +20,7 @@ import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeMultiDirectory;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Genome;
 
@@ -81,8 +82,8 @@ public class UpdateMasterProcessor extends BaseProcessor {
         int predicted = (int) (LOAD_FACTOR * this.pMaster.size());
         List<JsonObject> objects = new ArrayList<JsonObject>(predicted);
         p3.addAllProkaryotes(objects);
-        this.pGenomes = objects.stream().collect(Collectors.toMap(x -> P3Connection.getString(x, "genome_id"),
-                x -> P3Connection.getString(x, "genome_name"), (x1,x2) -> x1));
+        this.pGenomes = objects.stream().collect(Collectors.toMap(x -> KeyBuffer.getString(x, "genome_id"),
+                x -> KeyBuffer.getString(x, "genome_name"), (x1,x2) -> x1));
         log.info("{} genomes found in PATRIC.", this.pGenomes.size());
         return true;
     }
