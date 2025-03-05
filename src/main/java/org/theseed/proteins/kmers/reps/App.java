@@ -41,6 +41,7 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  taxReport		determine how much information a genus or species identification tells us about repgen membership
  *  repTax			write the taxonomy report for a genome source
  *  neighbors		list the N closest neighboring representative genomes to all genomes in a source
+ *  distDist		find a set of genomes that are various distributed distances from a key genome
  */
 public class App
 {
@@ -75,6 +76,7 @@ public class App
              "taxReport", "determine how much information a genus or species identification tells us about repgen membership",
              "repTax", "write the taxonomy report for a genome source",
              "neighbors", "list the N closest neighboring representative genomes to all genomes in a source",
+             "distDist", "find a set of genomes that are various distributed distances from a key genome",
     };
 
     public static void main( String[] args )
@@ -171,6 +173,9 @@ public class App
         case "neighbors" :
             processor = new NeighborProcessor();
             break;
+        case "distDist" :
+        	processor = new DistributedDistanceProcessor();
+        	break;
         case "-h" :
         case "--help" :
             processor = null;
