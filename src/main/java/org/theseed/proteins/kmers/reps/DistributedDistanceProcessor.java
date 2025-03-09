@@ -34,6 +34,11 @@ import org.theseed.sequence.Sequence;
  * where N and M are command-line options. The full genome list will be output on the standard
  * output. Note that we will deliberately ignore distances of 1.0, which is most of them.
  *
+ * This method will generally select a small subset of the total list of genomes. To vary the
+ * subset chosen, you can specify a different starting genome. The default starting genome is
+ * the first one in the finder file. To specify a different default, indicate a file containing
+ * just the starting genome's entry from the finder file.
+ *
  * The positional parameter is the name of the finder file for the SOUR in question.
  *
  * The command-line options are as follows:
@@ -45,6 +50,7 @@ import org.theseed.sequence.Sequence;
  *
  * --buckets	number of buckets in which to divide the distance range (default 50)
  * --size		maximum number of genomes to allow in a bucket (default 4)
+ * --primer		optional file containing the starting genome finder entry
  *
  * @author Bruce Parrello
  *
@@ -58,6 +64,8 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 	private DnaKmers sourceKmers;
 	/** array of upper bucket limits */
 	private double[] bucketMax;
+	/** feature ID of the primer protein */
+	private String primerID;
 	/** list of genome buckets; each bucket is a map from genome ID to name */
 	private List<Map<String, String>> bucketList;
 	/** number of full buckets */
@@ -83,6 +91,10 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 	@Option(name = "--size", metaVar = "12", usage = "maximum bucket size")
 	private int bucketSize;
 
+	/** optional file containing finder entry for primer DNA sequence */
+	@Option(name = "--primer", metaVar = "primer.fna", usage = "if specified, a file containing the primer protein finder entry")
+	private File primerFasta;
+
 	/** finder file name */
 	@Argument(index = 0, metaVar = "finderProtFile.fna", usage = "finder file for SOUR protein", required = true)
 	private File finderFasta;
@@ -92,6 +104,7 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 		this.kmerSize = 20;
 		this.numBuckets = 50;
 		this.bucketSize = 4;
+		this.primerFasta = null;
 	}
 
 	@Override
@@ -99,6 +112,11 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 		// Insure the finder file exists.
 		if (! this.finderFasta.canRead())
 			throw new FileNotFoundException("Finder file " + this.finderFasta + " is not found or unreadable.");
+		// If no primer is specified, use the finder file itself.
+		if (this.primerFasta == null)
+			this.primerFasta = finderFasta;
+		else if (! this.primerFasta.canRead())
+			throw new FileNotFoundException("Primer file " + this.primerFasta + " is not found or unreadable.");
 		// Validate the numeric parameters.
 		if (this.kmerSize < 2)
 			throw new ParseFailureException("Kmer size must be at least 2.");
@@ -126,37 +144,45 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 
 	@Override
 	protected void runReporter(PrintWriter writer) throws Exception {
-		// Open the input FASTA file and get the first sequence.
-		try (FastaInputStream inStream = new FastaInputStream(this.finderFasta)) {
+		int inCount = 0;
+		// Open the primer FASTA file and get the first sequence.
+		log.info("Reading primer protein from {}.", this.primerFasta);
+		try (FastaInputStream inStream = new FastaInputStream(this.primerFasta)) {
 			if (! inStream.hasNext())
-				throw new IOException("Input FASTA file is empty.");
+				throw new IOException("Primer FASTA file " + this.primerFasta + " is empty.");
 			this.readFirstSequence(inStream);
+			inCount++;
+		}
+		// Open the input FASTA file.
+		try (FastaInputStream inStream = new FastaInputStream(this.finderFasta)) {
 			// Set up some progress indicator stuff for logging. We will output progress every
 			// 10 seconds.
-			int inCount = 1;
 			long lastMsg = System.currentTimeMillis();
 			// Now loop through the other sequences, adding them to buckets until all the buckets
 			// fill or we run out of sequences.
 			while (inStream.hasNext() && this.fullCount < this.numBuckets) {
 				Sequence seq = inStream.next();
-				DnaKmers targetKmers = new DnaKmers(seq.getSequence());
-				double distance = this.sourceKmers.distance(targetKmers);
-				// Find the bucket for this distance.
-				OptionalInt iBucket = IntStream.range(0, this.numBuckets)
-						.filter(i -> this.bucketMax[i] > distance).findFirst();
-				// If there is no bucket, record a far genome. Otherwise, try to add it to the bucket.
-				if (iBucket.isEmpty())
-					this.farCount++;
-				else {
-					this.storeGenome(seq, iBucket.getAsInt());
-				}
-				inCount++;
-				// Check for a progress message.
-				long now = System.currentTimeMillis();
-				if (now - lastMsg >= 10000) {
-					log.info("{} genomes processed, {} kept, {} too far, {} full buckets, {} empty buckets.",
-							inCount, this.keptCount, this.farCount, this.fullCount, this.emptyCount);
-					lastMsg = now;
+				// Only proceed if this is not the primer.
+				if (! seq.getLabel().equals(this.primerID)) {
+					DnaKmers targetKmers = new DnaKmers(seq.getSequence());
+					double distance = this.sourceKmers.distance(targetKmers);
+					// Find the bucket for this distance.
+					OptionalInt iBucket = IntStream.range(0, this.numBuckets)
+							.filter(i -> this.bucketMax[i] > distance).findFirst();
+					// If there is no bucket, record a far genome. Otherwise, try to add it to the bucket.
+					if (iBucket.isEmpty())
+						this.farCount++;
+					else {
+						this.storeGenome(seq, iBucket.getAsInt());
+					}
+					inCount++;
+					// Check for a progress message.
+					long now = System.currentTimeMillis();
+					if (now - lastMsg >= 10000) {
+						log.info("{} genomes processed, {} kept, {} too far, {} full buckets, {} empty buckets.",
+								inCount, this.keptCount, this.farCount, this.fullCount, this.emptyCount);
+						lastMsg = now;
+					}
 				}
 			}
 			log.info("All done. {} genomes processed, {} kept, {} too far, {} full buckets, {} empty buckets.",
@@ -183,6 +209,8 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 		// Store the sequence in the first bucket.
 		String genome1 = this.storeGenome(firstSeq, 0);
 		log.info("First sequence processed from genome {}.", genome1);
+		// Save the primer ID.
+		this.primerID = firstSeq.getLabel();
 	}
 
 	/**
