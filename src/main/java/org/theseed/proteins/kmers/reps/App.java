@@ -42,6 +42,7 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  repTax			write the taxonomy report for a genome source
  *  neighbors		list the N closest neighboring representative genomes to all genomes in a source
  *  distDist		find a set of genomes that are various distributed distances from a key genome
+ *  buildFromGtos	build a representative genome database for all genomes in a source
  */
 public class App
 {
@@ -77,6 +78,7 @@ public class App
              "repTax", "write the taxonomy report for a genome source",
              "neighbors", "list the N closest neighboring representative genomes to all genomes in a source",
              "distDist", "find a set of genomes that are various distributed distances from a key genome",
+             "buildFromGtos", "build a representative genome database for all genomes in a source",
     };
 
     public static void main( String[] args )
@@ -86,6 +88,9 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
+        case "buildFromGtos" :
+            processor = new GtoRepBuildProcessor();
+            break;
         case "gtoReps" :
             processor = new GtoRepGenomeProcessor();
             break;
