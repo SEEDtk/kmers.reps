@@ -75,6 +75,8 @@ public class UniRoleProcessor extends BaseProcessor {
     private int minCount;
     /** estimated number of roles for map creation */
     private static final int ESTIMATED_ROLES = 5000;
+    /** valid domains for genomes */
+    private static final Set<String> DOMAINS = Set.of("Bacteria", "Archaea");
 
     // COMMAND-LINE OPTIONS
 
@@ -155,12 +157,16 @@ public class UniRoleProcessor extends BaseProcessor {
             // Loop through the genomes.
             int count = 0;
             int processed = 0;
+            int skipped = 0;
             for (String genomeId : this.genomeSet) {
                 Genome genome = this.genomes.getGenome(genomeId);
                 count++;
                 if (genome == null)
                     log.warn("Genome {} is missing from the input source.", genomeId);
-                else {
+                else if (! DOMAINS.contains(genome.getDomain())) {
+                    log.info("Skipping genome {}.", genome);
+                    skipped++;
+                } else {
                     log.info("Processing genome {} of {}: {}.", count, genomeSet.size(), genome);
                     // Count the role occurrences.
                     CountMap<String> gRoleCounts = new CountMap<String>();
@@ -190,6 +196,7 @@ public class UniRoleProcessor extends BaseProcessor {
                     processed++;
                 }
             }
+            log.info("{} genomes scanned, {} processed, {} skipped due to domain.", count, processed, skipped);
             if (this.roleCounts.size() == 0)
                 log.error("No singleton roles found.");
             else {
@@ -198,6 +205,7 @@ public class UniRoleProcessor extends BaseProcessor {
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
                     writer.println("role\tcount\tname\tmean_len\tsdev_len\tfamilies");
+                    writer.println("GENOMES\t" + processed + "\t\t\t\t");
                     // Loop through the roles of interest.
                     for (CountMap<String>.Count counter : this.roleCounts.sortedCounts()) {
                         int rCount = counter.getCount();
