@@ -57,6 +57,8 @@ public class GtoClassProcessor extends BaseReportProcessor {
     private GenomeSource genomes;
     /** list of repgen set names */
     private List<String> repGenNames;
+    /** set of legal domains */
+    private static final Set<String> LEGAL_DOMAINS = Set.of("Bacteria", "Archaea");
 
     // COMMAND-LINE OPTIONS
 
@@ -110,35 +112,40 @@ public class GtoClassProcessor extends BaseReportProcessor {
         for (Genome genome : this.genomes) {
             gCount++;
             log.info("Processing genome {} of {}: {}.", gCount, this.genomes.size(), genome);
-            // Find this genome's seed protein.
-            String protId = GenomeDescriptor.findSeed(genome);
-            if (protId == null) {
-                // Here there is no seed protein, so we skip the genome.
-                errorCount += repIds.length;
-            } else {
-                // Get the seed protein kmers.
-                Feature seed = genome.getFeature(protId);
-                ProteinKmers seedKmers = new ProteinKmers(seed.getProteinTranslation());
-                // Find all the representatives.
-                for (int i = 0; i < this.repGens.size(); i++) {
-                    RepGenomeDb.Representation rep = this.repGens.get(i).findClosest(seedKmers);
-                    if (rep.isRepresented()) {
-                        // Here we succeeded.
-                        repIds[i] = rep.getGenomeId();
-                        foundCount++;
-                        groupSets.get(i).add(rep.getGenomeId());
-                    } else {
-                        repIds[i] = genome.getId();
-                        errorCount++;
+            // Check the genome's domain.  We only want Bacteria and Archaea.
+            if (! LEGAL_DOMAINS.contains(genome.getDomain()))
+                log.info("Skipping genome {} because it is not in a legal domain ({}).", genome.getId(), genome.getDomain());
+            else {
+                // Find this genome's seed protein.
+                String protId = GenomeDescriptor.findSeed(genome);
+                if (protId == null) {
+                    // Here there is no seed protein, so we skip the genome.
+                    errorCount += repIds.length;
+                } else {
+                    // Get the seed protein kmers.
+                    Feature seed = genome.getFeature(protId);
+                    ProteinKmers seedKmers = new ProteinKmers(seed.getProteinTranslation());
+                    // Find all the representatives.
+                    for (int i = 0; i < this.repGens.size(); i++) {
+                        RepGenomeDb.Representation rep = this.repGens.get(i).findClosest(seedKmers);
+                        if (rep.isRepresented()) {
+                            // Here we succeeded.
+                            repIds[i] = rep.getGenomeId();
+                            foundCount++;
+                            groupSets.get(i).add(rep.getGenomeId());
+                        } else {
+                            repIds[i] = genome.getId();
+                            errorCount++;
+                        }
                     }
+                    // Write this genome's record.
+                    List<String> columns = new ArrayList<String>(repIds.length + 2);
+                    columns.add(genome.getId());
+                    columns.add(genome.getName());
+                    for (String repId : repIds)
+                        columns.add(repId);
+                    writer.println(StringUtils.join(columns, '\t'));
                 }
-                // Write this genome's record.
-                List<String> columns = new ArrayList<String>(repIds.length + 2);
-                columns.add(genome.getId());
-                columns.add(genome.getName());
-                for (String repId : repIds)
-                    columns.add(repId);
-                writer.println(StringUtils.join(columns, '\t'));
             }
         }
         log.info("{} genomes processed. {} representatives found; {} failures.", gCount, foundCount, errorCount);

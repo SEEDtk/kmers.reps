@@ -23,12 +23,14 @@ import org.theseed.sequence.ProteinKmers;
 
 /**
  * This command builds a representative-genome database with pre-selected representatives and a
- * specific universal protein for the seed.  If the protein does not exist in the representative
- * genome, it will be skipped.
+ * specific universal protein for the seed. In other words, it is assumed that your list
+ * of genomes is your repgen set. If the protein does not exist in a representative
+ * genome, it will be skipped. The main purpose for this is to take a repgen set for one
+ * protein and build an identical repgen database using a different protein.
  *
  * The positional parameters are the name of the genome source for the pre-selected representatives,
  * the name of the role definition file, and the name of the output rep-genome database.  The role file
- * should contain only a single role ID, but it may contain multiple defintions if the role has more
+ * should contain only a single role ID, but it may contain multiple definitions if the role has more
  * than one name.
  *
  * The command-line options are as follows.

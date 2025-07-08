@@ -11,7 +11,6 @@ import java.util.Collections;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
-import org.theseed.basic.ICommand;
 import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.utils.IntegerList;
 
@@ -36,7 +35,7 @@ import org.theseed.utils.IntegerList;
  * @author Bruce Parrello
  *
  */
-public class GenomeProcessor extends BaseGenomeProcessor implements ICommand {
+public class GenomeProcessor extends BaseGenomeProcessor {
 
     /** list of RepGen set thresholds */
     private IntegerList repSizes;

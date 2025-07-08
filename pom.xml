@@ -6,7 +6,7 @@
 
   <artifactId>kmers.reps</artifactId>
 
-  <name>proteins</name>
+  <name>kmers.reps</name>
   <description>Reference genome utilities</description>
   <url>https://patricbrc.org</url>
 
