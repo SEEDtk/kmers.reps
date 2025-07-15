@@ -57,7 +57,7 @@ public class UpdateProcessor extends BaseGenomeProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         this.checkParms();
         if (! this.inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
@@ -66,7 +66,6 @@ public class UpdateProcessor extends BaseGenomeProcessor {
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Evaluation result file " + this.inFile + " is not found or unreadable.");
         // Verify that the input directory
-        return true;
     }
 
     @Override

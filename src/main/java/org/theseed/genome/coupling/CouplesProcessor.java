@@ -138,7 +138,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         if (this.minWeight < 1)
             throw new ParseFailureException("Invalid minimum group size.  Must be at least 1.");
         this.validateConfiguration();
@@ -155,7 +155,6 @@ public class CouplesProcessor extends BaseCouplingProcessor {
         log.info("Connecting to genome source of type {} in {}.", this.sourceType, this.genomeDir);
         this.genomes = this.sourceType.create(this.genomeDir);
         log.info("{} genomes found in {}.", this.genomes.size(), this.genomeDir);
-        return true;
     }
 
     @Override

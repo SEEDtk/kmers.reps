@@ -71,7 +71,7 @@ public class UpdateMasterProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify the master directory.
         if (! this.p3MasterDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.p3MasterDir + " is not found or invalid.");
@@ -85,7 +85,6 @@ public class UpdateMasterProcessor extends BaseProcessor {
         this.pGenomes = objects.stream().collect(Collectors.toMap(x -> KeyBuffer.getString(x, "genome_id"),
                 x -> KeyBuffer.getString(x, "genome_name"), (x1,x2) -> x1));
         log.info("{} genomes found in PATRIC.", this.pGenomes.size());
-        return true;
     }
 
     @Override

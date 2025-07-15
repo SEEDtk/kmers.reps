@@ -62,13 +62,12 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify the input genome source.
         this.genomes = this.inType.create(this.gtoDir);
         // Setup the output/resume file.
         String header = "genome_id\tgenome_name\t" + StringUtils.join(funSeqNames, "\t");
         this.setup(header, "genome_id");
-        return true;
     }
 
     @Override

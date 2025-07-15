@@ -114,7 +114,7 @@ public class UniRoleProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify the role file.
         if (! this.roleFile.canRead())
             throw new FileNotFoundException("Role definition file " + this.roleFile + " not found or unreadable.");
@@ -144,7 +144,6 @@ public class UniRoleProcessor extends BaseProcessor {
         // Compute the output threshold.
         if (this.minPercent > 100.0)
             throw new ParseFailureException("Minimum percent must be <= 100");
-        return true;
     }
 
     @Override

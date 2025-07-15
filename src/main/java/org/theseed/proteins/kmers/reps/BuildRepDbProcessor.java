@@ -85,7 +85,7 @@ public class BuildRepDbProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify the kmer size.
         if (this.kmerSize < 3)
             throw new ParseFailureException("Kmer size must be at least 3.");
@@ -117,7 +117,6 @@ public class BuildRepDbProcessor extends BaseProcessor {
         // Finally, verify that we can write to the output file.
         if (this.outFile.exists() && ! this.outFile.canWrite())
             throw new IOException("Cannot write to output file " + this.outFile + ".");
-        return true;
     }
 
     @Override

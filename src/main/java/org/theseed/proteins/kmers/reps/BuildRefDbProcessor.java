@@ -73,7 +73,7 @@ public class BuildRefDbProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify the input file.
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Input file " + this.inFile + " not found or unreadable.");
@@ -104,7 +104,6 @@ public class BuildRefDbProcessor extends BaseProcessor {
             }
         }
         log.info("{} reference genomes found in file.", this.genomesIn.size());
-        return true;
     }
 
     @Override

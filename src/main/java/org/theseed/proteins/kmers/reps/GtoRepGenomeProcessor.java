@@ -138,7 +138,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         if (! this.gtoDir.exists())
             throw new FileNotFoundException("Input source " + this.gtoDir + " not found.");
         // Load the genome source.
@@ -189,7 +189,6 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             log.info("Output will be to {}.", this.outFile);
             this.outStream = new FileOutputStream(this.outFile);
         }
-        return true;
     }
 
     @Override

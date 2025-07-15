@@ -100,7 +100,7 @@ public class PrepareProcessor extends BaseCouplingProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Validate the base-class parameters.
         this.validateConfiguration();
         // Verify the input directory.
@@ -112,7 +112,6 @@ public class PrepareProcessor extends BaseCouplingProcessor {
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Input couplings file " + this.inFile + " is not found or unreadable.");
         this.readCouplingMap();
-        return true;
     }
 
     /**

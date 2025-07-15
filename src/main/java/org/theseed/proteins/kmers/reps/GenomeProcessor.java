@@ -60,11 +60,10 @@ public class GenomeProcessor extends BaseGenomeProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         this.checkParms();
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Input file " + this.inFile + " is not found or unreadable.");
-        return true;
     }
 
     @Override

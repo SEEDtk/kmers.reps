@@ -66,7 +66,7 @@ public class RepMatrixProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         // Set up the input FASTA.
         if (this.inFile != null)
             this.inStream = new FastaInputStream(this.inFile);
@@ -74,7 +74,6 @@ public class RepMatrixProcessor extends BaseProcessor {
             this.inStream = new FastaInputStream(System.in);
         // Set up to write the FASTA.
         this.outStream = new FastaOutputStream(System.out);
-        return true;
     }
 
     @Override

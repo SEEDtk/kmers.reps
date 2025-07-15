@@ -73,7 +73,7 @@ public class MD5Processor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         // Set up the input stream.
         if (this.inFile == null) {
             this.inStream = new TabbedLineReader(System.in);
@@ -84,7 +84,6 @@ public class MD5Processor extends BaseProcessor {
         }
         // Find the input column.
         this.gCol = this.inStream.findField(this.gColumn);
-        return true;
     }
 
     @Override

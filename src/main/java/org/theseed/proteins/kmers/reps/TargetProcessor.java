@@ -95,7 +95,7 @@ public class TargetProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         if (this.kmerSize < 3)
             throw new ParseFailureException("Kmer size must be >= 3.");
         if (! this.gtoDir.exists())
@@ -138,7 +138,6 @@ public class TargetProcessor extends BaseProcessor {
         // Set up the genome source.
         this.genomes = this.inType.create(this.gtoDir);
         log.info("{} genomes found in {}.", this.genomes.size(), this.gtoDir);
-        return true;
     }
 
     /**

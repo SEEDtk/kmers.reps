@@ -83,7 +83,7 @@ public class ClassifyProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         // Set up the input FASTA.
         if (this.inFile != null)
             this.inStream = new FastaInputStream(this.inFile);
@@ -93,7 +93,6 @@ public class ClassifyProcessor extends BaseProcessor {
         this.controlStream = new TabbedLineReader(this.controlFile, 2);
         // Create the group controller.
         this.groups = new KmerCollectionGroup();
-        return true;
     }
 
     @Override

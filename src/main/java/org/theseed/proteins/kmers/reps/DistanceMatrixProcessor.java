@@ -45,10 +45,9 @@ public class DistanceMatrixProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         if (! this.dbFile.canRead())
             throw new FileNotFoundException("RepDB file " + this.dbFile + " not found or unreadable.");
-        return true;
     }
 
     @Override
