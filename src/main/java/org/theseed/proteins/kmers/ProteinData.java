@@ -209,8 +209,10 @@ public class ProteinData implements Comparable<ProteinData> {
             // Insure we have the protein kmers.
             if (this.kmers == null)
                 this.kmers = new ProteinKmers(this.protein);
-            // Compute the representation.
-            retVal = repGenSet.findClosest(this.kmers);
+            if (retVal == null) {
+                // We need a new representative. Compute it here.
+                retVal = repGenSet.findClosest(this.kmers);
+            }
         }
         return retVal;
     }

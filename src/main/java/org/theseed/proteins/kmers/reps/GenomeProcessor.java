@@ -22,8 +22,6 @@ import org.theseed.utils.IntegerList;
  *
  * The positional parameters are the name of the output directory and the name of the input file.
  *
- * The following files are put into the output directory.
- *
  * The following command-line options are supported.
  *
  * -v	show more detailed log messages

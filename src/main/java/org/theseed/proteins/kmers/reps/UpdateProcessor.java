@@ -34,6 +34,8 @@ import org.theseed.proteins.kmers.ProteinDataFactory;
  *
  * -v	show more detailed log messages
  * -b	batch size for PATRIC queries
+ * 
+ * NOTE: due to a change in the way repgen sets are computed, this command no longer works
  *
  * @author Bruce Parrello
  *

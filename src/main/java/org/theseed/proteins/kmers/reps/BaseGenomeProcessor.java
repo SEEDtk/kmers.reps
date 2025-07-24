@@ -7,7 +7,9 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +76,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         YES,
         /** do not download GTOs */
         NO,
-        /** only download GTOs */
+        /** do not build repgens; only download GTOs */
         ONLY;
     }
 
@@ -133,31 +135,74 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
 
     /**
      * Separate the genomes into RepGen sets.  A set of genomes that do not need to be checked
-     * can be specified to improve performance in updates.
+     * can be specified to improve performance in updates. This is the place where the representative
+     * genomes are chosen.
+     * 
+     * We do one pass for each repgen set, starting with the smallest. Each larger set starts with
+     * the previous set's genomes pre-selected, so that the smaller set is always a subset of the
+     * larger one. To make this efficient, 
      *
      * @param skipSet	IDs of genomes that do not need to be checked
      */
     protected void collateGenomes(Set<String> skipSet) {
         log.info("Sorting genomes into repgen sets.");
-        int genomeCount = 0;
+        Iterator<RepGenomeDb> iter = this.repGenSets.iterator();
+        RepGenomeDb repGenDb = iter.next();
+        this.buildRepGenSet(repGenDb, skipSet);
+        while (iter.hasNext()) {
+            RepGenomeDb newRepGenDb = iter.next();
+            copyReps(repGenDb, newRepGenDb);
+            repGenDb = newRepGenDb;
+            // We can't skip anything for the larger sets. Because of the subsetting requirement,
+            // we only get to reuse the data from the smallest set.
+            this.buildRepGenSet(repGenDb, Collections.emptySet());
+        }
+    }
+
+    /**
+     * Copy all the representatives from the incoming repgen set to a new repgen database.
+     * 
+     * @param repGenDb      source repgen database
+     * @param newRepGenDb   target repgen database
+     */
+    public static void copyReps(RepGenomeDb repGenDb, RepGenomeDb newRepGenDb) {
+        for (RepGenome rep : repGenDb)
+            newRepGenDb.addRep(rep);
+        log.info("{} representatives copied from {} into {}.", repGenDb.size(), repGenDb, newRepGenDb);
+    }
+
+    /**
+     * Check all the genomes not in the skip set to find out if they qualify as representatives.
+     * 
+     * @param repGenDb  target representative-genome database
+     * @param skipSet   set of genome IDs for genomes to skip
+     */
+    private void buildRepGenSet(RepGenomeDb repGenDb, Set<String> skipSet) {
         long start = System.currentTimeMillis();
         int batchCount = this.batchSize;
+        int sim = repGenDb.getThreshold();
+        int genomeCount = 0;
+        // First, make all genomes in the set represent themselves. This gives us a minor performance
+        // boost.
+        log.info("Initializing default representation for rep{}.", sim);
+        for (RepGenome rep : repGenDb) {
+            String repId = rep.getGenomeId();
+            ProteinData genomeData = this.genomeList.getGenome(repId);
+            genomeData.setRepresentation(repGenDb, repId, RepGenome.INFINITY, 0.0);
+        }
+        log.info("Processing rep{} set with {} starting representatives.", sim, repGenDb.size());
         for (ProteinData genomeData : this.genomeList) {
             genomeCount++;
             if (! skipSet.contains(genomeData.getGenomeId())) {
                 RepGenome rep = new RepGenome(genomeData.getFid(), genomeData.getGenomeName(),
                         genomeData.getProtein());
-                for (RepGenomeDb repGen : this.repGenSets) {
-                    int sim = repGen.getThreshold();
-                    if (! genomeData.checkRepresented(sim) && ! repGen.checkSimilarity(rep, sim)) {
-                        repGen.addRep(rep);
-                    }
-                }
+                if (! genomeData.checkRepresented(sim) && ! repGenDb.checkSimilarity(rep, sim))
+                    repGenDb.addRep(rep);
                 batchCount--;
                 if (batchCount == 0) {
                     double rate = genomeCount * 1000.0 / ((double) (System.currentTimeMillis() - start));
-                    log.info("{} genomes out of {} processed. {} genomes/second.",
-                            genomeCount, this.genomeList.size(), rate);
+                    log.info("{} genomes out of {} processed for rep{}. {} genomes/second.",
+                            genomeCount, this.genomeList.size(), sim, rate);
                     batchCount = this.batchSize;
                 }
             }
@@ -483,7 +528,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         this.genomeList.prune(this.minRating);
         log.info("{} good genomes remaining after finishing.", this.genomeList.size());
         // Finally, the stats file.
-        File statsFile = new File(this.outDir, "patric.stats.tbl");
+        File statsFile = new File(this.outDir, "bvbrc.final.stats.tbl");
         this.genomeList.writeStats(statsFile);
         return this.genomeList;
     }
@@ -540,7 +585,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         int[] repLevels = this.repGenSets.stream().mapToInt(x -> x.getThreshold()).toArray();
         String headers = Arrays.stream(repLevels).mapToObj(x -> String.format("rep%d", x))
                 .collect(Collectors.joining("\t"));
-        File goodFile = new File(this.outDir, "patric.good.tbl");
+        File goodFile = new File(this.outDir, "bvbrc.good.tbl");
         try (PrintWriter writer = new PrintWriter(goodFile)) {
             // Write the header.
             writer.println("genome_id\tname\tdomain\tgenus\tspecies\tscore\trating\t" + headers);
@@ -741,7 +786,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * @throws IOException
      */
     public void writeGenomeReport() throws IOException {
-        File gReportFile = new File(this.outDir, "patric.genome.tbl");
+        File gReportFile = new File(this.outDir, "bvbrc.genome.tbl");
         this.genomeList.writeReport(gReportFile);
     }
 

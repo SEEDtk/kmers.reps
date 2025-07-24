@@ -541,7 +541,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         try (PrintWriter writer = new PrintWriter(file)) {
             writer.println(ProteinData.getHeader(this));
             for (var protein : this.master)
-                protein.getLine(this);
+                writer.println(protein.getLine(this));
         }
     }
 

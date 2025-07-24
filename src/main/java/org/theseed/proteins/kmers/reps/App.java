@@ -19,7 +19,6 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *	group			Analyze proteins and group them together.
  *  classify		Compare proteins to multiple protein lists
  *  genomes			Process genome evaluation results
- *  update			Process incremental genome evaluation results
  *  md5				Compute genome MD5s
  *  coupling		Compute functional coupling for a set of genomes
  *  prepare			Prepare a GTO directory for use in the coupling website
@@ -43,6 +42,8 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  neighbors		list the N closest neighboring representative genomes to all genomes in a source
  *  distDist		find a set of genomes that are various distributed distances from a key genome
  *  buildFromGtos	build a representative genome database for all genomes in a source
+ *  hiCheck         check the master representation list to see which genomes violate repgen hierarchy
+ *  repSub          validate the repgen sets to insure they are hierarchical
  */
 public class App
 {
@@ -55,7 +56,7 @@ public class App
              "group", "Analyze proteins and group them together.",
              "classify", "Compare proteins to multiple protein lists",
              "genomes", "Process genome evaluation results",
-             "update", "Process incremental genome evaluation results",
+//           "update", "Process incremental genome evaluation results",
              "md5", "Compute genome MD5s",
              "coupling", "Compute functional coupling for a set of genomes",
              "prepare", "Prepare a GTO directory for use in the coupling website",
@@ -79,6 +80,8 @@ public class App
              "neighbors", "list the N closest neighboring representative genomes to all genomes in a source",
              "distDist", "find a set of genomes that are various distributed distances from a key genome",
              "buildFromGtos", "build a representative genome database for all genomes in a source",
+             "hiCheck", "check the master representation list to see which genomes violate repgen hierarchy",
+             "repSub", "validate the repgen sets to insure they are hierarchical"
     };
 
     public static void main( String[] args )
@@ -112,9 +115,9 @@ public class App
         case "genomes" :
             processor = new GenomeProcessor();
             break;
-        case "update" :
-            processor = new UpdateProcessor();
-            break;
+//      case "update" :
+//          processor = new UpdateProcessor();
+//          break;
         case "md5" :
             processor = new MD5Processor();
             break;
@@ -181,6 +184,12 @@ public class App
         case "distDist" :
         	processor = new DistributedDistanceProcessor();
         	break;
+        case "hiCheck" :
+            processor = new HierarchyCheckProcessor();
+            break;
+        case "repSub" :
+            processor = new RepGenSubCheckProcessor();
+            break;
         case "-h" :
         case "--help" :
             processor = null;
