@@ -28,7 +28,7 @@ import org.theseed.basic.BaseProcessor;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Genome;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3CursorConnection;
 import org.theseed.p3api.P3Genome;
 import org.theseed.proteins.kmers.IRepGenContainer;
 import org.theseed.proteins.kmers.ProteinData;
@@ -728,7 +728,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      */
     public void saveNewGTOs() throws IOException {
         // Connect to PATRIC.
-        P3Connection p3 = new P3Connection();
+        P3CursorConnection p3 = new P3CursorConnection();
         // Loop through all the genomes doing the downloads.
         int gCount = 0;
         for (var repEntry : repHash.entrySet()) {

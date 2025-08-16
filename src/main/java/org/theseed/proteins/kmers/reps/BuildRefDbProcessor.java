@@ -16,7 +16,7 @@ import org.kohsuke.args4j.Option;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.GenomeMultiDirectory;
-import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3CursorConnection;
 import org.theseed.p3api.P3Genome;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
@@ -111,7 +111,7 @@ public class BuildRefDbProcessor extends BaseProcessor {
         // This part is very simple.  We need to get all the listed genomes from PATRIC and put them
         // in the output directory.  First, we need a PATRIC connection.
         log.info("Connecting to PATRIC.");
-        var p3 = new P3Connection();
+        var p3 = new P3CursorConnection();
         // If the output directory has genomes in it, we need to do some pre-cleaning.  Note that we
         // do the check only for performance reasons.  The code would still work, it just wouldn't do
         // anything.

@@ -21,7 +21,7 @@ import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeMultiDirectory;
 import org.theseed.p3api.KeyBuffer;
-import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3CursorConnection;
 import org.theseed.p3api.P3Genome;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -53,7 +53,7 @@ public class UpdateMasterProcessor extends BaseProcessor {
     /** scale faster for list size */
     private static final double LOAD_FACTOR = 1.3;
     /** PATRIC connection */
-    private P3Connection p3;
+    private P3CursorConnection p3;
 
     // COMMAND-LINE OPTIONS
 
@@ -78,7 +78,7 @@ public class UpdateMasterProcessor extends BaseProcessor {
         log.info("Loading master directory {}.", this.p3MasterDir);
         this.pMaster = new GenomeMultiDirectory(this.p3MasterDir);
         // Get the PATRIC genome list.  We convert it to an ID -> name map, keeping the first if there is a conflict.
-        this.p3 = new P3Connection();
+        this.p3 = new P3CursorConnection();
         int predicted = (int) (LOAD_FACTOR * this.pMaster.size());
         List<JsonObject> objects = new ArrayList<JsonObject>(predicted);
         p3.addAllProkaryotes(objects);
