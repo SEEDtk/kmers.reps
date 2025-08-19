@@ -100,7 +100,7 @@ public class SsuRepGenomeProcessor extends BaseReportProcessor {
     @Override
     protected void runReporter(PrintWriter writer) throws Exception {
         // Load the SSUs.
-        this.ssuList = new HashSet<SsuGenome>(2000);
+        this.ssuList = new HashSet<>(2000);
         log.info("Loading SSUs from {}.", this.ssuFile);
         try (TabbedLineReader ssuStream = new TabbedLineReader(this.ssuFile)) {
             int ssuCol = ssuStream.findField("ssu_rna");

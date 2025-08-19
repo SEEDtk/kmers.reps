@@ -2,11 +2,11 @@ package org.theseed.proteins.kmers.reps;
 
 import java.util.Arrays;
 
-import org.theseed.proteins.UniRoleProcessor;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.genome.MD5Processor;
 import org.theseed.genome.coupling.CouplesProcessor;
 import org.theseed.genome.coupling.PrepareProcessor;
+import org.theseed.proteins.UniRoleProcessor;
 import org.theseed.sequence.RnaVerifyProcessor;
 
 /**
@@ -91,112 +91,44 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
-        case "buildFromGtos" :
-            processor = new GtoRepBuildProcessor();
-            break;
-        case "gtoReps" :
-            processor = new GtoRepGenomeProcessor();
-            break;
-        case "ssuReps" :
-            processor = new SsuRepGenomeProcessor();
-            break;
-        case "distances" :
-            processor = new DistanceMatrixProcessor();
-            break;
-        case "repdb" :
-            processor = new RepGenomeDbProcessor();
-            break;
-        case "group" :
-            processor = new RepMatrixProcessor();
-            break;
-        case "classify" :
-            processor = new ClassifyProcessor();
-            break;
-        case "genomes" :
-            processor = new GenomeProcessor();
-            break;
+        case "buildFromGtos" -> processor = new GtoRepBuildProcessor();
+        case "gtoReps" -> processor = new GtoRepGenomeProcessor();
+        case "ssuReps" -> processor = new SsuRepGenomeProcessor();
+        case "distances" -> processor = new DistanceMatrixProcessor();
+        case "repdb" -> processor = new RepGenomeDbProcessor();
+        case "group" -> processor = new RepMatrixProcessor();
+        case "classify" -> processor = new ClassifyProcessor();
+        case "genomes" -> processor = new GenomeProcessor();
+        case "md5" -> processor = new MD5Processor();
+        case "coupling" -> processor = new CouplesProcessor();
+        case "prepare" -> processor = new PrepareProcessor();
+        case "seqTable" -> processor = new SeqTableProcessor();
+        case "seqComp" -> processor = new SeqCompProcessor();
+        case "seqTest" -> processor = new SeqTestProcessor();
+        case "target" -> processor = new TargetProcessor();
+        case "univ" -> processor = new UniRoleProcessor();
+        case "missing" -> processor = new MissingRoleProcessor();
+        case "gtoClass" -> processor = new GtoClassProcessor();
+        case "ssuCheck" -> processor = new BadRnaProcessor();
+        case "prio" -> processor = new PrioritizeProcessor();
+        case "list" -> processor = new ListProcessor();
+        case "rnaVerify" -> processor = new RnaVerifyProcessor();
+        case "seedTable" -> processor = new SeedTableProcessor();
+        case "build" -> processor = new BuildRepDbProcessor();
+        case "buildRefDb" -> processor = new BuildRefDbProcessor();
+        case "updateMaster" -> processor = new UpdateMasterProcessor();
+        case "taxReport" -> processor = new TaxReportProcessor();
+        case "repTax" -> processor = new RepTaxProcessor();
+        case "neighbors" -> processor = new NeighborProcessor();
+        case "distDist" -> processor = new DistributedDistanceProcessor();
+        case "hiCheck" -> processor = new HierarchyCheckProcessor();
+        case "repSub" -> processor = new RepGenSubCheckProcessor();
+        case "-h", "--help" -> processor = null;
+        default -> throw new RuntimeException("Invalid command " + command + ".");
+        }
 //      case "update" :
 //          processor = new UpdateProcessor();
 //          break;
-        case "md5" :
-            processor = new MD5Processor();
-            break;
-        case "coupling" :
-            processor = new CouplesProcessor();
-            break;
-        case "prepare" :
-            processor = new PrepareProcessor();
-            break;
-        case "seqTable" :
-            processor = new SeqTableProcessor();
-            break;
-        case "seqComp" :
-            processor = new SeqCompProcessor();
-            break;
-        case "seqTest" :
-            processor = new SeqTestProcessor();
-            break;
-        case "target" :
-            processor = new TargetProcessor();
-            break;
-        case "univ" :
-            processor = new UniRoleProcessor();
-            break;
-        case "missing" :
-            processor = new MissingRoleProcessor();
-            break;
-        case "gtoClass" :
-            processor = new GtoClassProcessor();
-            break;
-        case "ssuCheck" :
-            processor = new BadRnaProcessor();
-            break;
-        case "prio" :
-            processor = new PrioritizeProcessor();
-            break;
-        case "list" :
-            processor = new ListProcessor();
-            break;
-        case "rnaVerify" :
-            processor = new RnaVerifyProcessor();
-            break;
-        case "seedTable" :
-            processor = new SeedTableProcessor();
-            break;
-        case "build" :
-            processor = new BuildRepDbProcessor();
-            break;
-        case "buildRefDb" :
-            processor = new BuildRefDbProcessor();
-            break;
-        case "updateMaster" :
-            processor = new UpdateMasterProcessor();
-            break;
-        case "taxReport" :
-            processor = new TaxReportProcessor();
-            break;
-        case "repTax" :
-            processor = new RepTaxProcessor();
-            break;
-        case "neighbors" :
-            processor = new NeighborProcessor();
-            break;
-        case "distDist" :
-        	processor = new DistributedDistanceProcessor();
-        	break;
-        case "hiCheck" :
-            processor = new HierarchyCheckProcessor();
-            break;
-        case "repSub" :
-            processor = new RepGenSubCheckProcessor();
-            break;
-        case "-h" :
-        case "--help" :
-            processor = null;
-            break;
-        default :
-            throw new RuntimeException("Invalid command " + command + ".");
-        }
         if (processor == null)
             BaseProcessor.showCommands(COMMANDS);
         else {

@@ -7,8 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
-import org.kohsuke.args4j.Option;
+
 import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseReportProcessor;
@@ -17,9 +18,9 @@ import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.GenomeDescriptor;
 import org.theseed.sequence.GenomeDescriptorSet;
+import org.theseed.sequence.GenomeDescriptorSet.Rating;
 import org.theseed.sequence.GenomeDescriptorSource;
 import org.theseed.sequence.ProteinKmers;
-import org.theseed.sequence.GenomeDescriptorSet.Rating;
 
 /**
  * This command compares a set of genomes in a genome source to a four-column table produced by the "seqTable" command-- the

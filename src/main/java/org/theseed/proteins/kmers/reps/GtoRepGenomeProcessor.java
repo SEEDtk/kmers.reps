@@ -162,7 +162,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
         // If there is a filter file, create the filter set.
         if (this.filterFile == null) {
             log.info("All input genomes will be processed.");
-            this.idList = new ArrayList<String>(this.source.getIDs());
+            this.idList = new ArrayList<>(this.source.getIDs());
         } else {
             this.idList = TabbedLineReader.readColumn(this.filterFile, "1");
             log.info("{} genomes specified in filter file {}.", this.idList.size(), this.filterFile);
@@ -197,7 +197,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
             // Start the output report.
             writer.println("genome_id\tgenome_name\trep_id\trep_name\tsimilarity\tdistance\toutlier");
             // Set up the deferral list.
-            this.deferrals = new ArrayList<RepGenome>(2000);
+            this.deferrals = new ArrayList<>(2000);
             // Now read through the genome directory.
             log.info("Scanning genome directory {}.", this.gtoDir);
             int skipCount = 0;

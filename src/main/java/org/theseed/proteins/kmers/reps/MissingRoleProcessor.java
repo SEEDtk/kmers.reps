@@ -97,7 +97,7 @@ public class MissingRoleProcessor extends BaseReportProcessor {
         // We need to create the role map.  This is a two-stage process. First, we read the universal roles.  Next,
         // we create the real role map by keeping only the role definitions for the universals.  The key thing here
         // is that some role IDs have aliases, and will be added multiple times.
-        Set<String> uniRoles = new HashSet<String>(300);
+        Set<String> uniRoles = new HashSet<>(300);
         try (TabbedLineReader reader = new TabbedLineReader(this.sourFile)) {
             for (TabbedLineReader.Line line : reader)
                 uniRoles.add(line.get(0));
@@ -130,7 +130,7 @@ public class MissingRoleProcessor extends BaseReportProcessor {
             count++;
             log.info("Processing genome {} of {}:  {}", count, this.source.size(), genome);
             // Loop through the features, collecting universal role counts.
-            CountMap<String> roleCounts = new CountMap<String>();
+            CountMap<String> roleCounts = new CountMap<>();
             for (Feature feat : genome.getPegs()) {
                 // Note that the map contains only universal roles, so ONLY universals will
                 // be found here.
