@@ -40,7 +40,7 @@ public class SeqTableProcessor extends RestartableBaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(SeqTableProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(SeqTableProcessor.class);
     /** input genome source */
     private GenomeSource genomes;
     /** list of sequence names */

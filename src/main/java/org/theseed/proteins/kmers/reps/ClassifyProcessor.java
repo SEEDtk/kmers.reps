@@ -45,7 +45,7 @@ public class ClassifyProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(ClassifyProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(ClassifyProcessor.class);
     /** input FASTA stream */
     FastaInputStream inStream;
     /** input control file stream */

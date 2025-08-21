@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader;
 
@@ -18,6 +20,10 @@ import org.theseed.io.TabbedLineReader;
  *
  */
 public class TestLocalFamilyFeatureClass extends MapFeatureClass {
+
+    // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(TestLocalFamilyFeatureClass.class);
 
     public TestLocalFamilyFeatureClass(FeatureClass.IParms processor) {
         super();

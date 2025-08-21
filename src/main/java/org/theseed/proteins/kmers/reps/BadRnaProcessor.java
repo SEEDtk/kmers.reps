@@ -46,7 +46,7 @@ public class BadRnaProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(BadRnaProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(BadRnaProcessor.class);
     /** map of reference genomes to genome descriptors */
     private Map<String, GenomeDescriptor> referenceMap;
     /** output reporting object */

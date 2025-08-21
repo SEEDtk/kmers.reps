@@ -55,7 +55,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(RnaVerifyProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(RnaVerifyProcessor.class);
     /** input file reader */
     private TabbedLineReader inStream;
     /** genome ID column index */

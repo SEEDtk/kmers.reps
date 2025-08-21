@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.GenomeMultiDirectory;
@@ -48,6 +50,8 @@ import org.theseed.sequence.Sequence;
 public class BuildRefDbProcessor extends BaseProcessor {
 
     // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(BuildRefDbProcessor.class);
     /** output master directory */
     private GenomeMultiDirectory outputGenomes;
     /** input genome list */
@@ -93,7 +97,7 @@ public class BuildRefDbProcessor extends BaseProcessor {
         // Finally, we need to read in the genome list and copy the FASTA file to the master directory.
         log.info("Analyzing FASTA input file {}.", this.inFile);
         File fastaOutFile = new File(this.outDir, "refGenomes.fa");
-        this.genomesIn = new TreeMap<String, String>();
+        this.genomesIn = new TreeMap<>();
         try (FastaInputStream fastaIn = new FastaInputStream(this.inFile);
                 FastaOutputStream fastaOut = new FastaOutputStream(fastaOutFile)) {
             for (Sequence seq : fastaIn) {

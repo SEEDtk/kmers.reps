@@ -28,7 +28,7 @@ public class WhitePairFilter extends PairFilter {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(WhitePairFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(WhitePairFilter.class);
     /** set of acceptable classes */
     private Set<String> whiteSet;
 

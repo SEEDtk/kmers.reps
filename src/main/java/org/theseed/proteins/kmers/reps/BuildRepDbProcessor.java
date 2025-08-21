@@ -47,7 +47,7 @@ public class BuildRepDbProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(BuildRepDbProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(BuildRepDbProcessor.class);
     /** rep-genome database being built */
     private RepGenomeDb repDb;
     /** source for input genomes */

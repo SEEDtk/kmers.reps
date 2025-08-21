@@ -9,8 +9,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.theseed.genome.Genome;
 import org.theseed.proteins.Role;
 import org.theseed.proteins.RoleType;
@@ -25,12 +23,10 @@ import org.theseed.proteins.RoleType;
 public class TaxonBasedMissingRoleReporter extends MissingRoleReporter {
 
     // FIELDS
-    /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TaxonBasedMissingRoleReporter.class);
     /** output role data queue */
     private SortedSet<RoleData> dataLines;
     /** type of roles to report */
-    private Set<RoleType> allowed;
+    private final Set<RoleType> allowed;
 
     /**
      * Create a report for the specified role types.
@@ -40,7 +36,7 @@ public class TaxonBasedMissingRoleReporter extends MissingRoleReporter {
      */
     public TaxonBasedMissingRoleReporter(PrintWriter writer, RoleType... roleTypes) {
         super(writer);
-        this.allowed = new TreeSet<RoleType>(Arrays.asList(roleTypes));
+        this.allowed = new TreeSet<>(Arrays.asList(roleTypes));
     }
 
     @Override
@@ -48,7 +44,7 @@ public class TaxonBasedMissingRoleReporter extends MissingRoleReporter {
         // Write the header.
         this.println(RoleData.getHeader());
         // Create the data line tree.
-        this.dataLines = new TreeSet<RoleData>();
+        this.dataLines = new TreeSet<>();
     }
 
     @Override

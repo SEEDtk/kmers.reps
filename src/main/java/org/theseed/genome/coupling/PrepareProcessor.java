@@ -74,7 +74,7 @@ public class PrepareProcessor extends BaseCouplingProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(PrepareProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(PrepareProcessor.class);
     /** input directory */
     private GenomeDirectory inputGenomes;
     /** coupling map, keyed by protein family with protein family target IDs */

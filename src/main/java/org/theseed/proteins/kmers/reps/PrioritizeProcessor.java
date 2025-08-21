@@ -40,7 +40,7 @@ public class PrioritizeProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(PrioritizeProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(PrioritizeProcessor.class);
     /** set of IDs in the first file */
     private Set<String> priorityIDs;
     /** list of IDs in the second file that are not in the first file */

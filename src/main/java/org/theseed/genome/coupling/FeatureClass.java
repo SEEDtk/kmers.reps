@@ -11,8 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
@@ -30,11 +28,6 @@ import org.theseed.locations.Location;
  *
  */
 public abstract class FeatureClass {
-
-    // FIELDS
-    /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(FeatureClass.class);
-
 
     /**
      * This enumerates the valid classification types.
@@ -137,9 +130,9 @@ public abstract class FeatureClass {
      */
     public List<Result> getResults(Genome genome) {
         Collection<Feature> feats = genome.getFeatures();
-        List<Result> retVal = new ArrayList<Result>(feats.size());
+        List<Result> retVal = new ArrayList<>(feats.size());
         // We will compute the weights in here.
-        CountMap<String> weightMap = new CountMap<String>();
+        CountMap<String> weightMap = new CountMap<>();
         // Loop through the features, creating results for each.
         for (Feature feat : feats) {
             Result res = this.getClasses(feat);
@@ -162,11 +155,11 @@ public abstract class FeatureClass {
 
         // FIELDS
         /** ID of the feature that produced the classifications */
-        private String fid;
+        private final String fid;
         /** location of the feature */
-        private Location loc;
+        private final Location loc;
         /** list of classes found */
-        private Set<String> classes;
+        private final Set<String> classes;
         /** map of class occurrence counts */
         private CountMap<String> weightMap;
 
@@ -178,7 +171,7 @@ public abstract class FeatureClass {
         protected Result(Feature feat) {
             this.fid = feat.getId();
             this.loc = feat.getLocation();
-            this.classes = new HashSet<String>(5);
+            this.classes = new HashSet<>(5);
             this.weightMap = null;
         }
 
@@ -277,7 +270,7 @@ public abstract class FeatureClass {
          * @return TRUE if the result has any classes in it
          */
         public boolean isGood() {
-            return this.classes.size() > 0;
+            return !this.classes.isEmpty();
         }
 
         /**
@@ -329,9 +322,9 @@ public abstract class FeatureClass {
 
         // FIELDS
         /** first class */
-        private String class1;
+        private final String class1;
         /** second class */
-        private String class2;
+        private final String class2;
 
         /**
          * Construct a pair.
@@ -350,6 +343,7 @@ public abstract class FeatureClass {
         /**
          * @return the name of this pair for reports
          */
+        @Override
         public String toString() {
             return FeatureClass.this.getName(this.class1) + "\t" + FeatureClass.this.getName(this.class2);
         }
@@ -412,7 +406,7 @@ public abstract class FeatureClass {
 
         // FIELDS
         /** set of genomes with this class pair */
-        private Set<String> genomes;
+        private final Set<String> genomes;
         /** weight of the pair */
         private double weight;
         /** subsystem match score */
@@ -424,7 +418,7 @@ public abstract class FeatureClass {
          * Create a pair datum.
          */
         public PairData() {
-            this.genomes = new HashSet<String>(10);
+            this.genomes = new HashSet<>(10);
             this.weight = 0.0;
             this.subFail = 0;
             this.subMatch = 0;

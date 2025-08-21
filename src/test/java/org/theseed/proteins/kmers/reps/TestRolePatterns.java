@@ -25,7 +25,7 @@ import org.theseed.sequence.GenomeDescriptor;
 public class TestRolePatterns {
 
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TestRolePatterns.class);
+    private static final Logger log = LoggerFactory.getLogger(TestRolePatterns.class);
 
 
     @Test

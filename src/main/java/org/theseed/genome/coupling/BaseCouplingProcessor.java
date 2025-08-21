@@ -31,7 +31,7 @@ public abstract class BaseCouplingProcessor extends BaseProcessor implements Fea
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(BaseCouplingProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(BaseCouplingProcessor.class);
     /** feature classifier */
     private FeatureClass classifier;
     /** neighbor finder */

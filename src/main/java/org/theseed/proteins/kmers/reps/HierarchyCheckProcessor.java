@@ -45,7 +45,7 @@ public class HierarchyCheckProcessor extends BaseMultiReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(HierarchyCheckProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(HierarchyCheckProcessor.class);
     /** map of representative genomes to parent representatives */
     private Map<String, String[]> hierarchyMap;
     /** list of repgen set names, in column order */

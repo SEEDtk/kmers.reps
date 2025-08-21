@@ -15,8 +15,6 @@ import org.apache.commons.math3.stat.correlation.KendallsCorrelation;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.commons.math3.util.DoubleArray;
 import org.apache.commons.math3.util.ResizableDoubleArray;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This error summary report computes a Kendall Tau Correlation comparing the ranking of the SSU rRNA distances and the PheS
@@ -28,26 +26,24 @@ import org.slf4j.LoggerFactory;
 public class KendallSummaryReport extends ErrorSummaryReport {
 
     // FIELDS
-    /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(KendallSummaryReport.class);
     /** map of genome IDs to genome names */
-    private Map<String, String> nameMap;
+    private final Map<String, String> nameMap;
     /** Kendall Tau computation engine */
-    private KendallsCorrelation computer;
+    private final KendallsCorrelation computer;
     /** Pearson correlation computation engine */
-    private PearsonsCorrelation pComputer;
+    private final PearsonsCorrelation pComputer;
     /** map of genome IDs to correlation lists */
-    private Map<String, Distances> distanceMap;
+    private final Map<String, Distances> distanceMap;
     /** output file for report */
-    private File outFile;
+    private final File outFile;
     /** estimated number of genomes */
     private static final int ESTIMATED_GENOMES = 1000;
 
 
     public KendallSummaryReport(File summaryFile) {
         this.outFile = summaryFile;
-        this.nameMap = new HashMap<String, String>(ESTIMATED_GENOMES);
-        this.distanceMap = new HashMap<String, Distances>(ESTIMATED_GENOMES);
+        this.nameMap = new HashMap<>(ESTIMATED_GENOMES);
+        this.distanceMap = new HashMap<>(ESTIMATED_GENOMES);
         this.computer = new KendallsCorrelation();
         this.pComputer = new PearsonsCorrelation();
     }
@@ -78,7 +74,7 @@ public class KendallSummaryReport extends ErrorSummaryReport {
     @Override
     public void writeReport() throws IOException {
         // Sort the distances.
-        SortedSet<Distances> distanceList = new TreeSet<Distances>(this.distanceMap.values());
+        SortedSet<Distances> distanceList = new TreeSet<>(this.distanceMap.values());
         try (PrintWriter writer = new PrintWriter(this.outFile)) {
             writer.println("genome_id\tgenome_name\ttau_corr\tpearson");
             for (Distances dist : distanceList) {
@@ -94,9 +90,9 @@ public class KendallSummaryReport extends ErrorSummaryReport {
      */
     private class Distances implements Comparable<Distances> {
 
-        private String genomeId;
-        private DoubleArray protDists;
-        private DoubleArray rnaDists;
+        private final String genomeId;
+        private final DoubleArray protDists;
+        private final DoubleArray rnaDists;
         private boolean computed;
         private double tau;
         private double pc;

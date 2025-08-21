@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
@@ -36,7 +38,8 @@ import org.theseed.sequence.Sequence;
 public class RepMatrixProcessor extends BaseProcessor {
 
     // FIELDS
-
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(RepMatrixProcessor.class);
     /** input FASTA stream */
     FastaInputStream inStream;
     /** output FASTA stream */
@@ -80,7 +83,7 @@ public class RepMatrixProcessor extends BaseProcessor {
     protected void runCommand() throws Exception {
         try {
             // The sequences will be stored in here.
-            List<SequenceInfo> sequenceList = new ArrayList<SequenceInfo>(1000);
+            List<SequenceInfo> sequenceList = new ArrayList<>(1000);
             // Loop through the input.
             for (Sequence seq : inStream) {
                 log.debug("Processing sequence {}.", seq.getLabel());

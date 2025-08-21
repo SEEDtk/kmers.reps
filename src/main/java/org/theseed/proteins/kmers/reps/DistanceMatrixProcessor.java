@@ -29,7 +29,7 @@ public class DistanceMatrixProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(DistanceMatrixProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(DistanceMatrixProcessor.class);
     /** target representative-genome database */
     private RepGenomeDb repDB;
 

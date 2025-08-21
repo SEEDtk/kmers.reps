@@ -24,6 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Genome;
@@ -48,6 +50,8 @@ import org.theseed.stats.QualityCountMap;
 public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepGenContainer {
 
     // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(BaseGenomeProcessor.class);
     /** manager for key data about each genome and its seed protein */
     private ProteinDataFactory genomeList;
     /** list of repgen sets */
@@ -59,7 +63,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
     /** groups for last repgen set */
     private Map<String, List<ProteinData>> repFinderSets;
     /** map of representative genomes to the directories where they belong */
-    private Map<String, List<File>> repHash;
+    private final Map<String, List<File>> repHash;
     /** header line for four-column table containing SSUs */
     private static final String FOUR_COLUMN_HEADER = "genome_id\tgenome_name\tseed_protein\tssu_rna\tseed_dna";
     /** file name pattern for GTOs */
@@ -121,7 +125,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
 
     public BaseGenomeProcessor() {
         super();
-        this.repHash = new TreeMap<String, List<File>>();
+        this.repHash = new TreeMap<>();
     }
 
     /**
@@ -255,7 +259,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         int repIdx = this.repGenSets.size() - 1;
         RepGenomeDb repGenSet = this.repGenSets.get(repIdx);
         // Create a count map for the repgen sets.  We output the first two in each.
-        CountMap<String> repCounts = new CountMap<String>();
+        CountMap<String> repCounts = new CountMap<>();
         // Open the output file.
         try (FastaOutputStream fastaStream = new FastaOutputStream(new File(this.outDir, "refGenomes.fa"))) {
             int seqsOut = 0;
@@ -340,11 +344,11 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * @throws FileNotFoundException
      */
     protected void writeListFiles() throws FileNotFoundException {
-        List<PrintWriter> listFiles = new ArrayList<PrintWriter>(this.repGenSets.size());
-        this.statMaps = new ArrayList<QualityCountMap<String>>(this.repGenSets.size());
+        List<PrintWriter> listFiles = new ArrayList<>(this.repGenSets.size());
+        this.statMaps = new ArrayList<>(this.repGenSets.size());
         // Here we save the groups for the last repgen set.
         this.lastRepGen = this.repGenSets.get(this.repGenSets.size() - 1);
-        this.repFinderSets = new HashMap<String, List<ProteinData>>(this.lastRepGen.size());
+        this.repFinderSets = new HashMap<>(this.lastRepGen.size());
         try {
             // First, create the output files and count maps and write the header lines.
             for (RepGenomeDb repGen : this.repGenSets) {
@@ -352,7 +356,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                 PrintWriter listFile = new PrintWriter(listFileName);
                 listFile.println("genome_id\tgenome_name\tdomain\tgenus\tspecies\trep_id\tscore\tdistance");
                 listFiles.add(listFile);
-                this.statMaps.add(new QualityCountMap<String>());
+                this.statMaps.add(new QualityCountMap<>());
             }
             // These are used to generate progress messages.
             int genomeCount = 0;
@@ -468,14 +472,14 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * @throws IOException
      */
     protected void checkParms() throws IOException {
-        File outDir = this.getOutDir();
-        if (! outDir.exists()) {
+        File myOutDir = this.getOutDir();
+        if (! myOutDir.exists()) {
             // Insure we have an output directory.
-            log.info("Creating output directory {}.", outDir);
-            if (! outDir.mkdir())
-                throw new IOException("Could not create output directory " + outDir);
-        } else if (! outDir.isDirectory()) {
-            throw new FileNotFoundException("Invalid output directory " + outDir);
+            log.info("Creating output directory {}.", myOutDir);
+            if (! myOutDir.mkdir())
+                throw new IOException("Could not create output directory " + myOutDir);
+        } else if (! myOutDir.isDirectory()) {
+            throw new FileNotFoundException("Invalid output directory " + myOutDir);
         }
     }
     /**
@@ -562,7 +566,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      */
     @Override
     public void initRepGenSets(int size) {
-        this.repGenSets = new ArrayList<RepGenomeDb>(size);
+        this.repGenSets = new ArrayList<>(size);
     }
 
     /**
@@ -668,7 +672,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         int outCount = 0;
         int copyCount = 0;
         // This map will tell us where to find each genome that is already downloaded.
-        var oldMap = new HashMap<String, File>();
+        Map<String, File> oldMap = new HashMap<>();
         // Get the GTO file names.
         var gtoFiles = FileUtils.listFiles(inDir, GTO_FILE_FILTER, GTO_DIR_FILTER);
         log.info("{} existing representative GTO files found in {}.", gtoFiles.size(), inDir);
@@ -737,8 +741,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
             log.info("Downloading {} of {}: {}.", gCount, repHash.size(), genomeId);
             Genome genome = P3Genome.load(p3, genomeId, P3Genome.Details.FULL);
             String gName = genomeId + ".gto";
-            for (File outDir : repEntry.getValue())
-                genome.save(new File(outDir, gName));
+            for (File myOutDir : repEntry.getValue())
+                genome.save(new File(myOutDir, gName));
         }
     }
 

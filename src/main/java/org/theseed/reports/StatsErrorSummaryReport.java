@@ -27,7 +27,7 @@ public class StatsErrorSummaryReport extends ErrorSummaryReport {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(StatsErrorSummaryReport.class);
+    private static final Logger log = LoggerFactory.getLogger(StatsErrorSummaryReport.class);
     /** list of results; initially contains genome IDs and names, but eventually has the stats as well */
     private List<Result> results;
     /** map of genome IDs to error statistics */

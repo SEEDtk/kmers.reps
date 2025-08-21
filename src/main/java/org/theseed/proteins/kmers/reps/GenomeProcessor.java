@@ -11,6 +11,8 @@ import java.util.Collections;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.proteins.kmers.ProteinDataFactory;
 import org.theseed.utils.IntegerList;
 
@@ -35,6 +37,9 @@ import org.theseed.utils.IntegerList;
  */
 public class GenomeProcessor extends BaseGenomeProcessor {
 
+    // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(GenomeProcessor.class);
     /** list of RepGen set thresholds */
     private IntegerList repSizes;
 
@@ -43,7 +48,7 @@ public class GenomeProcessor extends BaseGenomeProcessor {
     /** list of RepGen set scores */
     @Option(name = "--repSizes", aliases = { "--repScores", "--repSims" }, metaVar = "10,50,100,200",
             usage = "comma-delimited list of minimum scores for each RepGen set to create")
-    private void setRepSizes(String repSizeString) {
+    protected void setRepSizes(String repSizeString) {
         this.repSizes = new IntegerList(repSizeString);
     }
 
@@ -65,60 +70,56 @@ public class GenomeProcessor extends BaseGenomeProcessor {
     }
 
     @Override
-    public void runCommand() {
-        try {
-            if (! this.isFullRegenRequired()) {
-                // Here we need to reload the repgen sets from the output directory so we can download
-                // the GTOs.
-                log.info("Reloading new repgen sets.");
-                ProteinDataFactory.restoreData(this, this.getOutDir());
-            } else {
-                // Read all the genomes from the input file and build protein data objects.
-                initializeProteinData(this.inFile);
-                // We need to create the FASTA files for the seed protein list and the
-                // binning BLAST database.  We do that here.
-                createFastaFiles();
-                // Create a list of RepGenomeDb objects, one for each score limit.
-                log.info("Creating repgen sets.");
-                this.initRepGenSets(this.repSizes.size());
-                for (int repSize : this.repSizes) {
-                    this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
-                }
-                saveRepLevels();
-                // Sort the genomes into repgen sets.
-                collateGenomes(Collections.emptySet());
-                // Save all the repgen sets.
-                saveRepGenSets();
-                // Write the protein data report.
-                writeGenomeReport();
-                // Write out the protein Fasta file for the first set.  This is used to find
-                // seed proteins.
-                writeSeedProt();
-                // Assign genomes to repgen sets.
-                log.info("Assigning genomes to repgen sets.");
-                writeListFiles();
-                // Now we write the protein FASTA files and the stats files.
-                writeProteinFasta();
-                // Next, the reference-genome finder for evaluation.
-                writeRefGenomeFasta();
-                // Now we produce the repFinder file used to find close genomes.
-                writeRepFinder();
-                // Write the good-genome list.
-                writeGoodGenomes();
+    public void runCommand() throws Exception {
+        if (! this.isFullRegenRequired()) {
+            // Here we need to reload the repgen sets from the output directory so we can download
+            // the GTOs.
+            log.info("Reloading new repgen sets.");
+            ProteinDataFactory.restoreData(this, this.getOutDir());
+        } else {
+            // Read all the genomes from the input file and build protein data objects.
+            initializeProteinData(this.inFile);
+            // We need to create the FASTA files for the seed protein list and the
+            // binning BLAST database.  We do that here.
+            createFastaFiles();
+            // Create a list of RepGenomeDb objects, one for each score limit.
+            log.info("Creating repgen sets.");
+            this.initRepGenSets(this.repSizes.size());
+            for (int repSize : this.repSizes) {
+                this.addRepGenSet(new RepGenomeDb(repSize, ProteinDataFactory.SEED_FUNCTION));
             }
-            // Finally, save the repgen GTOs.
-            if (isGTOsRequested()) {
-                log.info("Creating repgen GTO directories.");
-                setupGTOs();
-                log.info("Placing repgen genomes.");
-                placeGTOs();
-                log.info("Downloading genomes.");
-                saveNewGTOs();
-            }
-            log.info("All done.");
-        } catch (Exception e) {
-            e.printStackTrace();
+            saveRepLevels();
+            // Sort the genomes into repgen sets.
+            collateGenomes(Collections.emptySet());
+            // Save all the repgen sets.
+            saveRepGenSets();
+            // Write the protein data report.
+            writeGenomeReport();
+            // Write out the protein Fasta file for the first set.  This is used to find
+            // seed proteins.
+            writeSeedProt();
+            // Assign genomes to repgen sets.
+            log.info("Assigning genomes to repgen sets.");
+            writeListFiles();
+            // Now we write the protein FASTA files and the stats files.
+            writeProteinFasta();
+            // Next, the reference-genome finder for evaluation.
+            writeRefGenomeFasta();
+            // Now we produce the repFinder file used to find close genomes.
+            writeRepFinder();
+            // Write the good-genome list.
+            writeGoodGenomes();
         }
+        // Finally, save the repgen GTOs.
+        if (isGTOsRequested()) {
+            log.info("Creating repgen GTO directories.");
+            setupGTOs();
+            log.info("Placing repgen genomes.");
+            placeGTOs();
+            log.info("Downloading genomes.");
+            saveNewGTOs();
+        }
+        log.info("All done.");
 
     }
 

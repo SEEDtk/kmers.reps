@@ -48,7 +48,7 @@ public class MissingRoleProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(MissingRoleProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(MissingRoleProcessor.class);
     /** map of universal roles */
     private RoleMap roleMap;
     /** genome input source */

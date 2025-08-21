@@ -61,7 +61,7 @@ public class SeqTestProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(SeqTestProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(SeqTestProcessor.class);
     /** reference genome set */
     private GenomeDescriptorSet refGenomes;
     /** genome descriptor resource, if any */

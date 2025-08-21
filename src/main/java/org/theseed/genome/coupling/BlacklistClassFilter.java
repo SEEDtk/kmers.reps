@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.coupling.FeatureClass.Result;
 import org.theseed.io.TabbedLineReader;
@@ -24,14 +26,16 @@ import org.theseed.io.TabbedLineReader;
 public class BlacklistClassFilter extends ClassFilter {
 
     // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(BlacklistClassFilter.class);
     /** set of blacklisted classes */
-    private Set<String> blackList;
+    private final Set<String> blackList;
     /** source blacklist file */
-    private File blackListFile;
+    private final File blackListFile;
 
     public BlacklistClassFilter(CouplesProcessor processor) throws IOException, ParseFailureException {
         super(processor);
-        this.blackList = new HashSet<String>();
+        this.blackList = new HashSet<>();
         // Get the blacklist file.
         this.blackListFile = processor.getBlackListFile();
         if (blackListFile == null)

@@ -55,7 +55,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(CouplesProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(CouplesProcessor.class);
     /** hash of pairs to genome sets and weights */
     private Map<FeatureClass.Pair, FeatureClass.PairData> pairMap;
     /** class-filtering algorithm */

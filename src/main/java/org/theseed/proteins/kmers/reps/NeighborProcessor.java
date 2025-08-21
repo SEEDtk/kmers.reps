@@ -48,7 +48,7 @@ public class NeighborProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(NeighborProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(NeighborProcessor.class);
     /** input genome source */
     private GenomeSource genomes;
     /** representative-genome database */

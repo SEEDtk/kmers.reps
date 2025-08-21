@@ -57,7 +57,7 @@ public class RepGenomeDbProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(RepGenomeDbProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(RepGenomeDbProcessor.class);
     /** number of genomes processed */
     private int genomesProcessed;
     /** start time of run */

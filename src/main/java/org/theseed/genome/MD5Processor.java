@@ -7,10 +7,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.kohsuke.args4j.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3MD5Hex;
@@ -36,6 +39,8 @@ import org.theseed.p3api.P3MD5Hex;
 public class MD5Processor extends BaseProcessor {
 
     // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(MD5Processor.class);
     /** input column index */
     private int gCol;
     /** input file stream */
@@ -93,7 +98,7 @@ public class MD5Processor extends BaseProcessor {
             this.mdComputer = new P3MD5Hex();
             // The basic approach is to read in a batch of genome IDs.  We accumulate input lines until we have a batch
             // and then compute the MD5s.
-            this.batch = new LinkedHashMap<String, String>(this.batchSize);
+            this.batch = new LinkedHashMap<>(this.batchSize);
             // If we are not resuming, we write the output header.
             if (this.resume == null)
                 System.out.println(this.inStream.header() + "\tmd5_checksum");
@@ -130,7 +135,7 @@ public class MD5Processor extends BaseProcessor {
             // Process the residual batch.
             this.processBatch();
             log.info("All done. {} genomes processed.", genomeCount);
-        } catch (Exception e) {
+        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             log.error("Error after genome {}.", this.lastGenome, e);
         } finally {
             this.inStream.close();

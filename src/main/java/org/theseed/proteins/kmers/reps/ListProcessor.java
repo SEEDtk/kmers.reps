@@ -32,7 +32,7 @@ public class ListProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(ListProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(ListProcessor.class);
     /** repgen database */
     private RepGenomeDb repDb;
 

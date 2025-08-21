@@ -42,7 +42,7 @@ public class TaxReportProcessor extends BasePipeProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TaxReportProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(TaxReportProcessor.class);
     /** map of taxon IDs to count maps, each count map keyed by repgen ID */
     private Map<Integer, CountMap<String>> taxCountMaps;
     /** map of taxon IDs to ranks (genus or species) */

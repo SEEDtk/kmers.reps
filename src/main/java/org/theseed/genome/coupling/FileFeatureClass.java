@@ -9,6 +9,8 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader;
 
@@ -23,15 +25,18 @@ import org.theseed.io.TabbedLineReader;
 public class FileFeatureClass extends MapFeatureClass {
 
     // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(FileFeatureClass.class);
     /** map of protein MD5s to family IDs */
     private Map<String, String> md5Map;
+    
     /**
      * Initialize this classifier. We read in the family file and create the hashes.
      */
     public FileFeatureClass(FeatureClass.IParms processor) {
         super();
         // Create the maps.
-        this.md5Map = new HashMap<String, String>();
+        this.md5Map = new HashMap<>();
         File famFile = processor.getFamFile();
         log.info("Reading family data from {}.", famFile);
         try (TabbedLineReader inStream = new TabbedLineReader(famFile)) {

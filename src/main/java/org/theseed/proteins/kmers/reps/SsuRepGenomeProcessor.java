@@ -49,7 +49,7 @@ public class SsuRepGenomeProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(SsuRepGenomeProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(SsuRepGenomeProcessor.class);
     /** list of SSU genome objects to use to find the closest genome */
     private Set<SsuGenome> ssuList;
     /** genome source for input genomes */

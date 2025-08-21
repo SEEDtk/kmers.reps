@@ -56,7 +56,7 @@ public class UniRoleProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(UniRoleProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(UniRoleProcessor.class);
     /** role definitions */
     private RoleMap roleMap;
     /** genome source */

@@ -40,7 +40,7 @@ public class RepTaxProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(RepTaxProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(RepTaxProcessor.class);
     /** input genome source */
     private GenomeSource genomes;
 

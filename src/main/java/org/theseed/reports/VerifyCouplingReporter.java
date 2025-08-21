@@ -33,7 +33,7 @@ public class VerifyCouplingReporter extends CouplingReporter {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(VerifyCouplingReporter.class);
+    private static final Logger log = LoggerFactory.getLogger(VerifyCouplingReporter.class);
     /** set of classifier pairs of interest */
     private Set<FeatureClass.Pair> goodPairs;
     /** number of genomes containing each pair of good classes */

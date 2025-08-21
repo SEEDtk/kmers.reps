@@ -49,7 +49,7 @@ public class SeqCompProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(SeqCompProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(SeqCompProcessor.class);
     /** genome descriptors from the input file */
     private GenomeDescriptorSet refGenomes;
     /** error summary reporting object */

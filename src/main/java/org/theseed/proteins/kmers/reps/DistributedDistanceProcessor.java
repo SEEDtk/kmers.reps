@@ -59,7 +59,7 @@ public class DistributedDistanceProcessor extends BaseReportProcessor {
 
 	// FIELDS
 	/** logging facility */
-	protected static Logger log = LoggerFactory.getLogger(DistributedDistanceProcessor.class);
+	private static final Logger log = LoggerFactory.getLogger(DistributedDistanceProcessor.class);
 	/** kmers for start protein */
 	private DnaKmers sourceKmers;
 	/** array of upper bucket limits */

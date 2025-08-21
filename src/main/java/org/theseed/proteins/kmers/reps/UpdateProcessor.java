@@ -44,7 +44,7 @@ public class UpdateProcessor extends BaseGenomeProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(UpdateProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(UpdateProcessor.class);
     /** input file for protein data factory */
     private File inFile;
     // COMMAND-LINE OPTIONS

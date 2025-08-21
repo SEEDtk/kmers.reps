@@ -44,7 +44,7 @@ public class SeedTableProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(SeedTableProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(SeedTableProcessor.class);
     /** input genome source */
     private GenomeSource source;
     /** role definition table (contains only the seed role) */

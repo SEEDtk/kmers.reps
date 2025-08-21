@@ -52,7 +52,7 @@ public class TargetProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TargetProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(TargetProcessor.class);
     /** input genome source */
     private GenomeSource genomes;
     /** list of seed proteins for the target genomes */

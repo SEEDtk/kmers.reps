@@ -50,7 +50,7 @@ public class GtoClassProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(GtoClassProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(GtoClassProcessor.class);
     /** list of repgen databases */
     private List<RepGenomeDb> repGens;
     /** input genome source */

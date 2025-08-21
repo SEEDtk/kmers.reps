@@ -45,7 +45,7 @@ public class UpdateMasterProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(UpdateMasterProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(UpdateMasterProcessor.class);
     /** map of PATRIC genome IDs to names */
     private Map<String, String> pGenomes;
     /** PATRIC master directory */

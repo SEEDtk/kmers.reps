@@ -57,7 +57,7 @@ public class GtoRepGenomeProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(GtoRepGenomeProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(GtoRepGenomeProcessor.class);
     /** representative-genome database */
     private RepGenomeDb repDb;
     /** input genome source */
