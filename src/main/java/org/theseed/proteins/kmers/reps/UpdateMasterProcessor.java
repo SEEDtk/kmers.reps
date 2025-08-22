@@ -80,7 +80,7 @@ public class UpdateMasterProcessor extends BaseProcessor {
         // Get the PATRIC genome list.  We convert it to an ID -> name map, keeping the first if there is a conflict.
         this.p3 = new P3CursorConnection();
         int predicted = (int) (LOAD_FACTOR * this.pMaster.size());
-        List<JsonObject> objects = new ArrayList<JsonObject>(predicted);
+        List<JsonObject> objects = new ArrayList<>(predicted);
         p3.addAllProkaryotes(objects);
         this.pGenomes = objects.stream().collect(Collectors.toMap(x -> KeyBuffer.getString(x, "genome_id"),
                 x -> KeyBuffer.getString(x, "genome_name"), (x1,x2) -> x1));

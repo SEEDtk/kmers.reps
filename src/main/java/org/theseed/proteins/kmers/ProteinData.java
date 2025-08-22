@@ -28,9 +28,9 @@ public class ProteinData implements Comparable<ProteinData> {
     /** feature ID */
     private String fid;
     /** genome ID */
-    private String genomeId;
+    private final String genomeId;
     /** genome name */
-    private String genomeName;
+    private final String genomeName;
     /** DNA sequence */
     private String dna;
     /** amino acid sequence */
@@ -40,19 +40,19 @@ public class ProteinData implements Comparable<ProteinData> {
     /** taxonomic species */
     private String species;
     /** quality score */
-    private double score;
+    private final double score;
     /** rating */
     private Rating rating;
     /** domain name */
     private String domain;
     /** genetic code */
-    private int geneticCode;
+    private final int geneticCode;
     /** proteinkmers object for computing representation */
     private ProteinKmers kmers;
     /** sequence for the best SSU rRNA */
     private String ssuSequence;
     /** representative genome information for each score level */
-    private Map<Integer, RepGenomeDb.Representation> representation;
+    private final Map<Integer, RepGenomeDb.Representation> representation;
 
     /**
      * This enum gives the rating of a protein data object.  The ratings are ordered from
@@ -95,7 +95,7 @@ public class ProteinData implements Comparable<ProteinData> {
         this.score = score;
         this.domain = domain;
         this.rating = Rating.NORMAL;
-        this.representation = new HashMap<Integer, RepGenomeDb.Representation>();
+        this.representation = new HashMap<>();
         this.kmers = null;
     }
 
@@ -298,7 +298,7 @@ public class ProteinData implements Comparable<ProteinData> {
         // Start with an empty SSU sequence.
         this.ssuSequence = "";
         // Create a place to stash the good sequences.
-        List<DnaKmers> goodSeqs = new ArrayList<DnaKmers>(rnas.size());
+        List<DnaKmers> goodSeqs = new ArrayList<>(rnas.size());
         // Count the sequences of acceptable length.
         int longSeqs = 0;
         // Check all the sequences.
