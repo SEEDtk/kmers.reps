@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.reports.CouplingReporter;
+import org.theseed.roles.RoleUtilities;
 
 /**
  * This command computes functional couplings using genomes from a specific genome source.  It allows specification of
@@ -65,7 +67,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
     /** input genome source */
     private GenomeSource genomes;
     /** functional assignment for the seed protein */
-    private static final String SEED_PROTEIN_FUNCTION = "Phenylalanyl-tRNA synthetase alpha chain (EC 6.1.1.20)";
+    private static final String SEED_PROTEIN_FUNCTION = RoleUtilities.SEED_FUNCTION;
 
     // COMMAND-LINE OPTIONS
 
@@ -143,7 +145,7 @@ public class CouplesProcessor extends BaseCouplingProcessor {
             throw new ParseFailureException("Invalid minimum group size.  Must be at least 1.");
         this.validateConfiguration();
         // Create the pair map.
-        this.pairMap = new HashMap<FeatureClass.Pair, FeatureClass.PairData>(100000);
+        this.pairMap = new HashMap<>(100000);
         // Create the filters.
         this.classFilter = this.classFilterType.create(this);
         log.info("Class filtering type is {}.", this.classFilter);
