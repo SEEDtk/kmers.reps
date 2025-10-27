@@ -44,6 +44,7 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  buildFromGtos	build a representative genome database for all genomes in a source
  *  hiCheck         check the master representation list to see which genomes violate repgen hierarchy
  *  repSub          validate the repgen sets to insure they are hierarchical
+ *  buildSets       create neighbor sets from a genome representation list file
  */
 public class App
 {
@@ -56,7 +57,6 @@ public class App
              "group", "Analyze proteins and group them together.",
              "classify", "Compare proteins to multiple protein lists",
              "genomes", "Process genome evaluation results",
-//           "update", "Process incremental genome evaluation results",
              "md5", "Compute genome MD5s",
              "coupling", "Compute functional coupling for a set of genomes",
              "prepare", "Prepare a GTO directory for use in the coupling website",
@@ -81,7 +81,8 @@ public class App
              "distDist", "find a set of genomes that are various distributed distances from a key genome",
              "buildFromGtos", "build a representative genome database for all genomes in a source",
              "hiCheck", "check the master representation list to see which genomes violate repgen hierarchy",
-             "repSub", "validate the repgen sets to insure they are hierarchical"
+             "repSub", "validate the repgen sets to insure they are hierarchical",
+             "buildSets", "create neighbor sets from a genome representation list file"
     };
 
     public static void main( String[] args )
@@ -123,12 +124,10 @@ public class App
         case "distDist" -> processor = new DistributedDistanceProcessor();
         case "hiCheck" -> processor = new HierarchyCheckProcessor();
         case "repSub" -> processor = new RepGenSubCheckProcessor();
+        case "buildSets" -> processor = new BuildSetsProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
-//      case "update" :
-//          processor = new UpdateProcessor();
-//          break;
         if (processor == null)
             BaseProcessor.showCommands(COMMANDS);
         else {
