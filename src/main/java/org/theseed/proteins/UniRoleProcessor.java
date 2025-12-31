@@ -150,9 +150,9 @@ public class UniRoleProcessor extends BaseProcessor {
     protected void runCommand() throws Exception {
         try {
             // Create the role maps.
-            this.roleCounts = new CountMap<String>();
-            this.roleStats = new HashMap<String, SummaryStatistics>(ESTIMATED_ROLES);
-            this.familyMap = new HashMap<String, Set<String>>(ESTIMATED_ROLES);
+            this.roleCounts = new CountMap<>();
+            this.roleStats = new HashMap<>(ESTIMATED_ROLES);
+            this.familyMap = new HashMap<>(ESTIMATED_ROLES);
             // Loop through the genomes.
             int count = 0;
             int processed = 0;
@@ -168,8 +168,8 @@ public class UniRoleProcessor extends BaseProcessor {
                 } else {
                     log.info("Processing genome {} of {}: {}.", count, genomeSet.size(), genome);
                     // Count the role occurrences.
-                    CountMap<String> gRoleCounts = new CountMap<String>();
-                    CountMap<String> gRoleLengths = new CountMap<String>();
+                    CountMap<String> gRoleCounts = new CountMap<>();
+                    CountMap<String> gRoleLengths = new CountMap<>();
                     for (Feature feat : genome.getPegs()) {
                         for (Role role : feat.getUsefulRoles(this.roleMap)) {
                             String roleId = role.getId();
