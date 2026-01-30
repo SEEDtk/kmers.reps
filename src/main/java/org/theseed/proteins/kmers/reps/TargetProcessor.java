@@ -3,17 +3,18 @@
  */
 package org.theseed.proteins.kmers.reps;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -105,7 +106,7 @@ public class TargetProcessor extends BaseProcessor {
         GenomeKmers.setKmerSize(this.kmerSize);
         log.info("DNA kmer size is {}.", DnaKmers.kmerSize());
         // Now get the target seed proteins.
-        this.targets = new TreeSet<String>();
+        this.targets = new TreeSet<>();
         if (this.fastaMode) {
             if (this.targetFiles.size() > 1)
                 throw new ParseFailureException("Cannot specify multiple input files in FASTA mode.");
@@ -120,7 +121,7 @@ public class TargetProcessor extends BaseProcessor {
             }
         } else {
             // Get the set of target genomes.
-            this.targetSeeds = new ArrayList<Sequence>(targetFiles.size());
+            this.targetSeeds = new ArrayList<>(targetFiles.size());
             for (File targetFile : targetFiles) {
                 if (! targetFile.canRead())
                     throw new FileNotFoundException("Genome file " + targetFile + " is not found or unreadable.");
@@ -147,7 +148,7 @@ public class TargetProcessor extends BaseProcessor {
      */
     private static String getGenomeId(String label) {
         String retVal = label;
-        if (StringUtils.startsWith(label, "fig|"))
+        if (Strings.CS.startsWith(label, "fig|"))
             retVal = StringUtils.substringBetween(label, "fig|", ".peg");
         return retVal;
     }

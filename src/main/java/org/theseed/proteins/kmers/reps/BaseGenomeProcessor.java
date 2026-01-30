@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.text.TextStringBuilder;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
@@ -680,7 +680,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
         for (File gtoFile : gtoFiles) {
             // The genome ID is the prefix of the file name.  The file filter pattern insures
             // that all we need to do is chop off the ".gto" at the end.
-            String genomeId = StringUtils.removeEnd(gtoFile.getName(), ".gto");
+            String genomeId = Strings.CS.removeEnd(gtoFile.getName(), ".gto");
             if (! oldMap.containsKey(genomeId)) {
                 // Here the genome is a new one, so we save its location.
                 oldMap.put(genomeId, gtoFile);

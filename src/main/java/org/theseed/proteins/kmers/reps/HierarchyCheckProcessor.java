@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,10 +88,10 @@ public class HierarchyCheckProcessor extends BaseMultiReportProcessor {
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Input file " + this.inFile + " is not found or unreadable.");
         // Create the big data structures.
-        this.hierarchyMap = new HashMap<String, String[]>();
-        this.childMapList = new ArrayList<Map<String, Set<String>>>();
-        this.parentMapList = new ArrayList<Map<String, Set<String>>>();
-        this.nameMap = new HashMap<String, String>();
+        this.hierarchyMap = new HashMap<>();
+        this.childMapList = new ArrayList<>();
+        this.parentMapList = new ArrayList<>();
+        this.nameMap = new HashMap<>();
     }
 
     @Override
@@ -105,7 +106,7 @@ public class HierarchyCheckProcessor extends BaseMultiReportProcessor {
             String[] colNames = inStream.getLabels();
             int i = 0;
             final int n = colNames.length;
-            while (i < n && ! StringUtils.startsWith(colNames[i], "rep")) i++;
+            while (i < n && ! Strings.CS.startsWith(colNames[i], "rep")) i++;
             if (i >= n)
                 throw new IOException("Missing repgen ID columns in " + this.inFile);
             // Save the repgen labels.
@@ -117,8 +118,8 @@ public class HierarchyCheckProcessor extends BaseMultiReportProcessor {
             final int nParentLevels = this.setNames.length - 1;
             this.parentMapList.add(null);
             for (i = 0; i < nParentLevels; i++) {
-                this.childMapList.add(new HashMap<String, Set<String>>());
-                this.parentMapList.add(new HashMap<String, Set<String>>());
+                this.childMapList.add(new HashMap<>());
+                this.parentMapList.add(new HashMap<>());
             }            
             // Loop through the input file.
             int inCount = 0;
