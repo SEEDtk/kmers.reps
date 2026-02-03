@@ -95,7 +95,7 @@ public class BuildRepDbProcessor extends BaseProcessor {
         if (! this.roleFile.canRead())
             throw new FileNotFoundException("Role definition file " + this.roleFile + " is not found or unreadable.");
         try (TabbedLineReader roleStream = new TabbedLineReader(this.roleFile, 3)) {
-            List<String> names = new ArrayList<String>();
+            List<String> names = new ArrayList<>();
             var ids = new TreeSet<String>();
             for (TabbedLineReader.Line line : roleStream) {
                 String id = line.get(0);
