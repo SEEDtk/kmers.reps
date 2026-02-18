@@ -4,10 +4,11 @@
 package org.theseed.proteins.kmers.reps;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -30,7 +31,8 @@ import org.theseed.sequence.ProteinKmers;
 /**
  * This command processes the genomes from a genome source and computes the closest representative genome in one or
  * more RepGen databases.  The output report will list the incoming genome ID and name, and then the ID of the representative
- * in each RepGen database.
+ * in each RepGen database. If there is no representative in a database, the column will be left blank.
+ * The output will be tab-delimited with a header line.
  *
  * The positional parameters are the name of the input genome source and the names of the files containing the repgen
  * databases, in order.  Each RepGen database should have a different similarity threshold; otherwise, the column
@@ -139,11 +141,10 @@ public class GtoClassProcessor extends BaseReportProcessor {
                         }
                     }
                     // Write this genome's record.
-                    List<String> columns = new ArrayList<String>(repIds.length + 2);
+                    List<String> columns = new ArrayList<>(repIds.length + 2);
                     columns.add(genome.getId());
                     columns.add(genome.getName());
-                    for (String repId : repIds)
-                        columns.add(repId);
+                    columns.addAll(Arrays.asList(repIds));
                     writer.println(StringUtils.join(columns, '\t'));
                 }
             }
@@ -167,9 +168,9 @@ public class GtoClassProcessor extends BaseReportProcessor {
         StringBuilder headers = new StringBuilder(20 + 12 * this.repGenFiles.size());
         headers.append("genome_id\tgenome_name");
         // This will hold the names of the repgen sets.
-        this.repGenNames = new ArrayList<String>(this.repGenFiles.size());
+        this.repGenNames = new ArrayList<>(this.repGenFiles.size());
         // This will hold the repgen sets.
-        this.repGens = new ArrayList<RepGenomeDb>(this.repGenFiles.size());
+        this.repGens = new ArrayList<>(this.repGenFiles.size());
         // Build each RepGen set and add its title to the header string.
         for (File repGenFile : this.repGenFiles) {
             log.info("Loading representative genome database from {}.", repGenFile);
