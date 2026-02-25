@@ -136,7 +136,7 @@ public class GtoClassProcessor extends BaseReportProcessor {
                             foundCount++;
                             groupSets.get(i).add(rep.getGenomeId());
                         } else {
-                            repIds[i] = genome.getId();
+                            repIds[i] = "";
                             errorCount++;
                         }
                     }
