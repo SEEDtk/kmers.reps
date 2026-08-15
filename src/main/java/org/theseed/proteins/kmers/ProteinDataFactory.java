@@ -6,10 +6,10 @@ package org.theseed.proteins.kmers;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,11 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Criterion;
 import org.theseed.p3api.KeyBuffer;
-import org.theseed.p3api.P3Connection;
-import org.theseed.p3api.P3Connection.Table;
+import org.theseed.p3api.P3CursorConnection;
 import org.theseed.p3api.P3TaxData;
+import org.theseed.p3api.SolrFilter;
 import org.theseed.proteins.RoleMap;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.roles.RoleUtilities;
@@ -53,7 +52,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /** taxonomy map */
     private P3TaxData taxMap;
     /** connection to PATRIC */
-    private final P3Connection p3;
+    private final P3CursorConnection p3;
     /** master list of ProteinData objects */
     private final SortedSet<ProteinData> master;
     /** map of ProteinData objects by genome ID */
@@ -80,12 +79,17 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      */
     public ProteinDataFactory() {
         // Connect to PATRIC.
-        this.p3 = new P3Connection();
+        this.p3 = new P3CursorConnection();
         // Get all the taxonomy stuff.
         this.taxMap = new P3TaxData(this.p3);
         // Get the NCBI reference and representative genomes.
-        List<JsonObject> ncbiGenomes = p3.query(Table.GENOME, "genome_id,reference_genome",
-                Criterion.IN("reference_genome", "Representative", "Reference"));
+        List<JsonObject> ncbiGenomes;
+        try {
+            ncbiGenomes = p3.getRecords("genome", P3CursorConnection.MAX_LIMIT, "genome_id,reference_genome",
+                    SolrFilter.IN("reference_genome", "Representative", "Reference"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         log.info("{} NCBI special genomes found.", ncbiGenomes.size());
         this.ncbiRefMap = new HashMap<>(ncbiGenomes.size());
         for (JsonObject genome : ncbiGenomes) {
@@ -186,13 +190,9 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         // role map to isolate it.
         RoleMap seedMap = new RoleMap();
         seedMap.findOrInsert(SEED_FUNCTION);
-        // These maps are keyed by MD5, and map each MD5 to the list of ProteinData objects for the
-        // associated genomes.
-        Map<String, Collection<ProteinData>> dnaMap = new HashMap<>(batchSize);
-        Map<String, Collection<ProteinData>> protMap = new HashMap<>(batchSize);
         // Ask for all the features with this function in the specified genomes.
         log.info("Retrieving seed protein features.");
-        this.getFeaturesByFunction(batchSize, seedMap, dnaMap, protMap);
+        this.getFeaturesByFunction(batchSize, seedMap);
         // Now run through and remove the genomes that aren't filled in or have multiple
         // ambiguity characters in the seed protein.
         log.info("Removing genomes with incomplete data or ambiguity.");
@@ -221,14 +221,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         log.info("{} incomplete or ambiguous genomes removed.",
                 deleteCount);
         // Now we do the SSU rRNAs with our slightly-reduced genome set.
-        Map<String, String> seqMap = new HashMap<>();
         Map<String, List<JsonObject>> genomeMap = new HashMap<>(this.master.size());
-        this.retrieveSsuRnaFeatures(seqMap, genomeMap);
-        // We now fill the map with the actual sequences.
-        log.info("Reading {} SSU nucleotide sequences from PATRIC.", seqMap.size());
-        p3.getRecords(Table.SEQUENCE, "md5", seqMap.keySet(), "md5,sequence").stream()
-                .forEach(x -> seqMap.put(KeyBuffer.getString(x, "md5"),
-                        KeyBuffer.getString(x, "sequence")));
+        this.retrieveSsuRnaFeatures(genomeMap);
         // We have all the SSU rRNA sequences, which is quite an accomplishment.  Run through the
         // genomes, collecting them and updating the SSUs.  This involves changing the key to a
         // sorted set, so we clear the master and rebuild it.
@@ -251,8 +245,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 deleteCount++;
             } else {
                 // Get all the sequences for this genome.
-                List<String> rnas = jsons.stream().map(x -> seqMap.get(KeyBuffer.getString(x, "na_sequence_md5")))
-                        .filter(x -> x != null).collect(Collectors.toList());
+                List<String> rnas = jsons.stream().map(x -> KeyBuffer.getString(x, "na_sequence"))
+                        .filter(x -> x != null && ! x.isEmpty()).collect(Collectors.toList());
                 if (rnas.isEmpty()) {
                     // Here the SSUs had no valid sequences.  Reject the genome.
                     log.warn("All 16s sequences invalid in {}: {}.", genomeId, genomeData.getGenomeName());
@@ -331,25 +325,27 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
     /**
      * Retrieve SSU rRNA features from the PATRIC database into the specified maps.
      * Form the features into a map based on genome ID.  Also, we create a map that will
-     * eventually map each sequence MD5 to its DNA and one to list all the SSU rRNA features
-     * for each genome.
+     * list all the SSU rRNA features for each genome.
      *
-     * @param seqMap        a map from sequence MD5 to DNA sequence
      * @param genomeMap     a map from genome ID to list of SSU rRNA feature records
      */
-    private void retrieveSsuRnaFeatures(Map<String, String> seqMap, Map<String, List<JsonObject>> genomeMap) {
+    private void retrieveSsuRnaFeatures(Map<String, List<JsonObject>> genomeMap) {
         log.info("Retrieving SSU rRNA features for {} genomes.", this.idMap.size());
-        List<JsonObject> features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
-                "genome_id,patric_id,product,na_sequence_md5",
-                Criterion.IN("feature_type", "rrna", "rRNA", "misc_RNA"),
-                Criterion.EQ("annotation", "PATRIC"));
+        List<JsonObject> features;
+        try {
+            features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, 2000, "genome_id", this.idMap.keySet(),
+                    "genome_id,patric_id,product,na_sequence",
+                    SolrFilter.IN("feature_type", "rrna", "rRNA", "misc_RNA"),
+                    SolrFilter.EQ("annotation", "PATRIC"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         log.info("{} total rRNAs found.", features.size());
         int found = 0;
         for (JsonObject feature : features) {
             String product = KeyBuffer.getString(feature, "product");
             if (RoleUtilities.SSU_R_RNA.matcher(product).find()) {
                 // Here we have a real 16S feature.
-                seqMap.put(KeyBuffer.getString(feature, "na_sequence_md5"), null);
                 String genomeId = KeyBuffer.getString(feature, "genome_id");
                 List<JsonObject> feats = genomeMap.computeIfAbsent(genomeId, x -> new ArrayList<JsonObject>(5));
                 feats.add(feature);
@@ -364,15 +360,16 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      *
      * @param batchSize     batch size for PATRIC queries
      * @param seedMap       a role map containing the seed functions
-     * @param dnaMap        a map to build that maps DNA MD5s to ProteinData objects
-     * @param protMap       a map to build that maps protein MD5s to ProteinData objects
      */
-    private void getFeaturesByFunction(int batchSize, RoleMap seedMap, Map<String, Collection<ProteinData>> dnaMap,
-            Map<String, Collection<ProteinData>> protMap) {
+    private void getFeaturesByFunction(int batchSize, RoleMap seedMap) {
         log.info("Querying PATRIC for seed protein features in {} genomes.", this.idMap.size());
-        List<JsonObject> features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
-                "genome_id,patric_id,product,aa_sequence_md5,na_sequence_md5",
-                Criterion.EQ("product", SEED_FUNCTION), Criterion.EQ("annotation", "PATRIC"));
+        List<JsonObject> features;
+        try {
+            features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, batchSize, "genome_id", this.idMap.keySet(),
+                    "genome_id,patric_id,product,na_sequence_md5,aa_sequence_md5,na_sequence,aa_sequence",
+                    SolrFilter.EQ("product", SEED_FUNCTION), SolrFilter.EQ("annotation", "PATRIC"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);       }
         // We are ready.  Loop through the features, retrieving the sequences.
         log.info("Retrieving seed protein DNA and AA sequences.");
         for (JsonObject feature : features) {
@@ -386,64 +383,23 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 ProteinData genomeData = this.idMap.get(genomeId);
                 // Only proceed if we found it.  If we didn't find it, then it is not one of our genomes.
                 if (genomeData != null) {
-                    // Verify that we have a valid feature ID and both MD5s.  Note that there is no trace message for a missing
+                    // Verify that we have a valid feature ID and both sequences.  Note that there is no trace message for a missing
                     // feature ID, as features with a missing ID have a special meaning.
                     String fid = KeyBuffer.getString(feature, "patric_id");
-                    String dnaMd5 = KeyBuffer.getString(feature, "na_sequence_md5");
-                    String protMd5 = KeyBuffer.getString(feature, "aa_sequence_md5");
-                    if (dnaMd5 == null || dnaMd5.isEmpty()) {
+                    String dna = KeyBuffer.getString(feature, "na_sequence");
+                    String prot = KeyBuffer.getString(feature, "aa_sequence");
+                    if (dna == null || dna.isEmpty()) {
                         log.debug("Missing DNA sequence for seed protein of {}.", genomeId);
-                    } else if (protMd5 == null || protMd5.isEmpty()) {
+                    } else if (prot == null || prot.isEmpty()) {
                         log.debug("Missing protein sequence for seed protein of {}.", genomeId);
                     } else if (fid != null && ! fid.isEmpty()) {
                         genomeData.setFid(fid);
-                        dnaMap.computeIfAbsent(dnaMd5, k -> new ArrayList<ProteinData>(5)).add(genomeData);
-                        protMap.computeIfAbsent(protMd5, k -> new ArrayList<ProteinData>(5)).add(genomeData);
-                        // If this fills a batch, process it.
-                        if (dnaMap.size() >= batchSize) {
-                            this.processMaps(dnaMap, protMap);
-                        }
+                        genomeData.setDna(dna);
+                        genomeData.setProtein(prot);
                     }
                 }
             }
         }
-        // Process the residual batch.
-        if (! dnaMap.isEmpty()) this.processMaps(dnaMap, protMap);
-    }
-
-    /**
-     * Here the accumulated protein and DNA MD5 maps are used to query PATRIC for the actual protein and DNA sequences.
-     *
-     * @param dnaMap	map of DNA MD5s to ProteinData objects
-     * @param protMap	map of protein MD%s to ProteinData objects
-     */
-    private void processMaps(Map<String, Collection<ProteinData>> dnaMap, Map<String, Collection<ProteinData>> protMap) {
-        log.info("Retrieving DNA sequences for {} features.", dnaMap.size());
-        Map<String, JsonObject> sequences = p3.getRecords(Table.SEQUENCE, dnaMap.keySet(), "sequence");
-        int dnaSet = 0;
-        int protSet = 0;
-        for (Map.Entry<String, JsonObject> sequence : sequences.entrySet()) {
-            Collection<ProteinData> genomeData = dnaMap.get(sequence.getKey());
-            String dna = KeyBuffer.getString(sequence.getValue(), "sequence");
-            for (ProteinData genomeDatum : genomeData) {
-                genomeDatum.setDna(dna);
-                dnaSet++;
-            }
-        }
-        log.info("Retrieving protein sequences for {} features.", protMap.size());
-        sequences = p3.getRecords(Table.SEQUENCE, protMap.keySet(), "sequence");
-        for (Map.Entry<String, JsonObject> sequence : sequences.entrySet()) {
-            Collection<ProteinData> genomeData = protMap.get(sequence.getKey());
-            String prot = KeyBuffer.getString(sequence.getValue(), "sequence");
-            for (ProteinData genomeDatum : genomeData) {
-                genomeDatum.setProtein(prot);
-                protSet++;
-            }
-        }
-        log.info("{} DNA sequences and {} protein sequences stored.", dnaSet, protSet);
-        // Erase the maps so they can be refilled for the next batch.
-        dnaMap.clear();
-        protMap.clear();
     }
 
     @Override

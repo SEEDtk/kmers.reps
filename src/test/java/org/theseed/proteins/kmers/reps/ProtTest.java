@@ -3,16 +3,20 @@
  */
 package org.theseed.proteins.kmers.reps;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.proteins.kmers.ProteinData;
@@ -170,47 +174,48 @@ public class ProtTest {
      */
     @Test
     public void testSeqInfo() throws IOException {
-        FastaInputStream testStream = new FastaInputStream(new File("data", "VapbProt.fa"));
-        // Get the first sequence and build the info object.
-        Sequence baseSeq = testStream.next();
-        SequenceInfo baseInfo = new SequenceInfo(baseSeq);
-        assertThat(baseInfo.getMean(), equalTo(0.0));
-        assertThat(baseInfo.getSDev(), equalTo(0.0));
-        assertThat(baseInfo.getId(), equalTo("fig|1005048.3.peg.2359"));
-        // Test the distance to the second sequence and compute the trivial results.
-        Sequence newSeq = testStream.next();
-        ProteinKmers baseK = new ProteinKmers(baseSeq.getSequence());
-        ProteinKmers newK = new ProteinKmers(newSeq.getSequence());
-        double dist1 = baseK.distance(newK);
-        SequenceInfo newInfo = new SequenceInfo(newSeq);
-        baseInfo.storeComparison(newInfo);
-        assertThat(baseInfo.getMean(), equalTo(dist1));
-        assertThat(baseInfo.getSDev(), equalTo(0.0));
-        assertThat(baseInfo.getMin(), equalTo(dist1));
-        assertThat(baseInfo.getMax(), equalTo(dist1));
-        List<Double> distList = new ArrayList<Double>(350);
-        distList.add(dist1);
-        for (Sequence testSeq : testStream) {
-            newInfo = new SequenceInfo(testSeq);
-            dist1 = baseInfo.storeComparison(newInfo);
+        try (FastaInputStream testStream = new FastaInputStream(new File("data", "VapbProt.fa"))) {
+            // Get the first sequence and build the info object.
+            Sequence baseSeq = testStream.next();
+            SequenceInfo baseInfo = new SequenceInfo(baseSeq);
+            assertThat(baseInfo.getMean(), equalTo(0.0));
+            assertThat(baseInfo.getSDev(), equalTo(0.0));
+            assertThat(baseInfo.getId(), equalTo("fig|1005048.3.peg.2359"));
+            // Test the distance to the second sequence and compute the trivial results.
+            Sequence newSeq = testStream.next();
+            ProteinKmers baseK = new ProteinKmers(baseSeq.getSequence());
+            ProteinKmers newK = new ProteinKmers(newSeq.getSequence());
+            double dist1 = baseK.distance(newK);
+            SequenceInfo newInfo = new SequenceInfo(newSeq);
+            baseInfo.storeComparison(newInfo);
+            assertThat(baseInfo.getMean(), equalTo(dist1));
+            assertThat(baseInfo.getSDev(), equalTo(0.0));
+            assertThat(baseInfo.getMin(), equalTo(dist1));
+            assertThat(baseInfo.getMax(), equalTo(dist1));
+            List<Double> distList = new ArrayList<>(350);
             distList.add(dist1);
+            for (Sequence testSeq : testStream) {
+                newInfo = new SequenceInfo(testSeq);
+                dist1 = baseInfo.storeComparison(newInfo);
+                distList.add(dist1);
+            }
+            double mean = baseInfo.getMean();
+            double max = baseInfo.getMax();
+            double min = baseInfo.getMin();
+            double sdev = baseInfo.getSDev();
+            testStream.close();
+            // Verify that the min, max, and sdev are reasonable.
+            int outsideCount = 0;
+            int expectedOutside = distList.size() / 4 + 1;
+            double sMin = mean - 2 * sdev;
+            double sMax = mean + 2 * sdev;
+            for (double dist : distList) {
+                assertThat(dist, lessThanOrEqualTo(max));
+                assertThat(dist, greaterThanOrEqualTo(min));
+                if (dist < sMin || dist > sMax) outsideCount++;
+            }
+            assertThat(outsideCount, lessThan(expectedOutside));
         }
-        double mean = baseInfo.getMean();
-        double max = baseInfo.getMax();
-        double min = baseInfo.getMin();
-        double sdev = baseInfo.getSDev();
-        testStream.close();
-        // Verify that the min, max, and sdev are reasonable.
-        int outsideCount = 0;
-        int expectedOutside = distList.size() / 4 + 1;
-        double sMin = mean - 2 * sdev;
-        double sMax = mean + 2 * sdev;
-        for (double dist : distList) {
-            assertThat(dist, lessThanOrEqualTo(max));
-            assertThat(dist, greaterThanOrEqualTo(min));
-            if (dist < sMin || dist > sMax) outsideCount++;
-        }
-        assertThat(outsideCount, lessThan(expectedOutside));
     }
 
 
