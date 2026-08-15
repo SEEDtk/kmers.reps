@@ -388,8 +388,8 @@ public class ProteinData implements Comparable<ProteinData> {
     public String getLine(ProteinDataFactory parent) {
         TextStringBuilder retVal = new TextStringBuilder(100);
         // Store the fixed fields.
-        retVal.append("%s\t%s\t%6.2f\t%s\t%s\t%s\t%s", this.genomeId, this.genomeName, this.score, this.rating.toString(),
-                this.domain, this.genus, this.species);
+        retVal.append("%s\t%s\t%6.2f\t%s\t%4d\t%s\t%s\t%s\t%s", this.genomeId, this.genomeName, this.score, this.rating.toString(),
+                this.geneticCode, this.domain, this.genus, this.species);
         // Add the representative genomes.
         Arrays.stream(parent.getRepLevels()).mapToObj(i -> this.getRepGenome(i)).forEach(x -> retVal.append('\t').append(x));
         return retVal.toString();

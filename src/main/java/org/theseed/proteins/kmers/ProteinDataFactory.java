@@ -392,7 +392,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                         log.debug("Missing DNA sequence for seed protein of {}.", genomeId);
                     } else if (prot == null || prot.isEmpty()) {
                         log.debug("Missing protein sequence for seed protein of {}.", genomeId);
-                    } else if (fid != null && ! fid.isEmpty()) {
+                    } else if (fid == null || fid.isEmpty()) {
+                        log.debug("Missing feature ID for seed protein of {}.", genomeId);
                         genomeData.setFid(fid);
                         genomeData.setDna(dna);
                         genomeData.setProtein(prot);
