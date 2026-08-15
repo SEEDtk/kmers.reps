@@ -366,8 +366,8 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         List<JsonObject> features;
         try {
             features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, batchSize, "genome_id", this.idMap.keySet(),
-                    "genome_id,patric_id,product,na_sequence_md5,aa_sequence_md5,na_sequence,aa_sequence",
-                    SolrFilter.EQ("product", SEED_FUNCTION), SolrFilter.EQ("annotation", "PATRIC"));
+                    "genome_id,patric_id,product,na_sequence,aa_sequence",
+                    SolrFilter.EQ("product", SEED_FUNCTION));
         } catch (IOException e) {
             throw new UncheckedIOException(e);       }
         // We are ready.  Loop through the features, retrieving the sequences.
