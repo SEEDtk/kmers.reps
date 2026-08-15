@@ -338,7 +338,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      * @param genomeMap     a map from genome ID to list of SSU rRNA feature records
      */
     private void retrieveSsuRnaFeatures(Map<String, String> seqMap, Map<String, List<JsonObject>> genomeMap) {
-        log.info("Retrieving SSU rRNA features.");
+        log.info("Retrieving SSU rRNA features for {} genomes.", this.idMap.size());
         List<JsonObject> features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
                 "genome_id,patric_id,product,na_sequence_md5",
                 Criterion.IN("feature_type", "rrna", "rRNA", "misc_RNA"),
@@ -369,6 +369,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
      */
     private void getFeaturesByFunction(int batchSize, RoleMap seedMap, Map<String, Collection<ProteinData>> dnaMap,
             Map<String, Collection<ProteinData>> protMap) {
+        log.info("Querying PATRIC for seed protein features in {} genomes.", this.idMap.size());
         List<JsonObject> features = p3.getRecords(Table.FEATURE, "genome_id", this.idMap.keySet(),
                 "genome_id,patric_id,product,aa_sequence_md5,na_sequence_md5",
                 Criterion.EQ("product", SEED_FUNCTION), Criterion.EQ("annotation", "PATRIC"));
