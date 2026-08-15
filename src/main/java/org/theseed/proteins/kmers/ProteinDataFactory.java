@@ -371,13 +371,21 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         } catch (IOException e) {
             throw new UncheckedIOException(e);       }
         // We are ready.  Loop through the features, retrieving the sequences.
-        log.info("Retrieving seed protein DNA and AA sequences.");
+        log.info("{} seed protein features found.", features.size());
+        int badRole = 0;
+        int badDna = 0;
+        int badProt = 0;
+        int badFid = 0;
         for (JsonObject feature : features) {
             // Check this feature for a valid function.  It usually IS valid.  Rarely, we get a substring match of something that
             // is similar, but not correct.
             String[] roleNames = Feature.rolesOfFunction(KeyBuffer.getString(feature, "product"));
             boolean foundRole = Arrays.stream(roleNames).anyMatch(x -> seedMap.containsName(x));
-            if (foundRole) {
+            if (! foundRole) {
+                log.debug("Seed protein feature {} has invalid function {}.", KeyBuffer.getString(feature, "patric_id"),
+                        KeyBuffer.getString(feature, "product"));
+                badRole++;
+            } else {
                 // Get the protein data for the feature's genome.
                 String genomeId = KeyBuffer.getString(feature, "genome_id");
                 ProteinData genomeData = this.idMap.get(genomeId);
@@ -390,10 +398,14 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                     String prot = KeyBuffer.getString(feature, "aa_sequence");
                     if (dna == null || dna.isEmpty()) {
                         log.debug("Missing DNA sequence for seed protein of {}.", genomeId);
+                        badDna++;
                     } else if (prot == null || prot.isEmpty()) {
                         log.debug("Missing protein sequence for seed protein of {}.", genomeId);
+                        badProt++;
                     } else if (fid == null || fid.isEmpty()) {
                         log.debug("Missing feature ID for seed protein of {}.", genomeId);
+                        badFid++;
+                    } else {
                         genomeData.setFid(fid);
                         genomeData.setDna(dna);
                         genomeData.setProtein(prot);
@@ -401,6 +413,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                 }
             }
         }
+        log.info("{} invalid functions, {} missing DNA, {} missing protein, {} missing feature ID.", badRole, badDna, badProt, badFid);
     }
 
     @Override
