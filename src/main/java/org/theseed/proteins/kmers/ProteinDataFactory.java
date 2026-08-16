@@ -335,8 +335,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         try {
             features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, 2000, "genome_id", this.idMap.keySet(),
                     "genome_id,patric_id,product,na_sequence",
-                    SolrFilter.IN("feature_type", "rrna", "rRNA", "misc_RNA"),
-                    SolrFilter.EQ("annotation", "PATRIC"));
+                    SolrFilter.IN("feature_type", "rrna", "rRNA", "misc_RNA"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
