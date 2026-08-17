@@ -144,7 +144,7 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
      * 
      * We do one pass for each repgen set, starting with the smallest. Each larger set starts with
      * the previous set's genomes pre-selected, so that the smaller set is always a subset of the
-     * larger one. To make this efficient, 
+     * larger one.
      *
      * @param skipSet	IDs of genomes that do not need to be checked
      */
@@ -309,6 +309,8 @@ public abstract class BaseGenomeProcessor extends BaseProcessor implements IRepG
                     RepGenome rep = repGenSet.get(groupId);
                     String groupName = rep.getName();
                     ProteinData genomeData = this.genomeList.getGenome(groupId);
+                    if (genomeData == null)
+                        throw new IOException("Representative genome " + groupId + " not found in protein database.");
                     fastaStream.write(new Sequence(groupId, groupName, rep.getProtein()));
                     statsStream.format("%s\t%s\t%s\t%d%n", groupId, groupName,
                             genomeData.getRating(), statMap.good(groupId));

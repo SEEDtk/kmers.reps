@@ -395,14 +395,15 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
                     String fid = KeyBuffer.getString(feature, "patric_id");
                     String dna = KeyBuffer.getString(feature, "na_sequence");
                     String prot = KeyBuffer.getString(feature, "aa_sequence");
+                    String fidDisplay = (fid == null ? "(null)" : fid);
                     if (dna == null || dna.isEmpty()) {
-                        log.debug("Missing DNA sequence for seed protein of {}.", genomeId);
+                        log.warn("GENOME ERROR: Missing DNA sequence for seed protein {} of {}.", fidDisplay, genomeId);
                         badDna++;
                     } else if (prot == null || prot.isEmpty()) {
-                        log.debug("Missing protein sequence for seed protein of {}.", genomeId);
+                        log.warn("GENOME ERROR: Missing protein sequence for seed protein {} of {}.", fidDisplay, genomeId);
                         badProt++;
                     } else if (fid == null || ! Feature.FID_PARSER.matcher(fid).matches()) {
-                        log.debug("Missing or invalid feature ID for seed protein of {}.", genomeId);
+                        log.warn("GENOME ERROR: Missing or invalid feature ID for seed protein {} of {}.", fidDisplay, genomeId);
                         badFid++;
                     } else {
                         genomeData.setFid(fid);
