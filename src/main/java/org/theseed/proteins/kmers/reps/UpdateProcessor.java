@@ -6,6 +6,7 @@ package org.theseed.proteins.kmers.reps;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Set;
@@ -138,8 +139,8 @@ public class UpdateProcessor extends BaseGenomeProcessor {
                 saveNewGTOs();
             }
             log.info("All done.");
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -156,11 +157,11 @@ public class UpdateProcessor extends BaseGenomeProcessor {
      */
     private Set<String> computeSkipSet(List<RepGenomeDb> repGenSets) throws IOException {
         // This will count the number of repgen sets where each genome has been placed.
-        CountMap<String> counts = new CountMap<String>();
+        CountMap<String> counts = new CountMap<>();
         for (RepGenomeDb repdb : repGenSets) {
             // Get the list file for this repgen set.
-            File inFile = new File(this.inDir, repdb.getListFileName());
-            if (! inFile.exists())
+            File myInFile = new File(this.inDir, repdb.getListFileName());
+            if (! myInFile.exists())
                 log.warn("WARNING: List file for {} not found in {}.", repdb, this.inDir);
             else {
                 // The file exists, so we can analyze it.

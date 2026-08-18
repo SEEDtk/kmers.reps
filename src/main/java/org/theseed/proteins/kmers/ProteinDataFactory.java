@@ -335,7 +335,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         try {
             features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, 2000, "genome_id", this.idMap.keySet(),
                     "genome_id,patric_id,product,na_sequence",
-                    SolrFilter.IN("feature_type", "rrna", "rRNA", "misc_RNA"));
+                    SolrFilter.IN("feature_type", "rrna", "rRNA", "misc_RNA"), SolrFilter.EQ("annotation", "PATRIC"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -366,7 +366,7 @@ public class ProteinDataFactory implements Iterable<ProteinData> {
         try {
             features = p3.getRecords("feature", P3CursorConnection.MAX_LIMIT, batchSize, "genome_id", this.idMap.keySet(),
                     "genome_id,patric_id,product,na_sequence,aa_sequence",
-                    SolrFilter.EQ("product", SEED_FUNCTION));
+                    SolrFilter.EQ("product", SEED_FUNCTION), SolrFilter.EQ("annotation", "PATRIC"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);       }
         // We are ready.  Loop through the features, retrieving the sequences.
