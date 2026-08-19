@@ -38,6 +38,8 @@ import org.theseed.io.TabbedLineReader;
  * The positional parameters are the name of the role map file and the name of the input file or directory.  The input
  * is a genome source-- either a master directory, a GTO directory (the default), or a file of PATRIC genome IDs.  The
  * role map is a tab-delimited file with role IDs in the first column and role descriptions in the third column.
+ * 
+ * This command is used to find SOURs-- singly-occurring universal roles.
  *
  * The command-line options are as follows.
  *
@@ -203,8 +205,7 @@ public class UniRoleProcessor extends BaseProcessor {
                 log.info("Output threshold is {}% ({} occurrences).", this.minPercent, this.minCount);
                 log.info("Producing output. {} distinct singleton roles found.", this.roleCounts.size());
                 try (PrintWriter writer = new PrintWriter(this.output)) {
-                    writer.println("role\tcount\tname\tmean_len\tsdev_len\tfamilies");
-                    writer.println("GENOMES\t" + processed + "\t\t\t\t");
+                    writer.println("role\tcount\tpercent\tname\tmean_len\tsdev_len\tfamilies");
                     // Loop through the roles of interest.
                     for (CountMap<String>.Count counter : this.roleCounts.sortedCounts()) {
                         int rCount = counter.getCount();
@@ -214,8 +215,8 @@ public class UniRoleProcessor extends BaseProcessor {
                             String families = StringUtils.join(this.familyMap.get(roleId), ", ");
                             // We need to compute the mean and standard deviation for the role length.
                             SummaryStatistics stats = this.roleStats.get(roleId);
-                            writer.format("%s\t%d\t%s\t%8.2f\t%8.2f\t%s%n", roleId, rCount, this.roleMap.getName(roleId),
-                                    stats.getMean(), stats.getStandardDeviation(), families);
+                            writer.format("%s\t%d\t%8.2f\t%s\t%8.2f\t%8.2f\t%s%n", roleId, rCount, 100.0 * rCount / processed,
+                                    this.roleMap.getName(roleId), stats.getMean(), stats.getStandardDeviation(), families);
                         }
                     }
                 }
