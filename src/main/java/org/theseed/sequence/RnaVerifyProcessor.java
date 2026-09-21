@@ -19,11 +19,11 @@ import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseReportProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.p3api.Criterion;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.roles.RoleUtilities;
-import org.theseed.p3api.Criterion;
-import org.theseed.p3api.KeyBuffer;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -129,7 +129,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         }
         this.colIdx = this.inStream.findField(this.column);
         // Create the genome batch holder.
-        this.genomeIds = new HashSet<String>(this.batchSize);
+        this.genomeIds = new HashSet<>(this.batchSize);
         // Connect  to PATRIC.
         log.info("Connecting to PATRIC.");
         this.p3 = new P3Connection();
@@ -156,7 +156,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
                 this.genomeIds.add(genomeId);
             }
             // Process the residual.
-            if (this.genomeIds.size() > 0)
+            if (! this.genomeIds.isEmpty())
                 this.processBatch(writer);
             // Write the stats.
             log.info("{} genomes processed in {} batches.  {} bad RNAs, {} genomes had too few RNAs.",
@@ -175,15 +175,15 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
         this.batchCount++;
         log.info("Processing batch {}: {} genomes.", this.batchCount, this.genomeIds.size());
         // This hash will hold the RNA MD5s for each genome.
-        Map<String, List<String>> rnaMap = new HashMap<String, List<String>>(this.batchSize);
+        Map<String, List<String>> rnaMap = new HashMap<>(this.batchSize);
         // This hash will hold the name of each genome.
-        Map<String, String> nameMap = new HashMap<String, String>(this.batchSize);
+        Map<String, String> nameMap = new HashMap<>(this.batchSize);
         // Run the RNA query.
         List<JsonObject> rnaRecords = this.p3.getRecords(Table.FEATURE, "genome_id", this.genomeIds, "genome_id,genome_name,product,na_sequence_md5",
                 Criterion.EQ("feature_type", "rrna"), Criterion.GE("na_length", this.minLen));
         log.info("{} rRNA records found in batch {}.", rnaRecords.size(), this.batchCount);
         // Sort the RNAs, saving the sequence MD5s.
-        Set<String> rnaSeqIds = new HashSet<String>(rnaRecords.size());
+        Set<String> rnaSeqIds = new HashSet<>(rnaRecords.size());
         for (JsonObject rnaRecord : rnaRecords) {
             String function = KeyBuffer.getString(rnaRecord, "product");
             if (RoleUtilities.SSU_R_RNA.matcher(function).find()) {
@@ -211,7 +211,7 @@ public class RnaVerifyProcessor extends BaseReportProcessor {
                 this.skipCount++;
             } else {
                 // Loop through the RNAs, comparing the sequences.
-                List<DnaKmers> kmers = new ArrayList<DnaKmers>(rnaList.size());
+                List<DnaKmers> kmers = new ArrayList<>(rnaList.size());
                 for (String seqId : rnaList) {
                     if (! seqRecords.containsKey(seqId)) {
                         log.warn("Could not find DNA for genome {} sequence {}.", genomeId, seqId);

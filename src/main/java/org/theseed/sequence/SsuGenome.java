@@ -23,9 +23,9 @@ public class SsuGenome extends DnaKmers implements Comparable<SsuGenome> {
 
     // FIELDS
     /** genome ID */
-    private String genomeId;
+    private final String genomeId;
     /** genome name */
-    private String name;
+    private final String name;
     /** natural sorter for genome IDs */
     private static final Comparator<String> NATURAL_SORT = new NaturalSort();
 
