@@ -45,6 +45,7 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  hiCheck         check the master representation list to see which genomes violate repgen hierarchy
  *  repSub          validate the repgen sets to insure they are hierarchical
  *  buildSets       create neighbor sets from a genome representation list file
+ *  repSample       create representative samples using a finderKmer load file
  */
 public class App
 {
@@ -82,7 +83,9 @@ public class App
              "buildFromGtos", "build a representative genome database for all genomes in a source",
              "hiCheck", "check the master representation list to see which genomes violate repgen hierarchy",
              "repSub", "validate the repgen sets to insure they are hierarchical",
-             "buildSets", "create neighbor sets from a genome representation list file"
+             "buildSets", "create neighbor sets from a genome representation list file",
+             "repSample", "create representative samples using a finderKmer load file"
+             
     };
 
     public static void main( String[] args )
@@ -115,6 +118,7 @@ public class App
         case "list" -> processor = new ListProcessor();
         case "rnaVerify" -> processor = new RnaVerifyProcessor();
         case "seedTable" -> processor = new SeedTableProcessor();
+        case "repSample" -> processor = new RepSampleProcessor();
         case "build" -> processor = new BuildRepDbProcessor();
         case "buildRefDb" -> processor = new BuildRefDbProcessor();
         case "updateMaster" -> processor = new UpdateMasterProcessor();
