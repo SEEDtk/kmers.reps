@@ -84,7 +84,8 @@ public class App
              "hiCheck", "check the master representation list to see which genomes violate repgen hierarchy",
              "repSub", "validate the repgen sets to insure they are hierarchical",
              "buildSets", "create neighbor sets from a genome representation list file",
-             "repSample", "create representative samples using a finderKmer load file"
+             "repSample", "create representative samples using a finderKmer load file",
+             "repFinder", "generate a representative set for a group of genomes using finder-kmer technology"
              
     };
 
@@ -117,8 +118,9 @@ public class App
         case "prio" -> processor = new PrioritizeProcessor();
         case "list" -> processor = new ListProcessor();
         case "rnaVerify" -> processor = new RnaVerifyProcessor();
-        case "seedTable" -> processor = new SeedTableProcessor();
         case "repSample" -> processor = new RepSampleProcessor();
+        case "repFinder" -> processor = new FinderRepsProcessor();
+        case "seedTable" -> processor = new SeedTableProcessor();
         case "build" -> processor = new BuildRepDbProcessor();
         case "buildRefDb" -> processor = new BuildRefDbProcessor();
         case "updateMaster" -> processor = new UpdateMasterProcessor();
