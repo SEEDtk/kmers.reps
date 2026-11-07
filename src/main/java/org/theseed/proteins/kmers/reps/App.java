@@ -46,6 +46,7 @@ import org.theseed.sequence.RnaVerifyProcessor;
  *  repSub          validate the repgen sets to insure they are hierarchical
  *  buildSets       create neighbor sets from a genome representation list file
  *  repSample       create representative samples using a finderKmer load file
+ *  massRepFinder   generate representative sets for multiple groups of genomes using finder-kmer technology
  */
 public class App
 {
@@ -85,8 +86,8 @@ public class App
              "repSub", "validate the repgen sets to insure they are hierarchical",
              "buildSets", "create neighbor sets from a genome representation list file",
              "repSample", "create representative samples using a finderKmer load file",
-             "repFinder", "generate a representative set for a group of genomes using finder-kmer technology"
-             
+             "repFinder", "generate a representative set for a group of genomes using finder-kmer technology",
+             "massRepFinder", "generate representative sets for multiple groups of genomes using finder-kmer technology"    
     };
 
     public static void main( String[] args )
@@ -120,6 +121,7 @@ public class App
         case "rnaVerify" -> processor = new RnaVerifyProcessor();
         case "repSample" -> processor = new RepSampleProcessor();
         case "repFinder" -> processor = new FinderRepsProcessor();
+        case "massRepFinder" -> processor = new MassRepFinderProcessor();
         case "seedTable" -> processor = new SeedTableProcessor();
         case "build" -> processor = new BuildRepDbProcessor();
         case "buildRefDb" -> processor = new BuildRefDbProcessor();
